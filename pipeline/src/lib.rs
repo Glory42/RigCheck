@@ -10,6 +10,7 @@ pub mod deck;
 pub mod ingest;
 pub mod pci;
 pub mod protondb;
+pub mod publish;
 pub mod report;
 pub mod validate;
 

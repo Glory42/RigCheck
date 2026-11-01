@@ -11,6 +11,8 @@
 //!       Adds parts missing from the hardware table (Blender Open Data), GPU
 //!       PCI IDs, uncrawled games by name, ProtonDB tiers and anti-cheat
 //!       status; re-matches hardware; rebuilds name search.
+//!   rigcheck-pipeline publish <games.db> <out-dir> <db_version> <built_at> <url> <min_app_version>
+//!       Writes <out-dir>/games.db.zst and manifest.json (ROADMAP §7.3).
 //!   rigcheck-pipeline validate <games.db>
 //!       Fails (exit 1) if games.db shouldn't be published.
 //!   rigcheck-pipeline report <games.db>
@@ -30,7 +32,7 @@ use rigcheck_pipeline::applist::{self, App};
 use rigcheck_pipeline::crawl::plan;
 use rigcheck_pipeline::ingest::{Ingested, ingest};
 use rigcheck_pipeline::validate::{Rules, validate};
-use rigcheck_pipeline::{awacy, blender, build, deck, pci, protondb, report};
+use rigcheck_pipeline::{awacy, blender, build, deck, pci, protondb, publish, report};
 
 const HARDWARE: &str = include_str!("../../data/hardware.toml");
 
@@ -56,6 +58,25 @@ fn main() -> Result<(), Error> {
                 blender: Path::new(blender),
             },
         ),
+        [
+            "publish",
+            db,
+            out,
+            db_version,
+            built_at,
+            url,
+            min_app_version,
+        ] => {
+            let release = publish::Release {
+                db_version: db_version.to_string(),
+                built_at: built_at.to_string(),
+                url: url.to_string(),
+                min_app_version: min_app_version.to_string(),
+            };
+            let manifest = publish::package(Path::new(db), Path::new(out), &release)?;
+            println!("{} bytes, sha256 {}", manifest.size_bytes, manifest.sha256);
+            Ok(())
+        }
         ["validate", db] => validate_db(Path::new(db)),
         ["report", db] => report_db(Path::new(db)),
         _ => Err("usage: see the comment at the top of pipeline/src/main.rs".into()),
