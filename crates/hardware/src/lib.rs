@@ -205,13 +205,21 @@ fn ram_bytes(root: &Path) -> Option<u64> {
     Some(kib * 1024)
 }
 
-/// GPUs from `/sys/class/drm`. Connector entries like `card1-eDP-1` have no
-/// PCI ID, so [`gpu`] skips them.
+/// GPUs from `/sys/class/drm/card<N>`. The same GPU also appears as a render
+/// node (`renderD128`), and connectors look like `card1-eDP-1`.
 fn gpus(root: &Path, probes: &Probes) -> Vec<Gpu> {
     let Ok(entries) = fs::read_dir(root.join("sys/class/drm")) else {
         return Vec::new();
     };
-    let mut cards: Vec<_> = entries.flatten().map(|entry| entry.path()).collect();
+    let mut cards: Vec<_> = entries
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| {
+            let name = path.file_name().unwrap_or_default().to_string_lossy();
+            name.strip_prefix("card")
+                .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+        })
+        .collect();
     cards.sort();
     cards.iter().filter_map(|card| gpu(card, probes)).collect()
 }

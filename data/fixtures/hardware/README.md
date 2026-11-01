@@ -4,7 +4,7 @@ Fake filesystem roots for `crates/hardware/tests/`. Each directory mirrors the f
 
 | Fixture | Machine | Source |
 |---|---|---|
-| `amd-laptop` | Ryzen 5 7530U, Radeon iGPU | Real, from `capture.sh`, plus one real connector entry (`card1-eDP-1`) |
+| `amd-laptop` | Ryzen 5 7530U, Radeon iGPU | Real, from `capture.sh` (connector `card1-eDP-1` and render node `renderD128` added by hand from the same machine) |
 | `amd-desktop` | Ryzen 5 5600X, RX 6600 | Hand-written |
 | `nvidia-desktop` | i5-8400, GTX 1060 6GB | Hand-written |
 | `intel-laptop` | i5-8250U, UHD 620 | Hand-written |

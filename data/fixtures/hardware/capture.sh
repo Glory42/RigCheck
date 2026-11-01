@@ -22,11 +22,15 @@ copy /proc/sys/kernel/osrelease
 copy /etc/os-release
 copy /sys/module/nvidia/version
 
-for card in /sys/class/drm/card*; do
-    case "$(basename "$card")" in *-*) continue ;; esac # skip connectors like card1-eDP-1
-    for file in vendor device uevent mem_info_vram_total; do
-        copy "$card/device/$file"
-    done
+for entry in /sys/class/drm/*; do
+    case "$(basename "$entry")" in
+    card*-* | renderD*) # connectors and render nodes: detection must skip these
+        copy "$entry/device/uevent" ;;
+    card*)
+        for file in vendor device uevent mem_info_vram_total; do
+            copy "$entry/device/$file"
+        done ;;
+    esac
 done
 
 mkdir -p "$out/commands"
