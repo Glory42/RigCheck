@@ -1,11 +1,11 @@
 //! Steam's list of every game, from `IStoreService/GetAppList`.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::Error;
 
 /// A game on Steam, as the app list names it.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct App {
     #[serde(rename = "appid")]
     pub app_id: u32,

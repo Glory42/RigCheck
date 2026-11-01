@@ -10,11 +10,10 @@ use crate::Error;
 /// What an `appdetails` response turned out to be.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ingested {
-    Game(GameRecord),
+    /// Boxed: a record is far bigger than the other outcomes.
+    Game(Box<GameRecord>),
     /// DLC, a soundtrack, a demo, a tool, hardware…: `kind` is Steam's `type`.
-    NotAGame {
-        kind: String,
-    },
+    NotAGame { kind: String },
     /// The store has no page for it (`"success": false`), e.g. delisted.
     Unavailable,
 }
@@ -59,7 +58,7 @@ pub fn ingest(app_id: u32, json: &str) -> Result<Ingested, Error> {
         return Ok(Ingested::NotAGame { kind: data.kind });
     }
     let tier = |name: &str| data.pc_requirements.get(name)?.as_str().map(parse);
-    Ok(Ingested::Game(GameRecord {
+    Ok(Ingested::Game(Box::new(GameRecord {
         app_id,
         minimum: tier("minimum"),
         recommended: tier("recommended"),
@@ -67,5 +66,5 @@ pub fn ingest(app_id: u32, json: &str) -> Result<Ingested, Error> {
         release_date: data.release_date.map(|release| release.date),
         native: data.platforms.linux,
         ..GameRecord::default()
-    }))
+    })))
 }

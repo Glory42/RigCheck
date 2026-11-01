@@ -98,3 +98,13 @@ fn finds_detected_gpus_by_pci_id() {
         );
     }
 }
+
+#[test]
+fn memory_sizes_written_with_a_space_still_match() {
+    let catalog = catalog();
+
+    // ELDEN RING, minimum
+    let gpus = catalog.match_gpus("NVIDIA GEFORCE GTX 1060 3 GB or AMD RADEON RX 580 4 GB");
+
+    assert_eq!(names(gpus), ["GeForce GTX 1060 3GB", "Radeon RX 580"]);
+}

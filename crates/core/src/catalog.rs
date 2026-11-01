@@ -152,7 +152,10 @@ const NOISE: &[&str] = &[
 /// `drop_sizes` also drops memory sizes, so "RX 580 8GB" finds "RX 580".
 fn normalize(text: &str, drop_sizes: bool) -> String {
     static SIZE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+(gb|mb)$").unwrap());
+    static SPACED_SIZE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"(\d)\s+(gb|mb)\b").unwrap());
     let text = strip_parentheses(&text.to_lowercase());
+    let text = SPACED_SIZE.replace_all(&text, "$1$2"); // "4 gb" → "4gb"
     let text = text.split('@').next().unwrap_or_default(); // "i5-2500K@3.3GHz"
     text.split(|c: char| !c.is_alphanumeric())
         .filter(|word| !word.is_empty() && !NOISE.contains(word))

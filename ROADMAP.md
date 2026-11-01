@@ -419,11 +419,11 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 **Done when:** your installed games that appear in the seed DB show correct verdicts, and the parser corpus is ≥ 90% parsed.
 
 ### Phase 4: Data pipeline v1 (v0.4)
-- [ ] **Make the repo public** (checklist in §1.1). This is required for free scheduled Actions and public `games.db` downloads
+- [x] **Make the repo public** (checklist in §1.1). This is required for free scheduled Actions and public `games.db` downloads
 - [ ] Add the `games.db` ODbL license notice and the Credits data (§9)
 - [ ] `pipeline` binary with subcommands: `applist`, `crawl`, `enrich`, `build`, `validate`, `report`
-- [ ] App list: fetch every app → keep games and drop DLC, soundtracks, tools and demos
-- [ ] Crawler: rate-limited (stay under the limit), retries with backoff, **resumable**. State lives in the previous `games.db` (`updated_at`, `requirements_status`), so each run continues where the last one stopped
+- [x] App list: fetch every app → keep games and drop DLC, soundtracks, tools and demos
+- [x] Crawler: rate-limited (stay under the limit), retries with backoff, **resumable**. State lives in the previous `games.db` (`crawl_log`: when each app was fetched), so each run continues where the last one stopped, and unchanged store pages aren't fetched again
 - [ ] Crawl priority: popular first (by ProtonDB report count / most-played), then new releases, then everything else
 - [ ] Enrich: ProtonDB dump, AreWeAntiCheatYet, Deck status, hardware scores (Blender Open Data, with `data/hardware.toml` for parts it lacks), PCI IDs
 - [ ] `validate`: schema check, size budget, sanity checks (e.g. top 100 games must have parsed requirements)

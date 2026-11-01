@@ -2,10 +2,12 @@
 //! host on an [`Allowlist`] (ROADMAP §6); `deny.toml` keeps HTTP clients out
 //! of other crates.
 
+mod client;
 mod limit;
 
 use url::Url;
 
+pub use client::{Client, Error};
 pub use limit::{RateLimiter, Retry};
 
 /// The hosts a program may send requests to, over HTTPS only.
