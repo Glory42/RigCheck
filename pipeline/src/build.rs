@@ -4,10 +4,26 @@ use std::collections::HashMap;
 
 use rigcheck_gamedb::GameDb;
 
+use rigcheck_core::Catalog;
+
 use crate::Error;
 use crate::applist::App;
 use crate::awacy::AntiCheatInfo;
+use crate::blender::GapScores;
+use crate::pci::PciId;
 use crate::protondb::Summary;
+
+/// Everything `build` merges into the crawled games.
+#[derive(Debug, Clone, Default)]
+pub struct Sources {
+    /// Every game on Steam, for name search.
+    pub apps: Vec<App>,
+    pub protondb: HashMap<u32, Summary>,
+    pub anticheat: HashMap<u32, AntiCheatInfo>,
+    /// Parts missing from data/hardware.toml, scored from Blender Open Data.
+    pub gaps: GapScores,
+    pub pci_ids: Vec<PciId>,
+}
 
 /// ROADMAP §1.2: ProtonDB's data is ODbL (share-alike), so games.db is too.
 const LICENSE: &str = "This database is made available under the Open Database License \
@@ -21,14 +37,28 @@ tiers computed by rigcheck's own rule. \
 Anti-cheat status: AreWeAntiCheatYet (areweanticheatyet.com), MIT, © AreWeAntiCheatYet contributors. \
 Hardware table: rigcheck (github.com/Glory42/rigcheck).";
 
-/// Adds every app-list game not crawled yet (by name), ProtonDB tiers and
-/// popularity and anti-cheat status, then rebuilds the name search.
-pub fn build(
-    db: &GameDb,
-    apps: &[App],
-    protondb: &HashMap<u32, Summary>,
-    anticheat: &HashMap<u32, AntiCheatInfo>,
-) -> Result<(), Error> {
+/// Adds missing hardware and GPU PCI IDs and re-matches every game against
+/// the grown table; adds every app-list game not crawled yet (by name),
+/// ProtonDB tiers and popularity and anti-cheat status; rebuilds the name
+/// search; and writes the license and source credits.
+pub fn build(db: &GameDb, sources: &Sources) -> Result<(), Error> {
+    let Sources {
+        apps,
+        protondb,
+        anticheat,
+        gaps,
+        pci_ids,
+    } = sources;
+    db.store_extra_hardware(
+        &Catalog::new(gaps.cpus.clone(), gaps.gpus.clone()),
+        "blender",
+    )?;
+    let pci_rows: Vec<(u16, u16, &str)> = pci_ids
+        .iter()
+        .map(|id| (id.vendor_id, id.device_id, id.name.as_str()))
+        .collect();
+    db.add_pci_ids(&pci_rows)?;
+    db.rematch()?;
     let names: Vec<(u32, &str)> = apps
         .iter()
         .map(|app| (app.app_id, app.name.as_str()))

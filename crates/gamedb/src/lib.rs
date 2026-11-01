@@ -178,7 +178,36 @@ impl GameDb {
     /// Writes the hardware table, which ships inside games.db.
     pub fn store_catalog(&self, catalog: &Catalog) -> Result<(), Error> {
         let tx = self.conn.unchecked_transaction()?;
-        insert_hardware(&tx, catalog)?;
+        insert_hardware(&tx, catalog, "manual")?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Adds hardware scored elsewhere (e.g. `source` "blender") to the table.
+    pub fn store_extra_hardware(&self, extra: &Catalog, source: &str) -> Result<(), Error> {
+        let tx = self.conn.unchecked_transaction()?;
+        insert_hardware(&tx, extra, source)?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Matches every stored requirement's CPU and GPU text against the
+    /// current hardware table again, so table growth reaches every game.
+    pub fn rematch(&self) -> Result<(), Error> {
+        let catalog = self.catalog()?;
+        let tx = self.conn.unchecked_transaction()?;
+        tx.execute("DELETE FROM requirement_hardware", [])?;
+        let mut statement =
+            tx.prepare("SELECT app_id, tier, cpu_raw, gpu_raw FROM requirements")?;
+        let rows: Vec<(u32, String, Option<String>, Option<String>)> = statement
+            .query_map([], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
+            })?
+            .collect::<Result<_, _>>()?;
+        drop(statement);
+        for (app_id, tier, cpu, gpu) in rows {
+            insert_matches(&tx, &catalog, app_id, &tier, cpu.as_deref(), gpu.as_deref())?;
+        }
         tx.commit()?;
         Ok(())
     }
@@ -235,19 +264,14 @@ impl GameDb {
                     parsed.gpu
                 ],
             )?;
-            let matched = [
-                ("cpu", parsed.cpu.as_deref().map(|t| catalog.match_cpus(t))),
-                ("gpu", parsed.gpu.as_deref().map(|t| catalog.match_gpus(t))),
-            ];
-            for (kind, entries) in matched {
-                for (position, entry) in entries.unwrap_or_default().into_iter().enumerate() {
-                    tx.execute(
-                        "INSERT INTO requirement_hardware (app_id, tier, kind, position, hardware_id)
-                         SELECT ?1, ?2, ?3, ?4, id FROM hardware WHERE kind = ?3 AND name = ?5",
-                        params![record.app_id, tier, kind, position as i64, entry.name],
-                    )?;
-                }
-            }
+            insert_matches(
+                &tx,
+                catalog,
+                record.app_id,
+                tier,
+                parsed.cpu.as_deref(),
+                parsed.gpu.as_deref(),
+            )?;
         }
         tx.commit()?;
         Ok(())
@@ -551,8 +575,37 @@ impl GameDb {
     }
 }
 
-/// Writes the hardware table.
-fn insert_hardware(tx: &rusqlite::Transaction, catalog: &Catalog) -> Result<(), Error> {
+/// Links a requirement tier to the table entries its CPU and GPU text name.
+fn insert_matches(
+    tx: &rusqlite::Transaction,
+    catalog: &Catalog,
+    app_id: u32,
+    tier: &str,
+    cpu: Option<&str>,
+    gpu: Option<&str>,
+) -> Result<(), Error> {
+    let matched = [
+        ("cpu", cpu.map(|text| catalog.match_cpus(text))),
+        ("gpu", gpu.map(|text| catalog.match_gpus(text))),
+    ];
+    for (kind, entries) in matched {
+        for (position, entry) in entries.unwrap_or_default().into_iter().enumerate() {
+            tx.execute(
+                "INSERT INTO requirement_hardware (app_id, tier, kind, position, hardware_id)
+                 SELECT ?1, ?2, ?3, ?4, id FROM hardware WHERE kind = ?3 AND name = ?5",
+                params![app_id, tier, kind, position as i64, entry.name],
+            )?;
+        }
+    }
+    Ok(())
+}
+
+/// Writes the hardware table, with `source` as where the scores came from.
+fn insert_hardware(
+    tx: &rusqlite::Transaction,
+    catalog: &Catalog,
+    source: &str,
+) -> Result<(), Error> {
     let entries = catalog
         .cpus()
         .iter()
@@ -561,12 +614,13 @@ fn insert_hardware(tx: &rusqlite::Transaction, catalog: &Catalog) -> Result<(), 
     for (kind, entry) in entries {
         tx.execute(
             "INSERT INTO hardware (kind, vendor, name, score, score_source, vram_mb)
-             VALUES (?1, ?2, ?3, ?4, 'manual', ?5)",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![
                 kind,
                 vendor_name(entry.vendor),
                 entry.name,
                 entry.score,
+                source,
                 entry.vram_mb
             ],
         )?;

@@ -7,9 +7,10 @@
 //!       Fetches up to <budget> store pages into games.db (created if
 //!       missing): changed or never-fetched ones, most ProtonDB reports first
 //!       when ProtonDB's reports_piiremoved.json is given. Run again to continue.
-//!   rigcheck-pipeline build <games.db> <apps.json> <reports.json> <awacy-games.json> <pci.ids>
-//!       Adds uncrawled games by name, ProtonDB tiers, anti-cheat status and
-//!       GPU PCI IDs; rebuilds name search.
+//!   rigcheck-pipeline build <games.db> <apps.json> <reports.json> <awacy-games.json> <pci.ids> <blender.jsonl>
+//!       Adds parts missing from the hardware table (Blender Open Data), GPU
+//!       PCI IDs, uncrawled games by name, ProtonDB tiers and anti-cheat
+//!       status; re-matches hardware; rebuilds name search.
 //!   rigcheck-pipeline validate <games.db>
 //!       Fails (exit 1) if games.db shouldn't be published.
 //!   rigcheck-pipeline report <games.db>
@@ -29,7 +30,7 @@ use rigcheck_pipeline::applist::{self, App};
 use rigcheck_pipeline::crawl::plan;
 use rigcheck_pipeline::ingest::{Ingested, ingest};
 use rigcheck_pipeline::validate::{Rules, validate};
-use rigcheck_pipeline::{awacy, build, deck, pci, protondb, report};
+use rigcheck_pipeline::{awacy, blender, build, deck, pci, protondb, report};
 
 const HARDWARE: &str = include_str!("../../data/hardware.toml");
 
@@ -45,12 +46,15 @@ fn main() -> Result<(), Error> {
             budget.parse()?,
             Some(Path::new(reports)),
         ),
-        ["build", db, apps, reports, awacy, pci_ids] => build_db(
+        ["build", db, apps, reports, awacy, pci_ids, blender] => build_db(
             Path::new(db),
-            Path::new(apps),
-            Path::new(reports),
-            Path::new(awacy),
-            Path::new(pci_ids),
+            Inputs {
+                apps: Path::new(apps),
+                reports: Path::new(reports),
+                awacy: Path::new(awacy),
+                pci_ids: Path::new(pci_ids),
+                blender: Path::new(blender),
+            },
         ),
         ["validate", db] => validate_db(Path::new(db)),
         ["report", db] => report_db(Path::new(db)),
@@ -93,28 +97,41 @@ fn protondb_summaries(reports: &Path) -> Result<HashMap<u32, protondb::Summary>,
     Ok(protondb::summarize(&reports, now()?))
 }
 
-fn build_db(
-    db: &Path,
-    apps: &Path,
-    reports: &Path,
-    awacy: &Path,
-    pci_ids: &Path,
-) -> Result<(), Error> {
+/// The data files `build` reads.
+struct Inputs<'a> {
+    apps: &'a Path,
+    reports: &'a Path,
+    awacy: &'a Path,
+    pci_ids: &'a Path,
+    blender: &'a Path,
+}
+
+fn build_db(db: &Path, inputs: Inputs) -> Result<(), Error> {
     let db = GameDb::open(db)?;
-    let apps: Vec<App> = serde_json::from_str(&std::fs::read_to_string(apps)?)?;
-    let protondb = protondb_summaries(reports)?;
-    let anticheat = awacy::statuses(&std::fs::read_to_string(awacy)?)?;
-    build::build(&db, &apps, &protondb, &anticheat)?;
-    let pci_ids = pci::ids(&db.catalog()?, &std::fs::read_to_string(pci_ids)?);
-    let pci_rows: Vec<(u16, u16, &str)> = pci_ids
-        .iter()
-        .map(|id| (id.vendor_id, id.device_id, id.name.as_str()))
-        .collect();
-    db.add_pci_ids(&pci_rows)?;
+    let table = db.catalog()?;
+    let gaps = blender::gap_scores(BufReader::new(File::open(inputs.blender)?), &table)?;
+    // PCI IDs are looked up in the table as it will be, Blender parts included.
+    let grown = Catalog::new(
+        table.cpus().iter().chain(&gaps.cpus).cloned().collect(),
+        table.gpus().iter().chain(&gaps.gpus).cloned().collect(),
+    );
+    let sources = build::Sources {
+        apps: serde_json::from_str(&std::fs::read_to_string(inputs.apps)?)?,
+        protondb: protondb_summaries(inputs.reports)?,
+        anticheat: awacy::statuses(&std::fs::read_to_string(inputs.awacy)?)?,
+        pci_ids: pci::ids(&grown, &std::fs::read_to_string(inputs.pci_ids)?),
+        gaps,
+    };
+    build::build(&db, &sources)?;
     println!(
-        "built: ProtonDB facts for {} games, anti-cheat for {}",
-        protondb.len(),
-        anticheat.len()
+        "built: {} apps, ProtonDB facts for {}, anti-cheat for {}, {} PCI IDs, \
+         Blender scores for {} CPUs and {} GPUs",
+        sources.apps.len(),
+        sources.protondb.len(),
+        sources.anticheat.len(),
+        sources.pci_ids.len(),
+        sources.gaps.cpus.len(),
+        sources.gaps.gpus.len()
     );
     Ok(())
 }
