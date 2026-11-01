@@ -382,14 +382,14 @@ Each phase ends with a usable, tested result. Check items off as you go.
 **Done when:** an empty app window opens, and CI passes on a pull request.
 
 ### Phase 1: My Library (v0.1)
-- [ ] `steam` crate: find Steam installs (native `~/.steam`, `~/.local/share/Steam`, Flatpak `~/.var/app/com.valvesoftware.Steam`)
-- [ ] Parse `libraryfolders.vdf` → all library folders (including other drives)
-- [ ] Parse `appmanifest_*.acf` → app ID, name, install size, folder
-- [ ] Filter out non-games (Proton versions, Steam Linux Runtime, Steamworks redistributables)
+- [x] `steam` crate: find Steam installs (native `~/.steam`, `~/.local/share/Steam`, Flatpak `~/.var/app/com.valvesoftware.Steam`)
+- [x] Parse `libraryfolders.vdf` → all library folders (including other drives)
+- [x] Parse `appmanifest_*.acf` → app ID, name, install size, folder
+- [x] Filter out non-games (Proton versions, Steam Linux Runtime, Steamworks redistributables)
 - [ ] Load installed games into the app with an iced `Task`, so the scan never blocks the UI
 - [ ] `images` module: download cover art from the Steam CDN, store it in the cache dir, show it with iced's `image` widget
 - [ ] Library page: virtualized grid with cover art, name and search box
-- [ ] Tests with fixture Steam directories
+- [x] Tests with fixture Steam directories
 
 **Done when:** the app shows your installed Steam games with cover art, including games on secondary drives.
 
