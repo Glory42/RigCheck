@@ -1,0 +1,10 @@
+Devices:
+========
+GPU0:
+	apiVersion         = 1.4.312
+	driverVersion      = 1.4.312
+	vendorID           = 0x10de
+	deviceID           = 0x1c03
+	deviceType         = PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+	deviceName         = NVIDIA GeForce GTX 1060 6GB
+	driverInfo         = 580.95.05

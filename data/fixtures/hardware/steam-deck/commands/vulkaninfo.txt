@@ -1,0 +1,10 @@
+Devices:
+========
+GPU0:
+	apiVersion         = 1.3.289
+	driverVersion      = 1.3.289
+	vendorID           = 0x1002
+	deviceID           = 0x163f
+	deviceType         = PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+	deviceName         = AMD Custom GPU 0405 (RADV VANGOGH)
+	driverInfo         = Mesa 24.1.0-devel
