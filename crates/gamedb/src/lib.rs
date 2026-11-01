@@ -245,6 +245,25 @@ impl GameDb {
         Ok(())
     }
 
+    /// Remembers that `app_id` was fetched at `fetched_at` (Unix time),
+    /// whether or not it turned out to be a game.
+    pub fn record_fetch(&self, app_id: u32, fetched_at: i64) -> Result<(), Error> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO crawl_log (app_id, fetched_at) VALUES (?1, ?2)",
+            params![app_id, fetched_at],
+        )?;
+        Ok(())
+    }
+
+    /// When each app was last fetched.
+    pub fn fetched(&self) -> Result<std::collections::HashMap<u32, i64>, Error> {
+        let mut statement = self
+            .conn
+            .prepare("SELECT app_id, fetched_at FROM crawl_log")?;
+        let rows = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
     /// The game with `app_id`, or `None` if the database doesn't have it.
     pub fn game(&self, app_id: u32) -> Result<Option<Game>, Error> {
         let row = self

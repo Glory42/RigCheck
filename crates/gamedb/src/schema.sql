@@ -54,3 +54,10 @@ CREATE TABLE gpu_pci_id (
   hardware_id INTEGER NOT NULL,
   PRIMARY KEY (vendor_id, device_id)
 );
+
+-- Pipeline bookkeeping: when each app (game or not) was last fetched, so a
+-- run continues where the last stopped and unchanged pages aren't fetched again.
+CREATE TABLE crawl_log (
+  app_id     INTEGER PRIMARY KEY,
+  fetched_at INTEGER NOT NULL
+);

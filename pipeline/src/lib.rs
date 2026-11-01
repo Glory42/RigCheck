@@ -2,6 +2,7 @@
 //! command line; the logic lives here so tests can reach it.
 
 pub mod applist;
+pub mod crawl;
 pub mod ingest;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
