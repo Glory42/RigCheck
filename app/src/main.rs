@@ -1,6 +1,7 @@
 //! The rigcheck desktop app: an iced UI on top of the workspace crates.
 
 mod my_hardware;
+mod settings;
 
 use std::path::Path;
 
