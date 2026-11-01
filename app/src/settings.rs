@@ -17,8 +17,22 @@ pub struct Settings {
 #[serde(rename_all = "lowercase")]
 pub enum Appearance {
     Ink,
+    Midnight,
+    Plum,
+    Forest,
     #[default]
     Paper,
+}
+
+impl Appearance {
+    /// In the order Settings shows them.
+    pub const ALL: [Appearance; 5] = [
+        Appearance::Paper,
+        Appearance::Ink,
+        Appearance::Midnight,
+        Appearance::Plum,
+        Appearance::Forest,
+    ];
 }
 
 impl Settings {
