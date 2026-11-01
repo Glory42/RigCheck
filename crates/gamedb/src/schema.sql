@@ -5,6 +5,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE games (
   app_id              INTEGER PRIMARY KEY,
   name                TEXT NOT NULL,
+  release_date        TEXT,              -- as the store page writes it
   linux_native        INTEGER NOT NULL DEFAULT 0,
   protondb_tier       TEXT,
   deck_status         TEXT,

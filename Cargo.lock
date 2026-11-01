@@ -3564,6 +3564,13 @@ dependencies = [
 [[package]]
 name = "rigcheck-pipeline"
 version = "0.0.0"
+dependencies = [
+ "rigcheck-core",
+ "rigcheck-gamedb",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
 
 [[package]]
 name = "rigcheck-steam"
