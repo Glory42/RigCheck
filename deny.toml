@@ -1,0 +1,15 @@
+# cargo-deny checks the dependency graph: https://embarkstudios.github.io/cargo-deny/
+# Run locally with `cargo deny check bans`.
+
+[bans]
+multiple-versions = "allow"
+# ROADMAP §6: only crates/net talks to the network. reqwest (the one HTTP client
+# we use) may only be a direct dependency of rigcheck-net; other clients are banned.
+deny = [
+    { crate = "reqwest", wrappers = ["rigcheck-net"], reason = "only crates/net may make requests (ROADMAP §6)" },
+    { crate = "ureq", reason = "use reqwest inside crates/net" },
+    { crate = "isahc", reason = "use reqwest inside crates/net" },
+    { crate = "curl", reason = "use reqwest inside crates/net" },
+    { crate = "attohttpc", reason = "use reqwest inside crates/net" },
+    { crate = "minreq", reason = "use reqwest inside crates/net" },
+]

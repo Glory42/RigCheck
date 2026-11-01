@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "pipeline"]
+members = ["app","crates/*", "pipeline"]
 
 # Shared metadata; each crate opts in with `field.workspace = true`.
 [workspace.package]
