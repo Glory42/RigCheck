@@ -1,0 +1,10 @@
+[workspace]
+resolver = "3"
+members = ["app","crates/*", "pipeline"]
+
+# Shared metadata; each crate opts in with `field.workspace = true`.
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+publish = false

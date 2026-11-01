@@ -1,0 +1,10 @@
+# Rust build output (one shared target dir for the whole workspace)
+/target/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+*.log
+.env
+.env.*

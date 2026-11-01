@@ -1,0 +1,38 @@
+name: CI
+
+# Private repo: run only where it matters to stay inside the free minutes (ROADMAP §1.1).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push to the same branch or PR cancels the run still in progress.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # CI runners have no GPU; render iced_test UIs in software.
+  ICED_TEST_BACKEND: tiny-skia
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      # Caches ~/.cargo and target/ between runs; the biggest time (and minutes) saver.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check bans
