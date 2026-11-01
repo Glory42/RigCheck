@@ -1,0 +1,19 @@
+name: Feature idea
+description: Something rigcheck could do
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap](https://github.com/Glory42/rigcheck/blob/master/ROADMAP.md) first; it may already be planned. rigcheck stays local-first: no accounts, no telemetry, no servers.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The problem, not the solution yet.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea

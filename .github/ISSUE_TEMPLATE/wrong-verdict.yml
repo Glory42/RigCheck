@@ -1,0 +1,38 @@
+name: Wrong verdict
+description: A game got the wrong stamp (READY, LOW, TOO WEAK, BLOCKED, ???)
+labels: ["verdict"]
+body:
+  - type: input
+    id: game
+    attributes:
+      label: Game
+      description: Name, and the Steam store link or app ID if you have it.
+      placeholder: Cyberpunk 2077 (1091500)
+    validations:
+      required: true
+  - type: dropdown
+    id: got
+    attributes:
+      label: Stamp you got
+      options: [READY, LOW, TOO WEAK, BLOCKED, "???", NO DATA]
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and why
+      description: Does the game actually run on this machine? How well, at which settings, with which Proton version?
+    validations:
+      required: true
+  - type: textarea
+    id: rig
+    attributes:
+      label: Your hardware
+      description: Open **My Rig** and press **Copy as text**, then paste here. Mention any GPU/CPU override you set.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: rigcheck version or commit

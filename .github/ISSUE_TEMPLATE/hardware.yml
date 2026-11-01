@@ -1,0 +1,29 @@
+name: Hardware detected wrong
+description: My Rig shows the wrong or no CPU, GPU, VRAM, Vulkan or driver
+labels: ["hardware"]
+body:
+  - type: textarea
+    id: wrong
+    attributes:
+      label: What's wrong
+      description: What My Rig shows, and what your machine really has.
+    validations:
+      required: true
+  - type: textarea
+    id: rig
+    attributes:
+      label: My Rig → Copy as text
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: capture
+    attributes:
+      label: Detection files (optional, very helpful)
+      description: |
+        Run `data/fixtures/hardware/capture.sh my-machine` from a clone of the repo. It copies only the files detection reads into a folder; nothing is uploaded. Attach the folder as a zip, or open a PR adding it as a fixture.
+  - type: input
+    id: machine
+    attributes:
+      label: Machine
+      placeholder: "Desktop with RTX 3060, Fedora 41 / ThinkPad T14 hybrid graphics"
