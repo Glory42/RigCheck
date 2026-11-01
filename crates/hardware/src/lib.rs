@@ -35,6 +35,47 @@ impl Hardware {
             .iter()
             .max_by_key(|gpu| gpu.vulkan.as_ref().is_some_and(|v| !v.integrated))
     }
+
+    /// Plain-text summary for "Copy as text", e.g. to paste into a help thread.
+    pub fn report(&self) -> String {
+        let unknown = || "unknown".to_owned();
+        let mut out = String::new();
+        let mut line = |label: &str, value: String| {
+            out += &format!("{label:<8}{value}\n");
+        };
+
+        line("CPU:", self.cpu.clone().unwrap_or_else(unknown));
+        line("RAM:", self.ram_bytes.map(gib).unwrap_or_else(unknown));
+        for gpu in &self.gpus {
+            let name = gpu.vulkan.as_ref().map_or("Unknown GPU", |v| &v.name);
+            let driver = gpu.kernel_driver.as_deref().unwrap_or("no driver");
+            let memory = match gpu.vram {
+                Vram::Shared => "shared memory".to_owned(),
+                Vram::Dedicated(bytes) => format!("{} VRAM", gib(bytes)),
+                Vram::Unknown => "VRAM unknown".to_owned(),
+            };
+            line(
+                "GPU:",
+                format!(
+                    "{name} [{:04x}:{:04x}], {driver}, {memory}",
+                    gpu.vendor_id, gpu.device_id
+                ),
+            );
+            let vulkan = match &gpu.vulkan {
+                Some(v) => format!("Vulkan {}, {}", v.api_version, v.driver),
+                None => "Vulkan not detected (is vulkan-tools installed?)".to_owned(),
+            };
+            line("", vulkan);
+        }
+        line("Distro:", self.distro.clone().unwrap_or_else(unknown));
+        line("Kernel:", self.kernel.clone().unwrap_or_else(unknown));
+        out
+    }
+}
+
+/// Bytes as GiB with one decimal, e.g. "15.0 GiB".
+fn gib(bytes: u64) -> String {
+    format!("{:.1} GiB", bytes as f64 / f64::from(1 << 30))
 }
 
 /// A graphics card or integrated GPU.

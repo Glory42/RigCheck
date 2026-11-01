@@ -1,29 +1,10 @@
-//! Tests for the crate's public seam, `detect(root, commands)`.
-//!
-//! Each fixture in `data/fixtures/hardware/` is a fake filesystem root plus
-//! captured command output in `commands/<program>.txt`. A missing file means
-//! the program isn't installed.
+//! Tests for the crate's public seam, `detect(root, commands)`, against the
+//! machines in `data/fixtures/hardware/`.
 
-use std::fs;
-use std::path::{Path, PathBuf};
+mod common;
 
-use rigcheck_hardware::{Commands, Hardware, Vram, VulkanDevice, detect};
-
-const FIXTURES: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../data/fixtures/hardware");
-
-/// Replays a fixture's captured command output instead of running programs.
-struct Captured(PathBuf);
-
-impl Commands for Captured {
-    fn run(&self, program: &str, _args: &[&str]) -> Option<String> {
-        fs::read_to_string(self.0.join("commands").join(format!("{program}.txt"))).ok()
-    }
-}
-
-fn detect_fixture(name: &str) -> Hardware {
-    let root = Path::new(FIXTURES).join(name);
-    detect(&root, &Captured(root.clone()))
-}
+use common::{detect_fixture, detect_fixture_without_programs};
+use rigcheck_hardware::{Vram, VulkanDevice};
 
 #[test]
 fn reads_cpu_model_and_ram() {
@@ -77,20 +58,9 @@ fn reads_distro_and_kernel() {
     assert_eq!(hardware.kernel.as_deref(), Some("7.2.11-arch1-1"));
 }
 
-/// A machine where none of the programs are installed.
-struct NothingInstalled;
-
-impl Commands for NothingInstalled {
-    fn run(&self, _program: &str, _args: &[&str]) -> Option<String> {
-        None
-    }
-}
-
 #[test]
 fn still_finds_gpus_without_vulkaninfo() {
-    let root = Path::new(FIXTURES).join("amd-laptop");
-
-    let hardware = detect(&root, &NothingInstalled);
+    let hardware = detect_fixture_without_programs("amd-laptop");
 
     let [gpu] = hardware.gpus.as_slice() else {
         panic!("expected one GPU, got {:?}", hardware.gpus);
