@@ -308,7 +308,7 @@ CREATE TABLE gpu_pci_id (
 | CPU | `/proc/cpuinfo` model name → `hardware_alias` | Normalize ("Intel(R) Core(TM) i5-8400 CPU @ 2.80GHz" → "i5-8400") |
 | GPU | `/sys/class/drm/card*/device/{vendor,device}` → `gpu_pci_id` | PCI IDs are exact, which beats matching name strings |
 | VRAM | `mem_info_vram_total` (AMD), `nvidia-smi` (NVIDIA), unknown for Intel iGPUs | iGPUs share system RAM. Treat VRAM as "shared" |
-| RAM | `/proc/meminfo` | Compare with ~5% tolerance: 15.6 GB usable counts as "16 GB" |
+| RAM | `/proc/meminfo` | Compare with 10% tolerance: the kernel and an iGPU keep some RAM, so a 16 GB laptop reports ~15.0 GiB |
 | Driver | `/sys/module/nvidia/version`, Mesa version via `vulkaninfo` | Detect `nouveau` and warn about it |
 | Vulkan | `vulkaninfo --summary` | If it's missing, show a "Install vulkan-tools" hint |
 | Disk | Free space on the Steam library folders | |
@@ -327,8 +327,9 @@ CREATE TABLE gpu_pci_id (
 
 ### 8.3 Comparing
 - **CPU/GPU:** the requirement is met if `user.score >= required.score`. When several alternatives are listed ("i5-4460 or FX-6300"), compare against the **same-vendor** alternative if there is one, otherwise the lowest-scored one. *(This is a decision to revisit with real data.)*
-- **RAM / VRAM / storage:** numeric comparison with tolerance.
-- **Graphics API:** DX11 → needs Vulkan 1.3 (DXVK). DX12 → needs VKD3D-Proton features plus a reasonably recent driver. OpenGL/Vulkan native → check version.
+- **RAM:** 10% tolerance (see §8.1). **VRAM and storage:** exact. A GPU that shares system RAM skips the VRAM check.
+- **Graphics API:** DirectX through Proton needs Vulkan 1.3 (DXVK for DX9–11, VKD3D-Proton for DX12). Native Linux games skip this check. *(Later: driver-specific DX12 features, native OpenGL/Vulkan versions.)*
+- **Confidence:** High when CPU, GPU and RAM could all be compared, Partial when some could, Low when none.
 - **Proton margin:** optionally require ~10% more score for non-native games. This is a setting, off by default until it's proven useful.
 - **Linux layer:** anti-cheat `denied`/`broken` → ⛔. ProtonDB `borked` → ⛔. `nouveau` driver → warning on every 3D game.
 
