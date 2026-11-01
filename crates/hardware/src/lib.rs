@@ -13,6 +13,22 @@ pub trait Commands {
     fn run(&self, program: &str, args: &[&str]) -> Option<String>;
 }
 
+/// Runs real programs found on `PATH`.
+pub struct System;
+
+impl Commands for System {
+    fn run(&self, program: &str, args: &[&str]) -> Option<String> {
+        let output = std::process::Command::new(program)
+            .args(args)
+            .output()
+            .ok()?;
+        output
+            .status
+            .success()
+            .then(|| String::from_utf8_lossy(&output.stdout).into_owned())
+    }
+}
+
 /// What rigcheck knows about the user's machine. `None` means not detected.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Hardware {
@@ -113,7 +129,7 @@ impl Hardware {
 }
 
 /// Bytes as GiB with one decimal, e.g. "15.0 GiB".
-fn gib(bytes: u64) -> String {
+pub fn gib(bytes: u64) -> String {
     format!("{:.1} GiB", bytes as f64 / f64::from(1 << 30))
 }
 

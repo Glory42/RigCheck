@@ -3172,6 +3172,7 @@ version = "0.0.0"
 dependencies = [
  "iced",
  "iced_test",
+ "rigcheck-hardware",
 ]
 
 [[package]]
