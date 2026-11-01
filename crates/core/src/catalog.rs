@@ -82,6 +82,16 @@ impl Catalog {
         matches(text, &self.cpus, &self.cpu_keys)
     }
 
+    /// CPU names in `text` the table doesn't know, as written.
+    pub fn unmatched_cpus(&self, text: &str) -> Vec<String> {
+        unmatched(text, &self.cpu_keys)
+    }
+
+    /// GPU names in `text` the table doesn't know, as written.
+    pub fn unmatched_gpus(&self, text: &str) -> Vec<String> {
+        unmatched(text, &self.gpu_keys)
+    }
+
     /// The GPU with this PCI ID, the exact way to identify a detected GPU.
     pub fn gpu_by_pci(&self, vendor_id: u16, device_id: u16) -> Option<&CatalogEntry> {
         let id = format!("{vendor_id:04x}:{device_id:04x}");
@@ -110,20 +120,40 @@ fn matches<'a>(
     entries: &'a [CatalogEntry],
     keys: &HashMap<String, usize>,
 ) -> Vec<&'a CatalogEntry> {
-    static ALTERNATIVES: LazyLock<Regex> =
-        LazyLock::new(|| Regex::new(r"(?i)\s*(?:/|,|;|\||\bor\b)\s*").unwrap());
     let mut found: Vec<&CatalogEntry> = Vec::new();
-    for token in ALTERNATIVES.split(&strip_parentheses(text)) {
-        let index = keys
-            .get(&normalize(token, false))
-            .or_else(|| keys.get(&normalize(token, true)));
-        if let Some(entry) = index.map(|&index| &entries[index])
+    for token in alternatives(text) {
+        if let Some(entry) = lookup(&token, keys).map(|index| &entries[index])
             && !found.contains(&entry)
         {
             found.push(entry);
         }
     }
     found
+}
+
+/// The alternatives in `text` that name hardware but match no entry.
+fn unmatched(text: &str, keys: &HashMap<String, usize>) -> Vec<String> {
+    alternatives(text)
+        .into_iter()
+        .filter(|token| !normalize(token, false).is_empty() && lookup(token, keys).is_none())
+        .collect()
+}
+
+/// "GTX 970 / RX 480 or Arc A380 (4GB)" → ["GTX 970", "RX 480", "Arc A380"].
+fn alternatives(text: &str) -> Vec<String> {
+    static ALTERNATIVES: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"(?i)\s*(?:/|,|;|\||\bor\b)\s*").unwrap());
+    ALTERNATIVES
+        .split(&strip_parentheses(text))
+        .map(|token| token.trim().to_owned())
+        .filter(|token| !token.is_empty())
+        .collect()
+}
+
+fn lookup(token: &str, keys: &HashMap<String, usize>) -> Option<usize> {
+    keys.get(&normalize(token, false))
+        .or_else(|| keys.get(&normalize(token, true)))
+        .copied()
 }
 
 /// Words that don't tell models apart.

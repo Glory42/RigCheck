@@ -293,6 +293,15 @@ impl GameDb {
         Ok(rows.collect::<Result<_, _>>()?)
     }
 
+    /// Every requirement tier's CPU and GPU text, by app.
+    pub fn requirement_text(&self) -> Result<Vec<(u32, Option<String>, Option<String>)>, Error> {
+        let mut statement = self
+            .conn
+            .prepare("SELECT app_id, cpu_raw, gpu_raw FROM requirements")?;
+        let rows = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
     /// Rebuilds the name index after games were written.
     pub fn rebuild_search(&self) -> Result<(), Error> {
         self.conn
