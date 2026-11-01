@@ -55,6 +55,7 @@ These are the rules every decision below follows. If a feature breaks one of the
 | **Game page** | Per-component verdict (CPU, GPU, RAM, VRAM, storage, graphics API), the bottleneck component, ProtonDB rating, anti-cheat status, Steam Deck status and a native Linux flag |
 | **My Hardware** | Shows detected CPU, GPU(s), RAM, VRAM, driver, Vulkan version, distro, kernel and free disk space |
 | **Appearance** | Five color themes for the pixel-art look (Paper, Ink, Midnight, Plum, Forest). Paper is the default; the choice is saved in `settings.json` |
+| **Language** | English, Turkish and German (Fluent `.ftl` files in `app/i18n/`). Follows the system language unless the user picks one. Game names and Steam's requirement text stay in English |
 | **Storage settings** | Database size and update status, a clear button for the cache, an image cache limit |
 
 ### Verdict levels
