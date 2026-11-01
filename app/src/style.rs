@@ -180,3 +180,15 @@ impl Colors {
         }
     }
 }
+
+/// The stamp color for a verdict level.
+pub fn level_color(level: rigcheck_core::Level) -> Color {
+    use rigcheck_core::Level;
+    match level {
+        Level::Recommended => rgb(0x2ea043),
+        Level::Minimum => rgb(0xd29922),
+        Level::Below => rgb(0xe5534b),
+        Level::Blocked => rgb(0xa371f7),
+        Level::Unknown => rgb(0x8b949e),
+    }
+}
