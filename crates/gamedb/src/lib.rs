@@ -52,6 +52,14 @@ pub struct Tier {
     pub directx: Option<u8>,
 }
 
+/// One requirement tier's CPU and GPU text, as the store page wrote them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RequirementText {
+    pub app_id: u32,
+    pub cpu: Option<String>,
+    pub gpu: Option<String>,
+}
+
 /// A game to write: what the pipeline (or the seed) knows about it.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct GameRecord {
@@ -253,6 +261,105 @@ impl GameDb {
             params![app_id, fetched_at],
         )?;
         Ok(())
+    }
+
+    /// Writes ProtonDB's tier and report count for games already stored.
+    /// The report count is also the game's popularity.
+    pub fn set_protondb(&self, facts: &[(u32, Option<ProtonTier>, u32)]) -> Result<(), Error> {
+        let tx = self.conn.unchecked_transaction()?;
+        for (app_id, tier, reports) in facts {
+            tx.execute(
+                "UPDATE games SET protondb_tier = ?2, protondb_reports = ?3, popularity = ?3
+                 WHERE app_id = ?1",
+                params![app_id, tier.map(proton_tier_name), reports],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Writes anti-cheat status and name for games already stored.
+    pub fn set_anticheat(&self, facts: &[(u32, AntiCheat, String)]) -> Result<(), Error> {
+        let tx = self.conn.unchecked_transaction()?;
+        for (app_id, status, name) in facts {
+            tx.execute(
+                "UPDATE games SET anticheat_status = ?2, anticheat_name = ?3 WHERE app_id = ?1",
+                params![app_id, anticheat_status_name(*status), name],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// The `n` most popular games and whether their requirements are
+    /// "parsed", "partial" or "missing".
+    pub fn most_popular(&self, n: usize) -> Result<Vec<(u32, String)>, Error> {
+        let mut statement = self.conn.prepare(
+            "SELECT app_id, requirements_status FROM games ORDER BY popularity DESC LIMIT ?1",
+        )?;
+        let rows = statement.query_map([n as i64], |row| Ok((row.get(0)?, row.get(1)?)))?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
+    /// Every requirement tier's CPU and GPU text.
+    pub fn requirement_text(&self) -> Result<Vec<RequirementText>, Error> {
+        let mut statement = self
+            .conn
+            .prepare("SELECT app_id, cpu_raw, gpu_raw FROM requirements")?;
+        let rows = statement.query_map([], |row| {
+            Ok(RequirementText {
+                app_id: row.get(0)?,
+                cpu: row.get(1)?,
+                gpu: row.get(2)?,
+            })
+        })?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
+    /// A value from the `meta` table (schema version, license, sources…).
+    pub fn meta(&self, key: &str) -> Result<Option<String>, Error> {
+        Ok(self
+            .conn
+            .query_row("SELECT value FROM meta WHERE key = ?1", [key], |row| {
+                row.get(0)
+            })
+            .optional()?)
+    }
+
+    pub fn set_meta(&self, key: &str, value: &str) -> Result<(), Error> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO meta (key, value) VALUES (?1, ?2)",
+            params![key, value],
+        )?;
+        Ok(())
+    }
+
+    /// Rebuilds the name index after games were written.
+    pub fn rebuild_search(&self) -> Result<(), Error> {
+        self.conn
+            .execute("INSERT INTO games_fts(games_fts) VALUES ('rebuild')", [])?;
+        Ok(())
+    }
+
+    /// Games whose name has words starting with each word of `query`, most
+    /// popular first: "witcher" → The Witcher 3, The Witcher…
+    pub fn search(&self, query: &str, limit: usize) -> Result<Vec<(u32, String)>, Error> {
+        // Each word quoted (so no FTS syntax leaks in) and matched as a prefix.
+        let terms: Vec<String> = query
+            .split_whitespace()
+            .map(|word| format!("\"{}\"*", word.replace('"', "")))
+            .collect();
+        if terms.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut statement = self.conn.prepare(
+            "SELECT g.app_id, g.name FROM games_fts f JOIN games g ON g.app_id = f.rowid
+             WHERE games_fts MATCH ?1 ORDER BY g.popularity DESC, g.name LIMIT ?2",
+        )?;
+        let rows = statement.query_map(params![terms.join(" "), limit as i64], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?;
+        Ok(rows.collect::<Result<_, _>>()?)
     }
 
     /// When each app was last fetched.
@@ -519,6 +626,26 @@ fn vendor_from(name: &str) -> Result<Vendor, Error> {
         "nvidia" => Vendor::Nvidia,
         other => return Err(format!("unknown vendor {other:?}").into()),
     })
+}
+
+fn proton_tier_name(tier: ProtonTier) -> &'static str {
+    match tier {
+        ProtonTier::Platinum => "platinum",
+        ProtonTier::Gold => "gold",
+        ProtonTier::Silver => "silver",
+        ProtonTier::Bronze => "bronze",
+        ProtonTier::Borked => "borked",
+    }
+}
+
+fn anticheat_status_name(status: AntiCheat) -> &'static str {
+    match status {
+        AntiCheat::Supported => "supported",
+        AntiCheat::Running => "running",
+        AntiCheat::Planned => "planned",
+        AntiCheat::Broken => "broken",
+        AntiCheat::Denied => "denied",
+    }
 }
 
 fn proton_tier(name: &str) -> Option<ProtonTier> {

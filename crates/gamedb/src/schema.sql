@@ -1,18 +1,25 @@
--- games.db, ROADMAP §7.2. Full-text search (games_fts) arrives with the
--- Catalog in Phase 5.
+-- games.db, ROADMAP §7.2.
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
 
 CREATE TABLE games (
   app_id              INTEGER PRIMARY KEY,
   name                TEXT NOT NULL,
   release_date        TEXT,              -- as the store page writes it
+  popularity          INTEGER NOT NULL DEFAULT 0,  -- ProtonDB report count; ranks search
   linux_native        INTEGER NOT NULL DEFAULT 0,
   protondb_tier       TEXT,
+  protondb_reports    INTEGER,
   deck_status         TEXT,
   anticheat_status    TEXT,
   anticheat_name      TEXT,
   requirements_status TEXT NOT NULL,   -- parsed|partial|missing
   updated_at          INTEGER NOT NULL
+);
+
+-- Search by any word of a game's name ("witcher" → The Witcher 3). An index
+-- over games.name; rebuilt after the pipeline writes (GameDb::rebuild_search).
+CREATE VIRTUAL TABLE games_fts USING fts5(
+  name, content='games', content_rowid='app_id', tokenize='unicode61 remove_diacritics 2'
 );
 
 CREATE TABLE requirements (

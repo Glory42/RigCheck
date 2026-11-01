@@ -1,0 +1,247 @@
+[
+ {
+  "url": "",
+  "name": "Halo: The Master Chief Collection",
+  "logo": "",
+  "native": false,
+  "status": "Supported",
+  "reference": "",
+  "anticheats": [
+   "Easy Anti-Cheat"
+  ],
+  "notes": [
+   [
+    "All-modes enabled with minor caveats",
+    "https://www.gamingonlinux.com/2023/04/halo-the-master-chief-collection-gets-steam-deck-support/"
+   ],
+   [
+    "Singleplayer, co-op, and custom matches work",
+    "https://www.protondb.com/app/976730#s1M6yjsTt"
+   ]
+  ],
+  "updates": [
+   {
+    "name": "Tried to enable EAC",
+    "date": "Apr 12, 2022, 8:10 AM GMT+2",
+    "reference": "https://www.xda-developers.com/halo-mcc-broken-steam-deck/"
+   },
+   {
+    "name": "Updated Linux EAC Files",
+    "date": "Aug 31, 2022, 17:00:12 UTC",
+    "reference": "https://steamdb.info/patchnotes/9367265/"
+   },
+   {
+    "name": "Still actively working on it",
+    "date": "Dec 15, 2022, 4:15 PM GMT+1",
+    "reference": "https://www.theverge.com/23499215/valve-steam-deck-interview-late-2022"
+   },
+   {
+    "name": "Steam Deck Support",
+    "date": "Apr 6, 2023, 8:00 PM UTC",
+    "reference": "https://support.halowaypoint.com/hc/en-us/articles/14589112499348"
+   }
+  ],
+  "storeIds": {
+   "steam": "976730"
+  },
+  "slug": "halo-the-master-chief-collection",
+  "dateChanged": "2024-01-19T04:40:56.000Z"
+ },
+ {
+  "url": "https://www.fortnite.com/",
+  "name": "Fortnite",
+  "logo": "",
+  "native": false,
+  "status": "Denied",
+  "reference": "",
+  "anticheats": [
+   "Easy Anti-Cheat"
+  ],
+  "notes": [
+   [
+    "Works on Xbox-Cloud",
+    "https://news.xbox.com/en-us/2022/05/05/play-fortnite-with-xbox-cloud-gaming-for-free/"
+   ]
+  ],
+  "updates": [
+   {
+    "name": "Not confident in anti-cheat",
+    "date": "Feb 07, 2022, 6:59 AM GMT+2",
+    "reference": "https://twitter.com/TimSweeneyEpic/status/1490565925648715781"
+   },
+   {
+    "name": "Removed Hyperion",
+    "date": "Nov 1, 2022, 6:43 PM GMT+1",
+    "reference": "https://github.com/Starz0r/AreWeAntiCheatYet/issues/918"
+   },
+   {
+    "name": "Was running for a short period of time",
+    "date": "Nov 2, 2022, 8:04 AM GMT+1",
+    "reference": "https://github.com/Starz0r/AreWeAntiCheatYet/issues/918#issuecomment-1299673303"
+   },
+   {
+    "name": "Removed BattlEye",
+    "date": "Jun 11, 2024, 5:34 PM GMT+1",
+    "reference": "https://x.com/ShiinaBR/status/1800567329870537171"
+   }
+  ],
+  "storeIds": {
+   "epic": {
+    "namespace": "fn",
+    "slug": "fortnite"
+   }
+  },
+  "slug": "fortnite",
+  "dateChanged": "2024-10-04T17:23:46.000Z"
+ },
+ {
+  "url": "",
+  "name": "Paladins",
+  "logo": "",
+  "native": false,
+  "status": "Running",
+  "reference": "",
+  "anticheats": [
+   "Easy Anti-Cheat"
+  ],
+  "notes": [
+   [
+    "Make sure to check recent updates, the game is known to break often (And the status may not update to reflect that)",
+    ""
+   ]
+  ],
+  "updates": [
+   {
+    "name": "Hope to provide such support in the near future",
+    "date": "Nov 09, 2021, 5:55 PM EST",
+    "reference": "https://www.theverge.com/2021/10/5/22709918/valve-steam-deck-supported-games-anti-cheat-proton-eac-battleye-epic"
+   },
+   {
+    "name": "Running with Proton GE, Anti-Cheat may not be intentionally enabled",
+    "date": "Sat May 14 2022 23:57:51 GMT+0000",
+    "reference": "https://www.protondb.com/app/444090#7U2uy5DZzc"
+   },
+   {
+    "name": "Proton Experimental - Now Playable: Paladins",
+    "date": "Thu Jun 30 2022 16:00:00 GMT+0000",
+    "reference": "https://github.com/ValveSoftware/Proton/wiki/Changelog"
+   },
+   {
+    "name": "Reports of game not working",
+    "date": "Jul 13, 2022, 2:29 AM GMT+2",
+    "reference": "https://github.com/Starz0r/AreWeAntiCheatYet/issues/581"
+   },
+   {
+    "name": "Previously working most likely due to fluke in EAC Config",
+    "date": "Aug 05, 2022, 9:57 PM",
+    "reference": "https://github.com/ValveSoftware/Proton/issues/6062#issuecomment-1206809079"
+   },
+   {
+    "name": "No plans to dedicate time for steam deck / linux compatibility",
+    "date": "Feb 14, 2023, 02:13 AM",
+    "reference": "https://www.reddit.com/r/paladinsgame/comments/110mcuf/with_em_striving_to_do_better_how_about_some/j8g2nam/"
+   },
+   {
+    "name": "EAC updated, and Linux allowed after Evil Mojo layoffs",
+    "date": "April 1, 2025, 12:00 AM",
+    "reference": "https://www.protondb.com/app/444090/1000#JBFivnOCC-"
+   }
+  ],
+  "storeIds": {
+   "steam": "444090",
+   "epic": {
+    "namespace": "badb0ee71b474ed591ec43212547cfc8",
+    "slug": "paladins"
+   }
+  },
+  "slug": "paladins",
+  "dateChanged": "2025-04-05T19:13:42.0000000-04:00"
+ },
+ {
+  "url": "https://pubg.com/",
+  "name": "PUBG: Battlegrounds",
+  "logo": "",
+  "native": false,
+  "status": "Broken",
+  "reference": "",
+  "anticheats": [
+   "Zakynthos",
+   "BattlEye",
+   "UNCHEATER"
+  ],
+  "notes": [],
+  "updates": [
+   {
+    "name": "The team does not have a comment for this",
+    "date": "Nov 09, 2021, 5:55 PM EST",
+    "reference": "https://www.theverge.com/2021/10/5/22709918/valve-steam-deck-supported-games-anti-cheat-proton-eac-battleye-epic"
+   }
+  ],
+  "storeIds": {
+   "steam": "578080",
+   "epic": {
+    "namespace": "9361c8c6d2f34b42b5f2f61093eedf48",
+    "slug": "pubg-59c1d9"
+   }
+  },
+  "slug": "pubg-battlegrounds",
+  "dateChanged": "2024-01-19T04:40:56.000Z"
+ },
+ {
+  "url": "http://www.destinythegame.com/",
+  "name": "Destiny 2",
+  "logo": "",
+  "native": false,
+  "status": "Denied",
+  "reference": "https://help.bungie.net/hc/en-us/articles/360049024592-Destiny-2-Steam-Guide#steam-deck-and-destiny-2-0-3",
+  "anticheats": [
+   "BattlEye"
+  ],
+  "notes": [
+   [
+    "Show your support!",
+    "https://www.gamingonlinux.com/2022/10/go-tell-bungie-you-want-destiny-2-on-steam-deck-linux/"
+   ]
+  ],
+  "updates": [
+   {
+    "name": "Destiny 2 is not supported for play on the Steam Deck or on any system utilizing Steam Play's Proton",
+    "date": "Mar 02, 2022, 12:10 AM UTC",
+    "reference": "https://www.gamingonlinux.com/2022/03/bungie-say-a-big-fat-no-to-proton-and-steam-deck-for-destiny-2/"
+   }
+  ],
+  "storeIds": {
+   "steam": "1085660",
+   "epic": {
+    "namespace": "428115def4ca4deea9d69c99c5a5a99e",
+    "slug": "destiny-2"
+   }
+  },
+  "slug": "destiny-2",
+  "dateChanged": "2024-01-19T04:40:56.000Z"
+ },
+ {
+  "url": "https://dueprocess.info/",
+  "name": "Due Process",
+  "logo": "",
+  "native": false,
+  "status": "Planned",
+  "reference": "",
+  "anticheats": [
+   "Easy Anti-Cheat"
+  ],
+  "notes": [],
+  "updates": [
+   {
+    "name": "We're on it.",
+    "date": "Thu, Sep 23, 2021, 09:43:05 PM (Central European Summer Time)",
+    "reference": "https://www.reddit.com/r/dueprocess/comments/pu252w/bring_steam_decklinux_support_to_due_process/he04229/?context=1"
+   }
+  ],
+  "storeIds": {
+   "steam": "753650"
+  },
+  "slug": "due-process",
+  "dateChanged": "2024-01-19T04:40:56.000Z"
+ }
+]

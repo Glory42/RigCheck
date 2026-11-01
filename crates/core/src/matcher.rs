@@ -65,7 +65,7 @@ pub struct LinuxInfo {
 }
 
 /// ProtonDB's rating for running the Windows version through Proton.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProtonTier {
     Platinum,
     Gold,

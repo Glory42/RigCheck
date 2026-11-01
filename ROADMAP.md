@@ -363,6 +363,8 @@ struct Verdict {
 | Popularity | ProtonDB report counts, Steam's most-played charts | Free | n/a |
 | App icon / logo | Original pixel art in `assets/brand/` (drawn by scripts in `assets/brand/src/`) | n/a | MIT, our own work: no attribution needed, and it can be trademarked later |
 
+**ProtonDB tiers.** The dump has raw reports but no Platinum/Gold/… tier, and ProtonDB's formula isn't published, so rigcheck uses its own rule and the app labels it as derived from ProtonDB reports. Per report: Borked if the verdict is "no"; Bronze with stability faults or significant bugs; Silver with any other fault; Gold if it needed tweaks (didn't work out of the box, custom or GE Proton, launch options); else Platinum. Per game: the most common rating among reports from the last 12 months, or all reports if fewer than 3 are that recent; ties go to the worse tier. Reports on native Linux builds count toward popularity but not the tier.
+
 **Rules:**
 - An in-app **Credits** page lists every source with its license.
 - `games.db` is published under ODbL (see §1.2), and the code under MIT.
@@ -420,14 +422,15 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 
 ### Phase 4: Data pipeline v1 (v0.4)
 - [x] **Make the repo public** (checklist in §1.1). This is required for free scheduled Actions and public `games.db` downloads
-- [ ] Add the `games.db` ODbL license notice and the Credits data (§9)
-- [ ] `pipeline` binary with subcommands: `applist`, `crawl`, `enrich`, `build`, `validate`, `report`
+- [x] Add the `games.db` ODbL license notice and the Credits data (§9): `build` writes both into games.db's `meta` table; the app's Credits page is Phase 7
+- [x] `pipeline` binary with subcommands: `applist`, `crawl`, `build` (which does the enriching), `validate`, `report`
 - [x] App list: fetch every app → keep games and drop DLC, soundtracks, tools and demos
 - [x] Crawler: rate-limited (stay under the limit), retries with backoff, **resumable**. State lives in the previous `games.db` (`crawl_log`: when each app was fetched), so each run continues where the last one stopped, and unchanged store pages aren't fetched again
-- [ ] Crawl priority: popular first (by ProtonDB report count / most-played), then new releases, then everything else
-- [ ] Enrich: ProtonDB dump, AreWeAntiCheatYet, Deck status, hardware scores (Blender Open Data, with `data/hardware.toml` for parts it lacks), PCI IDs
-- [ ] `validate`: schema check, size budget, sanity checks (e.g. top 100 games must have parsed requirements)
-- [ ] `report`: unmatched hardware tokens sorted by frequency, used to grow the aliases in `data/hardware.toml`
+- [x] Crawl priority: popular first (by ProtonDB report count), then the most recently changed store pages
+- [x] Enrich: ProtonDB dump (tiers by our own rule, see §9) and AreWeAntiCheatYet
+- [ ] Enrich: Deck status, hardware scores (Blender Open Data, with `data/hardware.toml` for parts it lacks), PCI IDs
+- [x] `validate`: size budget and sanity checks: not empty, and ≥ 90% of the 100 most popular games parsed (not 100%: some popular games leave a field out on Steam, e.g. TF2 lists no GPU)
+- [x] `report`: unmatched hardware tokens sorted by frequency, used to grow the aliases in `data/hardware.toml`
 - [ ] `build-db.yml`: daily cron → download the previous release → run the pipeline (stop well under the 6-hour job limit) → publish `games.db.zst` + `manifest.json` to a rolling `db-latest` release
 - [ ] Keep scheduled workflows alive: the run commits an updated `data/db-version.json`, since GitHub disables cron in repos inactive for 60 days
 - [ ] Optional: run the first full crawl locally to get past the multi-day backlog faster
