@@ -1,0 +1,41 @@
+//! Tests for the host allowlists (ROADMAP §6): the only places rigcheck may
+//! send requests to.
+
+use rigcheck_net::Allowlist;
+
+#[test]
+fn the_app_may_only_reach_the_three_privacy_destinations() {
+    let app = Allowlist::app();
+
+    for url in [
+        "https://github.com/Glory42/rigcheck/releases/download/db-latest/manifest.json",
+        "https://store.steampowered.com/api/appdetails?appids=1086940",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1086940/library_600x900.jpg",
+    ] {
+        assert!(app.allows(url), "{url} should be allowed");
+    }
+    for url in [
+        "https://api.steampowered.com/IStoreService/GetAppList/v1/",
+        "https://example.com/",
+        "http://store.steampowered.com/api/appdetails",
+        "https://store.steampowered.com.example.com/api/appdetails",
+        "not a url",
+    ] {
+        assert!(!app.allows(url), "{url} should be refused");
+    }
+}
+
+#[test]
+fn the_pipeline_may_also_reach_its_data_sources() {
+    let pipeline = Allowlist::pipeline();
+
+    for url in [
+        "https://api.steampowered.com/IStoreService/GetAppList/v1/",
+        "https://store.steampowered.com/api/appdetails?appids=1086940",
+        "https://github.com/bdefore/protondb-data/raw/master/reports/reports_oct1_2026.tar.gz",
+        "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/master/games.json",
+    ] {
+        assert!(pipeline.allows(url), "{url} should be allowed");
+    }
+    assert!(!pipeline.allows("https://example.com/"));
+}

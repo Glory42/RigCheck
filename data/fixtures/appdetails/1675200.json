@@ -1,0 +1,169 @@
+{
+ "1675200": {
+  "success": true,
+  "data": {
+   "type": "hardware",
+   "name": "Steam Deck",
+   "steam_appid": 1675200,
+   "required_age": 0,
+   "is_free": false,
+   "detailed_description": "",
+   "about_the_game": "",
+   "short_description": "Your games, everywhere Powerful, portable PC gaming, designed for comfort and a console-like user experience",
+   "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/4c51ecfd17183d45c466ad78f5fdb92920e6224d/header.jpg?t=1781214136",
+   "capsule_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/0f9e2ea28cf0382479618500fc527b7ccf251b8f/capsule_231x87.jpg?t=1781214136",
+   "capsule_imagev5": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/0f9e2ea28cf0382479618500fc527b7ccf251b8f/capsule_184x69.jpg?t=1781214136",
+   "website": "https://www.steamdeck.com/",
+   "pc_requirements": [],
+   "mac_requirements": [],
+   "linux_requirements": [],
+   "price_overview": {
+    "currency": "USD",
+    "initial": 39900,
+    "final": 39900,
+    "discount_percent": 0,
+    "initial_formatted": "",
+    "final_formatted": "$399.00"
+   },
+   "packages": [
+    595604,
+    1186053,
+    946113,
+    1186054,
+    946114,
+    1186055
+   ],
+   "package_groups": [
+    {
+     "name": "default",
+     "title": "Buy Steam Deck",
+     "description": "",
+     "selection_text": "Select a purchase option",
+     "save_text": "",
+     "display_type": 0,
+     "is_recurring_subscription": "false",
+     "subs": [
+      {
+       "packageid": 595604,
+       "percent_savings_text": " ",
+       "percent_savings": 0,
+       "option_text": "Steam Deck 256 GB - $399.00",
+       "option_description": "",
+       "can_get_free_license": "0",
+       "is_free_license": false,
+       "price_in_cents_with_discount": 39900
+      },
+      {
+       "packageid": 1186053,
+       "percent_savings_text": " ",
+       "percent_savings": 0,
+       "option_text": "Steam Deck 256 GB w/o PSU - $399.00",
+       "option_description": "",
+       "can_get_free_license": "0",
+       "is_free_license": false,
+       "price_in_cents_with_discount": 39900
+      },
+      {
+       "packageid": 946113,
+       "percent_savings_text": " ",
+       "percent_savings": 0,
+       "option_text": "Steam Deck 512 GB OLED - $789.00",
+       "option_description": "",
+       "can_get_free_license": "0",
+       "is_free_license": false,
+       "price_in_cents_with_discount": 78900
+      },
+      {
+       "packageid": 1186054,
+       "percent_savings_text": " ",
+       "percent_savings": 0,
+       "option_text": "Steam Deck 512 GB OLED w/o PSU - $789.00",
+       "option_description": "",
+       "can_get_free_license": "0",
+       "is_free_license": false,
+       "price_in_cents_with_discount": 78900
+      },
+      {
+       "packageid": 946114,
+       "percent_savings_text": " ",
+       "percent_savings": 0,
+       "option_text": "Steam Deck 1 TB OLED - $949.00",
+       "option_description": "",
+       "can_get_free_license": "0",
+       "is_free_license": false,
+       "price_in_cents_with_discount": 94900
+      },
+      {
+       "packageid": 1186055,
+       "percent_savings_text": " ",
+       "percent_savings": 0,
+       "option_text": "Steam Deck 1 TB OLED w/o PSU - $949.00",
+       "option_description": "",
+       "can_get_free_license": "0",
+       "is_free_license": false,
+       "price_in_cents_with_discount": 94900
+      }
+     ]
+    }
+   ],
+   "platforms": {
+    "windows": true,
+    "mac": true,
+    "linux": true
+   },
+   "screenshots": [
+    {
+     "id": 0,
+     "path_thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/ss_5535edca3f6c9844d301de3a88ed16a4575376ac.600x338.jpg?t=1781214136",
+     "path_full": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/ss_5535edca3f6c9844d301de3a88ed16a4575376ac.1920x1080.jpg?t=1781214136"
+    },
+    {
+     "id": 1,
+     "path_thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/ss_585b19a7e2eb7e2784c6148fe44782acab73229c.600x338.jpg?t=1781214136",
+     "path_full": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/ss_585b19a7e2eb7e2784c6148fe44782acab73229c.1920x1080.jpg?t=1781214136"
+    },
+    {
+     "id": 2,
+     "path_thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/ss_6d25000e7a7badd44ec9f38e6264c7f400db649c.600x338.jpg?t=1781214136",
+     "path_full": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/ss_6d25000e7a7badd44ec9f38e6264c7f400db649c.1920x1080.jpg?t=1781214136"
+    },
+    {
+     "id": 3,
+     "path_thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/ss_fa9f7868b7ae1b0b6fc98876bd03c1bfd5a73030.600x338.jpg?t=1781214136",
+     "path_full": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/ss_fa9f7868b7ae1b0b6fc98876bd03c1bfd5a73030.1920x1080.jpg?t=1781214136"
+    },
+    {
+     "id": 4,
+     "path_thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/ss_9452b8b23fc9f3fa95165ea4535b75cae585886e.600x338.jpg?t=1781214136",
+     "path_full": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1675200/ss_9452b8b23fc9f3fa95165ea4535b75cae585886e.1920x1080.jpg?t=1781214136"
+    }
+   ],
+   "movies": [
+    {
+     "id": 257207136,
+     "name": "Steam Deck Available Now",
+     "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257207136/c864bf9aadc7f7b96808f9fe06f4b0943ff3118e/movie_600x337.jpg?t=1758925709",
+     "dash_av1": "https://video.akamai.steamstatic.com/store_trailers/1675200/1749094849/5d3e0009b0ecaefc31b45bf18d2c5c3becc5d864/1758925015/dash_av1.mpd?t=1758925709",
+     "dash_h264": "https://video.akamai.steamstatic.com/store_trailers/1675200/1749094849/5d3e0009b0ecaefc31b45bf18d2c5c3becc5d864/1758925015/dash_h264.mpd?t=1758925709",
+     "hls_h264": "https://video.akamai.steamstatic.com/store_trailers/1675200/1749094849/5d3e0009b0ecaefc31b45bf18d2c5c3becc5d864/1758925015/hls_264_master.m3u8?t=1758925709",
+     "highlight": true
+    }
+   ],
+   "release_date": {
+    "coming_soon": false,
+    "date": "Jan 17, 2025"
+   },
+   "support_info": {
+    "url": "https://www.steamdeck.com/",
+    "email": ""
+   },
+   "background": "https://store.akamai.steamstatic.com/images/storepagebackground/app/1675200?t=1781214136",
+   "background_raw": "https://store.akamai.steamstatic.com/images/storepagebackground/app/1675200?t=1781214136",
+   "content_descriptors": {
+    "ids": [],
+    "notes": null
+   },
+   "ratings": null
+  }
+ }
+}
