@@ -72,23 +72,21 @@ The overall verdict is the **worst component**. A ⛔ Linux blocker overrides ev
 ## 3. Architecture
 
 ```
-┌──────────────────────── Desktop app (Tauri 2) ─────────────────────────┐
+┌──────────────────── Desktop app (one Rust binary, iced) ───────────────┐
 │                                                                        │
-│  Frontend: React + TypeScript (Vite)                                   │
-│  Library │ Catalog │ Game page │ My Hardware │ Settings                │
-│       ▲  no network access; talks only to the Rust backend             │
-│       │  Tauri commands (invoke)                                       │
-│  ─────┴──────────────────────────────────────────────────────────────  │
-│  Rust backend                                                          │
+│  app/  UI: Library │ Catalog │ Game page │ My Hardware │ Settings      │
+│        Elm architecture: state → view → Message → update               │
+│        calls the crates below directly (no IPC, no webview)            │
+│  ────────────────────────────────────────────────────────────────────  │
+│  crates/                                                               │
 │  ├── hardware   detect CPU/GPU/RAM/VRAM/Vulkan/driver/disk             │
 │  ├── steam      find Steam installs, list installed games              │
-│  ├── db         games.db (read-only) + fetched.db (cache)              │
-│  ├── fetch      live Steam lookups for games missing from games.db     │
-│  ├── images     cover art download + LRU disk cache                    │
-│  ├── updater    check manifest, download + verify + swap games.db      │
+│  ├── gamedb     games.db (read-only) + fetched.db (cache), updater     │
+│  ├── net        the ONLY crate with an HTTP client: live Steam         │
+│  │              lookups, cover art download, games.db download         │
 │  └── core       requirement parser + matcher (shared with pipeline)    │
 └────────────────────────────────────────────────────────────────────────┘
-          │ only 3 network destinations, all read-only (see §6)
+          │ only 3 network destinations, all read-only, all via net (§6)
           ▼
    GitHub Releases (games.db)   Steam store API (live lookups)   Steam CDN (images)
 
@@ -110,20 +108,21 @@ The overall verdict is the **worst component**. A ⛔ Linux blocker overrides ev
 
 | Layer | Choice | Why |
 |---|---|---|
-| App shell | **Tauri 2** | Small native binary with a Rust backend, AppImage/deb/rpm bundling and a built-in updater |
-| Frontend | **React + TypeScript + Vite** | Existing skills, a big ecosystem, easy image-heavy UI |
-| UI kit | Tailwind + shadcn/ui (or similar) | Fast to build, looks good |
-| Lists | `@tanstack/react-virtual` | Smooth scrolling through 100k+ rows |
-| Data fetching (UI) | `@tanstack/react-query` | Caching and loading states around Tauri commands |
-| Backend | **Rust** | Speed, safety, a single binary |
+| Language | **Rust, everywhere** | One language for UI, logic and pipeline. A single native binary, no webview |
+| UI | **iced** (0.14) | Native Rust GUI in the Elm style, used by System76's COSMIC desktop. GPU rendering (wgpu) with a software fallback (tiny-skia) |
+| Lists | `scrollable` + render only the visible rows | Smooth scrolling through 100k+ rows |
+| Async work (UI) | iced `Task` on tokio | Loading states for disk and network work without blocking the UI |
+| App directories | `directories` (XDG) | `~/.local/share`, `~/.cache`, `~/.config`; Flatpak redirects these into its sandbox |
 | Database | **SQLite** via `rusqlite` (bundled), **FTS5** for search | Local, millisecond search, zero cost |
 | Steam files | `steamlocate`, `keyvalues-parser` | Finds Steam (native + Flatpak) and parses VDF/ACF |
 | System info | `sysinfo` + reading `/proc`, `/sys`, `vulkaninfo` | CPU, RAM, disks, GPU details |
-| HTTP | `reqwest` (rustls) | Live lookups, images, database download |
+| HTTP | `reqwest` (rustls), only inside `crates/net` | Live lookups, images, database download |
 | Serialization | `serde`, `serde_json` | Everything |
 | Compression | `zstd` | Smaller database downloads |
 | Tests (Rust) | built-in tests + `insta` snapshots | Parser and matcher correctness |
-| Tests (UI) | Vitest + Testing Library | Component logic |
+| Tests (UI) | `iced_test` (headless simulator) + unit tests on `update` | Screens and state changes, no display needed |
+| Dependency rules | `cargo-deny` | Enforces that only `crates/net` has an HTTP client (§6) |
+| Packaging | `cargo-packager` (deb, AppImage, pacman), `cargo-generate-rpm` (rpm) | Linux packages from the same binary |
 | Pipeline | Rust binary in the same workspace | Shares `core` with the app |
 | CI/CD | GitHub Actions | Free for public repos |
 
@@ -134,17 +133,19 @@ The overall verdict is the **worst component**. A ⛔ Linux blocker overrides ev
 ```
 rigcheck/
 ├── Cargo.toml                 # Rust workspace
-├── crates/
+├── deny.toml                  # dependency rules (only crates/net may do HTTP)
+├── app/                       # the desktop app (iced), binary `rigcheck`
+│   └── src/                   # main.rs + one module per screen
+├── pipeline/                  # data pipeline binary (crawl, parse, build games.db)
+├── crates/                    # libraries shared by app/ and pipeline/
 │   ├── core/                  # requirement parser, matcher, shared types (no I/O)
 │   ├── hardware/              # Linux hardware detection
 │   ├── steam/                 # Steam install + library discovery
-│   └── gamedb/                # games.db schema, queries, migrations
-├── apps/
-│   ├── website/               # Astro showcase site (Phase 9, after v1.0)
-│   └── desktop/               # Tauri app
-│       ├── src/               # React frontend
-│       └── src-tauri/         # Tauri Rust entry, commands, capabilities
-├── pipeline/                  # data pipeline binary (crawl, parse, build games.db)
+│   ├── gamedb/                # games.db schema, queries, migrations
+│   └── net/                   # HTTP client with the host allowlist (§6)
+├── packaging/                 # .desktop file, AppStream metainfo, Flatpak manifest (Phase 7)
+├── website/                   # Astro showcase site (Phase 9, after v1.0)
+├── assets/brand/              # pixel-art icon and the scripts that draw it
 ├── data/                      # hand-maintained, version-controlled inputs
 │   ├── hardware_aliases.toml  # "GTX 1060 6GB" → canonical hardware ID
 │   ├── hardware_overrides.toml# manual scores for hardware missing from benchmarks
@@ -156,6 +157,10 @@ rigcheck/
 ├── ROADMAP.md
 └── README.md
 ```
+
+**Rule of thumb:** things you run live at the top (`app/`, `pipeline/`), and logic lives in `crates/`. `app/` stays thin: screens, state and wiring. Anything worth unit-testing belongs in a crate.
+
+Crate packages are prefixed (`rigcheck-core`, …) because a package called `core` would clash with Rust's built-in `core` library. Directory names stay short.
 
 **Testability rule:** `hardware` and `steam` take a root path (default `/`, or `$HOME` for Steam). Tests point them at fake directory trees in `data/fixtures/`, so detection gets tested without real hardware.
 
@@ -174,8 +179,8 @@ The app makes **only** these requests. This list goes in the README and on an in
 As with any download, GitHub and Valve see the user's IP address. The project itself receives **nothing**.
 
 **Enforced in code, not just promised:**
-- The frontend has no network permission in Tauri's capability config. Only the Rust backend makes requests.
-- The Rust HTTP client only accepts the three hosts above. Any other host is a bug.
+- Only `crates/net` may depend on an HTTP client. `deny.toml` bans `reqwest` everywhere else (and bans other HTTP clients outright), and `cargo deny check bans` fails CI if that ever changes.
+- The client in `crates/net` only accepts the three hosts above. Any other host is a bug.
 - A settings toggle lets users disable automatic update checks and update manually.
 
 ---
@@ -191,7 +196,7 @@ As with any download, GitHub and Valve see the user's IP address. The project it
 | Cover images | `~/.cache/rigcheck/images/` | Yes. LRU-evicted at a user-set limit (default 500 MB) |
 | `settings.json` | `~/.config/rigcheck/` | Reset button |
 
-Use Tauri's `app_data_dir()` / `app_cache_dir()` / `app_config_dir()`. These resolve correctly under Flatpak.
+Use the `directories` crate (`ProjectDirs`), which follows the XDG variables. Flatpak points those variables into the sandbox, so the same code works there.
 
 **Lookup order:** `games.db` → `fetched.db` → live fetch (stored in `fetched.db`). Updating `games.db` never touches `fetched.db`. Entries in `fetched.db` older than 30 days, or that later appear in `games.db`, are ignored and pruned.
 
@@ -326,7 +331,7 @@ CREATE TABLE gpu_pci_id (
 - **Proton margin:** optionally require ~10% more score for non-native games. This is a setting, off by default until it's proven useful.
 - **Linux layer:** anti-cheat `denied`/`broken` → ⛔. ProtonDB `borked` → ⛔. `nouveau` driver → warning on every 3D game.
 
-### 8.4 Output (shared Rust type, serialized to the UI)
+### 8.4 Output (shared Rust type, used directly by the UI)
 ```rust
 struct Verdict {
     overall: Level,                 // Recommended | Minimum | Below | Blocked | Unknown
@@ -366,13 +371,13 @@ struct Verdict {
 Each phase ends with a usable, tested result. Check items off as you go.
 
 ### Phase 0: Foundation (v0.0)
-- [ ] Install the toolchain: `rustup`, Node LTS + pnpm, Tauri's Linux dependencies (`webkit2gtk-4.1`, `libayatana-appindicator`, `librsvg`, …)
+- [ ] Install the toolchain: `rustup` (stable, with clippy and rustfmt) and `cargo-deny`. iced loads Wayland/X11/Vulkan at runtime, so there are no extra system packages to build
 - [ ] Learn Rust basics: *The Rust Book*, chapters 1–10. Keep going in parallel; you don't have to finish first
 - [ ] Create a **private** GitHub repo (`Glory42/rigcheck`) with the MIT license (see §1.1)
 - [ ] Set up the Cargo workspace and the crate skeletons from §5
-- [ ] Scaffold Tauri 2 + React + TS + Vite in `apps/desktop`
-- [ ] CI (`ci.yml`): `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, `pnpm lint`, `pnpm test`, `pnpm build`. Run on `main` + PRs only, with Rust caching, to stay inside the private-repo minutes
-- [ ] Lock Tauri capabilities: no network permission for the frontend (§6)
+- [ ] iced app skeleton in `app/` that opens an empty window with the brand icon, plus a headless `iced_test` test
+- [ ] CI (`ci.yml`): `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, `cargo deny check bans`. Run on `main` + PRs only, with Rust caching, to stay inside the private-repo minutes
+- [ ] Network lock: `crates/net` skeleton, and a `deny.toml` that bans HTTP clients from every other crate (§6)
 
 **Done when:** an empty app window opens, and CI passes on a pull request.
 
@@ -381,8 +386,8 @@ Each phase ends with a usable, tested result. Check items off as you go.
 - [ ] Parse `libraryfolders.vdf` → all library folders (including other drives)
 - [ ] Parse `appmanifest_*.acf` → app ID, name, install size, folder
 - [ ] Filter out non-games (Proton versions, Steam Linux Runtime, Steamworks redistributables)
-- [ ] Tauri command `list_installed_games`
-- [ ] `images` module: download cover art from the Steam CDN, store it in the cache dir, serve it to the UI via Tauri's asset protocol
+- [ ] Load installed games into the app with an iced `Task`, so the scan never blocks the UI
+- [ ] `images` module: download cover art from the Steam CDN, store it in the cache dir, show it with iced's `image` widget
 - [ ] Library page: virtualized grid with cover art, name and search box
 - [ ] Tests with fixture Steam directories
 
@@ -444,13 +449,13 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 **Done when:** the database updates in the background with no broken states, even if you kill the app mid-download (test that).
 
 ### Phase 7: Packaging & release (v0.7)
-- [ ] `release-app.yml`: on tag → build AppImage, `.deb` and `.rpm` → attach to a GitHub Release
-- [ ] Tauri updater plugin pointed at GitHub Releases, with a self-generated signing key stored as an Actions secret
+- [ ] `release-app.yml`: on tag → build AppImage and `.deb` (`cargo-packager`) and `.rpm` (`cargo-generate-rpm`) → attach to a GitHub Release
+- [ ] Update notice: compare the running version with the latest GitHub Release and link to it. Flathub and AUR users get updates from their package manager, so the app never replaces its own binary
 - [ ] Test on at least Arch, Ubuntu/Debian, Fedora and SteamOS (Deck desktop mode)
-- [ ] Test on NVIDIA proprietary drivers, including the WebKitGTK blank-window issue. Apply `WEBKIT_DISABLE_DMABUF_RENDERER=1` automatically if needed
+- [ ] Test on NVIDIA proprietary drivers and on a machine without working Vulkan. iced should fall back to its software renderer (tiny-skia); check that it does
 - [ ] AUR package (`rigcheck-bin`)
 - [ ] Flathub submission (manifest, permissions: read-only access to Steam folders and network).
-- [ ] App icons: run `pnpm tauri icon assets/brand/icon-1024.png`, then install hicolor icons (`128`, `256`, `512`) for the `.desktop` entry
+- [ ] Desktop integration in `packaging/`: a `.desktop` file named after the app ID (`dev.gorkemkaryol.rigcheck`), AppStream metainfo, and hicolor icons (`128`, `256`, `512` from `assets/brand/`). On Wayland, the window icon comes from this `.desktop` file
 - [ ] About page in the app: version, license, links, data-source credits (§9)
 - [ ] README with screenshots, privacy section and credits
 
@@ -499,13 +504,14 @@ A static showcase page. It describes the app and sends people to GitHub, Flathub
 | Steam changes or blocks the unofficial `appdetails` endpoint | Pipeline and live lookups break | Cache aggressively, use PCGamingWiki as a backup, and keep the pipeline's sources modular |
 | Requirement parsing is inaccurate | Wrong verdicts erode trust | Show ❓ instead of guessing, use a large fixture corpus, track parse-rate metrics in `report`, show raw text on every game page |
 | Hardware scores missing for old or obscure parts | Unknown verdicts | Manual overrides in `hardware_overrides.toml`, fall back to a release-year/tier estimate marked "low confidence" |
-| WebKitGTK rendering issues on NVIDIA | Blank window for some users | Detect NVIDIA and apply the env var, document it, test on NVIDIA every release |
+| iced is pre-1.0 | Breaking changes between releases, weaker screen-reader support than GTK or the web | Pin the version, keep `app/` thin so upgrades touch little code, upgrade on purpose rather than automatically |
+| GPU driver problems (no Vulkan, old drivers) | Blank or crashing window for some users | iced falls back to software rendering (tiny-skia). Document `ICED_BACKEND=tiny-skia` and test on NVIDIA every release |
 | Scheduled workflow auto-disabled | Database goes stale | The pipeline commits a version file each run, and a "DB older than 7 days" warning appears in the app |
 | Steam installed via Flatpak or Snap | Library not found | Check all known paths, plus a manual "add Steam folder" option |
 | First crawl takes days | Slow start | Crawl popular games first, make it resumable, and optionally run the first crawl locally |
 | Data license conflicts | Legal risk | Verify every license in §9 before v0.4. Keep attribution in the app and the database `meta` table |
 | Private-repo Actions minutes run out (2,000/month) | CI blocked during Phases 0–3 | CI only on `main` + PRs with Rust caching, no scheduled jobs while private, go public before Phase 4 |
-| Learning Rust while building | Slow progress | Phases 1–3 need only basic Rust. Keep the `core` crate pure and test-driven, and don't optimize early |
+| Learning Rust while building | Slow progress | Phases 1–3 need only basic Rust. Keep the `core` crate pure and test-driven, and don't optimize early. For the UI, start each screen from the closest iced example |
 
 ---
 
@@ -517,7 +523,7 @@ A static showcase page. It describes the app and sends people to GitHub, Flathub
 | CI/CD and pipeline compute | GitHub Actions (free for public repos) |
 | Database hosting | GitHub Releases asset (up to 2 GB per file) |
 | App distribution | GitHub Releases, Flathub, AUR |
-| App updates | Tauri updater + GitHub Releases |
+| App updates | Flathub and AUR, plus an in-app "new version" notice from GitHub Releases |
 | Code signing | Not required on Linux. The updater key is self-generated |
 | Images | Steam CDN directly |
 | Steam Web API key | Free |
@@ -530,7 +536,9 @@ A static showcase page. It describes the app and sends people to GitHub, Flathub
 
 - *The Rust Book*: https://doc.rust-lang.org/book/
 - *Rust by Example*: https://doc.rust-lang.org/rust-by-example/
-- Tauri 2 docs: https://v2.tauri.app/
+- iced book and API docs: https://book.iced.rs/, https://docs.rs/iced
+- iced examples (most features have one): https://github.com/iced-rs/iced/tree/master/examples
+- cargo-deny: https://embarkstudios.github.io/cargo-deny/
 - `rusqlite` docs + the SQLite FTS5 docs: https://www.sqlite.org/fts5.html
 - Steam VDF/ACF format: Valve Developer Community wiki ("KeyValues")
 - Linux sysfs for DRM devices: kernel documentation, `/sys/class/drm`
