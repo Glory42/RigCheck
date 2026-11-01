@@ -107,10 +107,11 @@ Wrong verdicts, missing hardware, translations and captures of your machine all 
 
 ## Credits
 
+- Game data comes from Steam's store pages; Proton compatibility from [ProtonDB](https://www.protondb.com) reports ([ODbL](https://opendatacommons.org/licenses/odbl/1-0/)), rated by rigcheck's own rule ([ROADMAP §9](ROADMAP.md#9-data-sources--licenses)); anti-cheat status from [AreWeAntiCheatYet](https://areweanticheatyet.com) (MIT).
 - Requirement text in `data/fixtures/requirements/` comes from Steam's store pages, for testing the parser.
 - Hardware scores in `data/hardware.toml` are rough hand estimates until the pipeline brings in benchmark data.
 - The pixel-art icon is original, drawn by scripts in [`assets/brand/`](assets/brand/).
 
 ## License
 
-Code: [MIT](LICENSE).
+Code: [MIT](LICENSE). The published game database (`games.db`) includes ProtonDB data, so it's under the [ODbL](https://opendatacommons.org/licenses/odbl/1-0/).

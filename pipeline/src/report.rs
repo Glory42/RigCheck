@@ -22,18 +22,20 @@ pub struct Unmatched {
 pub fn unmatched(db: &GameDb, catalog: &Catalog) -> Result<Vec<Unmatched>, Error> {
     // Each (kind, name) once per game, however many tiers mention it.
     let mut seen: HashSet<(u32, &'static str, String)> = HashSet::new();
-    for (app_id, cpu, gpu) in db.requirement_text()? {
-        let cpus = cpu
+    for tier in db.requirement_text()? {
+        let cpus = tier
+            .cpu
             .map(|text| catalog.unmatched_cpus(&text))
             .unwrap_or_default();
-        let gpus = gpu
+        let gpus = tier
+            .gpu
             .map(|text| catalog.unmatched_gpus(&text))
             .unwrap_or_default();
         for name in cpus {
-            seen.insert((app_id, "cpu", name));
+            seen.insert((tier.app_id, "cpu", name));
         }
         for name in gpus {
-            seen.insert((app_id, "gpu", name));
+            seen.insert((tier.app_id, "gpu", name));
         }
     }
     let mut counts: HashMap<(&'static str, String), usize> = HashMap::new();

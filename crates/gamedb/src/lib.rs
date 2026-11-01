@@ -52,6 +52,14 @@ pub struct Tier {
     pub directx: Option<u8>,
 }
 
+/// One requirement tier's CPU and GPU text, as the store page wrote them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RequirementText {
+    pub app_id: u32,
+    pub cpu: Option<String>,
+    pub gpu: Option<String>,
+}
+
 /// A game to write: what the pipeline (or the seed) knows about it.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct GameRecord {
@@ -293,13 +301,37 @@ impl GameDb {
         Ok(rows.collect::<Result<_, _>>()?)
     }
 
-    /// Every requirement tier's CPU and GPU text, by app.
-    pub fn requirement_text(&self) -> Result<Vec<(u32, Option<String>, Option<String>)>, Error> {
+    /// Every requirement tier's CPU and GPU text.
+    pub fn requirement_text(&self) -> Result<Vec<RequirementText>, Error> {
         let mut statement = self
             .conn
             .prepare("SELECT app_id, cpu_raw, gpu_raw FROM requirements")?;
-        let rows = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?;
+        let rows = statement.query_map([], |row| {
+            Ok(RequirementText {
+                app_id: row.get(0)?,
+                cpu: row.get(1)?,
+                gpu: row.get(2)?,
+            })
+        })?;
         Ok(rows.collect::<Result<_, _>>()?)
+    }
+
+    /// A value from the `meta` table (schema version, license, sources…).
+    pub fn meta(&self, key: &str) -> Result<Option<String>, Error> {
+        Ok(self
+            .conn
+            .query_row("SELECT value FROM meta WHERE key = ?1", [key], |row| {
+                row.get(0)
+            })
+            .optional()?)
+    }
+
+    pub fn set_meta(&self, key: &str, value: &str) -> Result<(), Error> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO meta (key, value) VALUES (?1, ?2)",
+            params![key, value],
+        )?;
+        Ok(())
     }
 
     /// Rebuilds the name index after games were written.

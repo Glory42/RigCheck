@@ -26,7 +26,15 @@ struct ReportApp {
 #[derive(Debug, Clone, Deserialize)]
 struct SteamApp {
     #[serde(rename = "appId")]
-    app_id: String,
+    app_id: AppId,
+}
+
+/// Most reports write the ID as a string, some as a number.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+enum AppId {
+    Text(String),
+    Number(u32),
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -49,7 +57,10 @@ struct Responses {
 
 impl Report {
     pub fn app_id(&self) -> Option<u32> {
-        self.app.steam.app_id.parse().ok()
+        match &self.app.steam.app_id {
+            AppId::Text(text) => text.parse().ok(),
+            AppId::Number(number) => Some(*number),
+        }
     }
 }
 

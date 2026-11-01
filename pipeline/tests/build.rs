@@ -91,3 +91,19 @@ fn games_get_their_proton_tier_and_anti_cheat_status() {
     assert_eq!(destiny.linux.anticheat, Some(AntiCheat::Denied));
     assert_eq!(destiny.anticheat_name.as_deref(), Some("BattlEye"));
 }
+
+#[test]
+fn the_built_database_names_its_license_and_sources() {
+    let dir = TempDir::new().unwrap();
+    let db = crawled(&dir);
+
+    build(&db, &HashMap::new(), &HashMap::new()).unwrap();
+
+    // ROADMAP §1.2: games.db includes ProtonDB data (ODbL, share-alike).
+    let license = db.meta("license").unwrap().expect("a license notice");
+    assert!(license.contains("ODbL"), "{license}");
+    let sources = db.meta("sources").unwrap().expect("source credits");
+    for source in ["Steam", "ProtonDB", "AreWeAntiCheatYet"] {
+        assert!(sources.contains(source), "{source} missing from: {sources}");
+    }
+}

@@ -83,3 +83,11 @@ fn each_report_is_rated_by_the_rule() {
         assert_eq!(summary.tier, Some(tier), "report at {timestamp}");
     }
 }
+
+#[test]
+fn reports_with_a_numeric_app_id_count_too() {
+    // About 8% of the dump writes "appId": 427510 instead of "427510".
+    let summaries = summarize(&reports(), NOW);
+
+    assert_eq!(summaries[&427510].reports, 1);
+}

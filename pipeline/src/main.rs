@@ -3,11 +3,20 @@
 //!
 //!   rigcheck-pipeline applist <apps.json>
 //!       Every game on Steam, from GetAppList. Needs $STEAM_API_KEY.
-//!   rigcheck-pipeline crawl <apps.json> <games.db> <budget>
-//!       Fetches up to <budget> store pages, popular and changed ones first,
-//!       into games.db (created if missing). Run again to continue.
+//!   rigcheck-pipeline crawl <apps.json> <games.db> <budget> [reports.json]
+//!       Fetches up to <budget> store pages into games.db (created if
+//!       missing): changed or never-fetched ones, most ProtonDB reports first
+//!       when ProtonDB's reports_piiremoved.json is given. Run again to continue.
+//!   rigcheck-pipeline build <games.db> <reports.json> <awacy-games.json>
+//!       Adds ProtonDB tiers and anti-cheat status; rebuilds name search.
+//!   rigcheck-pipeline validate <games.db>
+//!       Fails (exit 1) if games.db shouldn't be published.
+//!   rigcheck-pipeline report <games.db>
+//!       Hardware names data/hardware.toml doesn't know, most used first.
 
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::BufReader;
 use std::path::Path;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -18,6 +27,8 @@ use rigcheck_pipeline::Error;
 use rigcheck_pipeline::applist::{self, App};
 use rigcheck_pipeline::crawl::plan;
 use rigcheck_pipeline::ingest::{Ingested, ingest};
+use rigcheck_pipeline::validate::{Rules, validate};
+use rigcheck_pipeline::{awacy, build, protondb, report};
 
 const HARDWARE: &str = include_str!("../../data/hardware.toml");
 
@@ -26,11 +37,19 @@ fn main() -> Result<(), Error> {
     let args: Vec<&str> = args.iter().map(String::as_str).collect();
     match args.as_slice() {
         ["applist", out] => fetch_applist(Path::new(out)),
-        ["crawl", apps, db, budget] => crawl(Path::new(apps), Path::new(db), budget.parse()?),
-        _ => Err(
-            "usage: rigcheck-pipeline applist <apps.json> | crawl <apps.json> <games.db> <budget>"
-                .into(),
+        ["crawl", apps, db, budget] => crawl(Path::new(apps), Path::new(db), budget.parse()?, None),
+        ["crawl", apps, db, budget, reports] => crawl(
+            Path::new(apps),
+            Path::new(db),
+            budget.parse()?,
+            Some(Path::new(reports)),
         ),
+        ["build", db, reports, awacy] => {
+            build_db(Path::new(db), Path::new(reports), Path::new(awacy))
+        }
+        ["validate", db] => validate_db(Path::new(db)),
+        ["report", db] => report_db(Path::new(db)),
+        _ => Err("usage: see the comment at the top of pipeline/src/main.rs".into()),
     }
 }
 
@@ -59,7 +78,62 @@ fn fetch_applist(out: &Path) -> Result<(), Error> {
     Ok(())
 }
 
-fn crawl(apps: &Path, db_path: &Path, budget: usize) -> Result<(), Error> {
+fn now() -> Result<i64, Error> {
+    Ok(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64)
+}
+
+/// ProtonDB tiers and report counts for every game it has reports for.
+fn protondb_summaries(reports: &Path) -> Result<HashMap<u32, protondb::Summary>, Error> {
+    let reports = protondb::read_reports(BufReader::new(File::open(reports)?))?;
+    Ok(protondb::summarize(&reports, now()?))
+}
+
+fn build_db(db: &Path, reports: &Path, awacy: &Path) -> Result<(), Error> {
+    let db = GameDb::open(db)?;
+    let protondb = protondb_summaries(reports)?;
+    let anticheat = awacy::statuses(&std::fs::read_to_string(awacy)?)?;
+    build::build(&db, &protondb, &anticheat)?;
+    println!(
+        "built: ProtonDB facts for {} games, anti-cheat for {}",
+        protondb.len(),
+        anticheat.len()
+    );
+    Ok(())
+}
+
+fn validate_db(path: &Path) -> Result<(), Error> {
+    let rules = Rules {
+        top: 100,
+        min_parsed_share: 0.9,
+        max_bytes: 200 * 1024 * 1024, // uncompressed; ROADMAP §7.4 caps the .zst at 50 MB
+    };
+    let problems = validate(&GameDb::open(path)?, path, &rules)?;
+    for problem in &problems {
+        eprintln!("problem: {problem:?}");
+    }
+    if problems.is_empty() {
+        println!("valid");
+        Ok(())
+    } else {
+        Err(format!("{} problem(s); not publishable", problems.len()).into())
+    }
+}
+
+fn report_db(path: &Path) -> Result<(), Error> {
+    use std::io::Write;
+    let db = GameDb::open(path)?;
+    let mut out = std::io::stdout().lock();
+    for line in report::unmatched(&db, &db.catalog()?)?.iter().take(100) {
+        match writeln!(out, "{}\t{}\t{}", line.games, line.kind, line.text) {
+            // `report | head` closes the pipe early; that's not an error.
+            Err(error) if error.kind() == std::io::ErrorKind::BrokenPipe => return Ok(()),
+            result => result?,
+        }
+    }
+    Ok(())
+}
+
+fn crawl(apps: &Path, db_path: &Path, budget: usize, reports: Option<&Path>) -> Result<(), Error> {
     let apps: Vec<App> = serde_json::from_str(&std::fs::read_to_string(apps)?)?;
     let db = if db_path.exists() {
         GameDb::open(db_path)?
@@ -69,15 +143,21 @@ fn crawl(apps: &Path, db_path: &Path, budget: usize) -> Result<(), Error> {
         db
     };
     let catalog = db.catalog()?;
-    // Popularity comes from ProtonDB report counts once enrichment lands.
-    let batch = plan(&apps, &db, &HashMap::new(), budget)?;
+    let popularity: HashMap<u32, u32> = match reports {
+        Some(reports) => protondb_summaries(reports)?
+            .into_iter()
+            .map(|(app_id, summary)| (app_id, summary.reports))
+            .collect(),
+        None => HashMap::new(),
+    };
+    let batch = plan(&apps, &db, &popularity, budget)?;
     let mut client = client()?;
     let (mut games, mut other) = (0, 0);
     for app_id in &batch {
         let url = format!(
             "https://store.steampowered.com/api/appdetails?appids={app_id}&l=english&cc=us"
         );
-        let fetched_at = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
+        let fetched_at = now()?;
         match client
             .get_text(&url)
             .and_then(|json| ingest(*app_id, &json))
