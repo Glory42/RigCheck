@@ -1,0 +1,18 @@
+Devices:
+========
+GPU0:
+	apiVersion         = 1.3.289
+	driverVersion      = 1.3.289
+	vendorID           = 0x8086
+	deviceID           = 0x3e9b
+	deviceType         = PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+	deviceName         = Intel(R) UHD Graphics 630 (CFL GT2)
+	driverInfo         = Mesa 24.2.5
+GPU1:
+	apiVersion         = 1.4.312
+	driverVersion      = 1.4.312
+	vendorID           = 0x10de
+	deviceID           = 0x1f91
+	deviceType         = PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+	deviceName         = NVIDIA GeForce GTX 1650
+	driverInfo         = 580.95.05

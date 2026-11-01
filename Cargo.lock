@@ -3172,6 +3172,7 @@ version = "0.0.0"
 dependencies = [
  "iced",
  "iced_test",
+ "rigcheck-hardware",
 ]
 
 [[package]]
@@ -3185,6 +3186,10 @@ version = "0.0.0"
 [[package]]
 name = "rigcheck-hardware"
 version = "0.0.0"
+dependencies = [
+ "rustix 1.1.6",
+ "tempfile",
+]
 
 [[package]]
 name = "rigcheck-net"
