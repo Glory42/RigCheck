@@ -7,5 +7,6 @@ pub mod build;
 pub mod crawl;
 pub mod ingest;
 pub mod protondb;
+pub mod validate;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;

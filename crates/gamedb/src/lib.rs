@@ -283,6 +283,16 @@ impl GameDb {
         Ok(())
     }
 
+    /// The `n` most popular games and whether their requirements are
+    /// "parsed", "partial" or "missing".
+    pub fn most_popular(&self, n: usize) -> Result<Vec<(u32, String)>, Error> {
+        let mut statement = self.conn.prepare(
+            "SELECT app_id, requirements_status FROM games ORDER BY popularity DESC LIMIT ?1",
+        )?;
+        let rows = statement.query_map([n as i64], |row| Ok((row.get(0)?, row.get(1)?)))?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
     /// Rebuilds the name index after games were written.
     pub fn rebuild_search(&self) -> Result<(), Error> {
         self.conn
