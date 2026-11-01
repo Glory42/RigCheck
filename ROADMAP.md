@@ -407,9 +407,10 @@ Each phase ends with a usable, tested result. Check items off as you go.
 
 ### Phase 3: Matcher core (v0.3)
 Build this test-first. It's pure logic with no I/O, so it's the easiest part to get right with tests.
-- [ ] `core` types: `Requirement`, `HardwareRef`, `Verdict`, `Level`, `Confidence`
-- [ ] Requirement parser (§8.2), with a fixture corpus of **100+ real requirement strings** and snapshot tests (`insta`)
-- [ ] Matcher (§8.3), with table-driven tests covering every verdict level and edge case
+- [x] `core` types: `Requirement`, `HardwareRef`, `Verdict`, `Level`, `Confidence`
+- [x] Requirement parser (§8.2 step 1): fields, RAM/VRAM/storage/DirectX numbers, with a fixture corpus of **100+ real requirement strings** (145 games, 268 tiers, 92.9% fully parsed) and snapshot tests (`insta`)
+- [ ] Match CPU/GPU text to the hardware table (§8.2 steps 2–5): split alternatives, normalize, alias lookup
+- [x] Matcher (§8.3), with tests covering every verdict level and edge case
 - [ ] Hand-write a **seed `games.db`** with ~20 games covering the range: native Linux, Proton Platinum, anti-cheat denied, DX12-heavy, ancient, brand new, missing requirements
 - [ ] Seed hardware table with ~50 common CPUs/GPUs, using manual scores for now
 - [ ] Verdict badges on the Library page, and a first version of the game page

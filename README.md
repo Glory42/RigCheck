@@ -36,6 +36,7 @@ cargo test --workspace           # all tests (UI tests run headless)
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all
 cargo deny check bans            # only crates/net may use an HTTP client
+INSTA_UPDATE=always cargo test -p rigcheck-core --test parser   # accept parser snapshot changes, then review the diff
 ```
 
 CI runs fmt, clippy, tests and `cargo deny` on pushes to `master` and on pull requests.
