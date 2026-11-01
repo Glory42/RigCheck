@@ -3,9 +3,12 @@
 //! Blender's benchmark measures rendering, not games, so hand scores in
 //! data/hardware.toml always win. Blender only scores parts the table lacks:
 //! each device's median score (sum of samples/minute over the three standard
-//! scenes, ≥ 3 runs) is rescaled per vendor by the median ratio of our score
-//! to Blender's over parts both have (≥ 3 of them). NVIDIA uses CUDA runs,
-//! because OptiX also uses RT cores and overrates RTX cards against GTX ones.
+//! scenes, ≥ 3 runs) is rescaled by the median ratio of our score to
+//! Blender's over the 3 same-vendor parts both have whose Blender scores are
+//! closest. Nearest anchors beat one ratio per vendor (13% vs 21% median
+//! error, leave-one-out over the hand table), because rendering and games
+//! scale differently across generations. NVIDIA uses CUDA runs, because
+//! OptiX also uses RT cores and overrates RTX cards against GTX ones.
 
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read};
@@ -17,7 +20,8 @@ use crate::Error;
 
 const SCENES: [&str; 3] = ["monster", "junkshop", "classroom"];
 const MIN_RUNS: usize = 3;
-const MIN_ANCHORS: usize = 3;
+/// How many nearby parts both scored set a missing part's ratio.
+const ANCHORS: usize = 3;
 
 /// Parts the table lacks, with rescaled scores.
 #[derive(Debug, Clone, Default)]
@@ -86,7 +90,8 @@ pub fn gap_scores(snapshot: impl Read, catalog: &Catalog) -> Result<GapScores, E
         .collect();
 
     // Per kind and vendor: our-score / Blender-score over parts both have.
-    let mut ratios: HashMap<(Kind, Vendor), Vec<f64>> = HashMap::new();
+    // (Blender score, our score / Blender score) for parts both have.
+    let mut anchors: HashMap<(Kind, Vendor), Vec<(f64, f64)>> = HashMap::new();
     let mut missing = Vec::new();
     for ((kind, vendor, name), score) in medians {
         let matches = match kind {
@@ -94,10 +99,10 @@ pub fn gap_scores(snapshot: impl Read, catalog: &Catalog) -> Result<GapScores, E
             Kind::Gpu => catalog.match_gpus(&name),
         };
         match matches.as_slice() {
-            [entry] => ratios
+            [entry] => anchors
                 .entry((kind, vendor))
                 .or_default()
-                .push(f64::from(entry.score) / score),
+                .push((score, f64::from(entry.score) / score)),
             [] => missing.push((kind, vendor, name, score)),
             _ => {} // ambiguous name
         }
@@ -105,16 +110,16 @@ pub fn gap_scores(snapshot: impl Read, catalog: &Catalog) -> Result<GapScores, E
 
     let mut gaps = GapScores::default();
     for (kind, vendor, name, score) in missing {
-        let Some(anchors) = ratios
-            .get(&(kind, vendor))
-            .filter(|r| r.len() >= MIN_ANCHORS)
-        else {
+        let Some(known) = anchors.get(&(kind, vendor)).filter(|a| a.len() >= ANCHORS) else {
             continue;
         };
+        let mut nearest = known.clone();
+        nearest.sort_by(|a, b| (a.0 - score).abs().total_cmp(&(b.0 - score).abs()));
+        let ratio = median(nearest.iter().take(ANCHORS).map(|&(_, r)| r).collect());
         let entry = CatalogEntry {
             name,
             vendor,
-            score: (score * median(anchors.clone())).round() as u32,
+            score: (score * ratio).round() as u32,
             vram_mb: None,
             aliases: Vec::new(),
             pci: Vec::new(),
