@@ -3,6 +3,7 @@
 
 pub mod applist;
 pub mod awacy;
+pub mod blender;
 pub mod build;
 pub mod crawl;
 pub mod deck;
