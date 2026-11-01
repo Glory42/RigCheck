@@ -101,6 +101,10 @@ INSTA_UPDATE=always cargo test -p rigcheck-core --test parser   # accept parser 
 
 CI runs fmt, clippy, tests and `cargo deny` on pushes to `master` and on pull requests.
 
+## Contributing
+
+Wrong verdicts, missing hardware, translations and captures of your machine all help. [CONTRIBUTING.md](CONTRIBUTING.md) explains each, plus how code gets written here (test-first). Please follow the [Code of Conduct](CODE_OF_CONDUCT.md), and report security problems privately as described in [SECURITY.md](SECURITY.md).
+
 ## Credits
 
 - Requirement text in `data/fixtures/requirements/` comes from Steam's store pages, for testing the parser.

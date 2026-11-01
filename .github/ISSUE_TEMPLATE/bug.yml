@@ -1,0 +1,31 @@
+name: Bug
+description: Something broke, crashed, or looks wrong
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include any error text. A screenshot helps for anything visual.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Settings
+        2. Pick Midnight
+        3. ...
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Distro, desktop (Wayland/X11, GNOME/KDE/…), how you installed rigcheck, and **My Rig → Copy as text** if the app starts.
+      render: text
+    validations:
+      required: true
