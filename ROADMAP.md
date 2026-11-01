@@ -371,13 +371,13 @@ struct Verdict {
 Each phase ends with a usable, tested result. Check items off as you go.
 
 ### Phase 0: Foundation (v0.0)
-- [ ] Install the toolchain: `rustup` (stable, with clippy and rustfmt) and `cargo-deny`. iced loads Wayland/X11/Vulkan at runtime, so there are no extra system packages to build
+- [x] Install the toolchain: `rustup` (stable, with clippy and rustfmt) and `cargo-deny`. iced loads Wayland/X11/Vulkan at runtime, so there are no extra system packages to build
 - [ ] Learn Rust basics: *The Rust Book*, chapters 1–10. Keep going in parallel; you don't have to finish first
-- [ ] Create a **private** GitHub repo (`Glory42/rigcheck`) with the MIT license (see §1.1)
-- [ ] Set up the Cargo workspace and the crate skeletons from §5
-- [ ] iced app skeleton in `app/` that opens an empty window with the brand icon, plus a headless `iced_test` test
-- [ ] CI (`ci.yml`): `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, `cargo deny check bans`. Run on `main` + PRs only, with Rust caching, to stay inside the private-repo minutes
-- [ ] Network lock: `crates/net` skeleton, and a `deny.toml` that bans HTTP clients from every other crate (§6)
+- [x] Create a **private** GitHub repo (`Glory42/rigcheck`) with the MIT license (see §1.1)
+- [x] Set up the Cargo workspace and the crate skeletons from §5
+- [x] iced app skeleton in `app/` that opens an empty window with the brand icon, plus a headless `iced_test` test
+- [x] CI (`ci.yml`): `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, `cargo deny check bans`. Run on `main` + PRs only, with Rust caching, to stay inside the private-repo minutes
+- [x] Network lock: `crates/net` skeleton, and a `deny.toml` that bans HTTP clients from every other crate (§6)
 
 **Done when:** an empty app window opens, and CI passes on a pull request.
 
