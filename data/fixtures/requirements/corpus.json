@@ -1,0 +1,872 @@
+[
+ {
+  "app_id": 10,
+  "name": "Counter-Strike",
+  "minimum": "\n\t\t\t<p><strong>Minimum:</strong> 500 mhz processor, 96mb ram, 16mb video card, Windows XP, Mouse, Keyboard, Internet Connection<br /></p>\n\t\t\t<p><strong>Recommended:</strong> 800 mhz processor, 128mb ram, 32mb+ video card, Windows XP, Mouse, Keyboard, Internet Connection<br /></p>\n\t\t\t",
+  "recommended": null
+ },
+ {
+  "app_id": 70,
+  "name": "Half-Life",
+  "minimum": "\n\t\t\t<p><strong>Minimum:</strong> 500 mhz processor, 96mb ram, 16mb video card, Windows XP, Mouse, Keyboard, Internet Connection<br /></p>\n\t\t\t<p><strong>Recommended:</strong> 800 mhz processor, 128mb ram, 32mb+ video card, Windows XP, Mouse, Keyboard, Internet Connection<br /></p>\n\t\t\t",
+  "recommended": null
+ },
+ {
+  "app_id": 220,
+  "name": "Half-Life 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7, Vista, XP<br></li><li><strong>Processor:</strong> 1.7 Ghz<br></li><li><strong>Memory:</strong> 512 MB RAM<br></li><li><strong>Graphics:</strong> DirectX 8.1 level Graphics Card (requires support for SSE)<br></li><li><strong>Storage:</strong> 6500 MB available space</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 240,
+  "name": "Counter-Strike: Source",
+  "minimum": "\n\t\t\t<p><strong>Minimum: </strong>1.7 GHz Processor, 512MB RAM, DirectX&reg; 8.1 level Graphics Card (Requires support for SSE), Windows&reg; 7 (32/64-bit)/Vista/XP, Mouse, Keyboard, Internet Connection</p>\n\t\t\t<p><strong>Recommended: </strong>Pentium 4 processor (3.0GHz, or better), 1GB RAM, DirectX&reg; 9 level Graphics Card, Windows&reg; 7 (32/64-bit)/Vista/XP, Mouse, Keyboard, Internet Connection</p>\n\t\t\t",
+  "recommended": null
+ },
+ {
+  "app_id": 400,
+  "name": "Portal",
+  "minimum": "\n\t\t\t<p><strong>Minimum: </strong>1.7 GHz Processor, 512MB RAM, DirectX&reg; 8.1 level Graphics Card (Requires support for SSE), Windows&reg; 7 (32/64-bit)/Vista/XP, Mouse, Keyboard, Internet Connection</p>\n\t\t\t<p><strong>Recommended: </strong>Pentium 4 processor (3.0GHz, or better), 1GB RAM, DirectX&reg; 9 level Graphics Card, Windows&reg; 7 (32/64-bit)/Vista/XP, Mouse, Keyboard, Internet Connection</p>\n\t\t\t",
+  "recommended": null
+ },
+ {
+  "app_id": 440,
+  "name": "Team Fortress 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows® 7 (32/64-bit)/Vista/XP<br></li><li><strong>Processor:</strong> 1.7 GHz Processor or better<br></li><li><strong>Memory:</strong> 512 MB RAM<br></li><li><strong>DirectX:</strong> Version 8.1<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 15 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows® 7 (32/64-bit)<br></li><li><strong>Processor:</strong> Pentium 4 processor (3.0GHz, or better)<br></li><li><strong>Memory:</strong> 1 GB RAM<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 15 GB available space</li></ul>"
+ },
+ {
+  "app_id": 500,
+  "name": "Left 4 Dead",
+  "minimum": "<strong>Minimum:</strong>                    <br>\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>Supported OS:</strong> Windows® 7 32/64-bit / Vista 32/64 / XP                    <br>\t\t\t\t\t</li><li><strong>Processor:</strong> Pentium 4 3.0GHz                     <br>\t\t\t\t\t</li><li><strong>Memory:</strong> 1 GB                    <br>\t\t\t\t\t</li><li><strong>Graphics:</strong> 128 MB, Shader model 2.0, ATI 9600, NVidia 6600 or better                     <br>\t\t\t\t\t</li><li><strong>Hard Drive:</strong> At least 7.5 GB of free space                    <br>\t\t\t\t\t</li><li><strong>Sound Card:</strong> DirectX 9.0c compatible sound card                    </li></ul>",
+  "recommended": "<strong>Recommended:</strong>                    <br>\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>Supported OS:</strong> Windows® 7 32/64-bit / Vista 32/64 / XP                    <br>\t\t\t\t\t</li><li><strong>Processor:</strong> Intel core 2 duo 2.4GHz                    <br>\t\t\t\t\t</li><li><strong>Memory:</strong> 1 GB                     <br>\t\t\t\t\t</li><li><strong>Graphics:</strong> Shader model 3.0, NVidia 7600, ATI X1600 or better                     </li></ul>"
+ },
+ {
+  "app_id": 550,
+  "name": "Left 4 Dead 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows® 7 32/64-bit / Vista 32/64 / XP<br></li><li><strong>Processor:</strong> Pentium 4 3.0GHz<br></li><li><strong>Memory:</strong> 2 GB RAM<br></li><li><strong>Graphics:</strong> Video card with 128 MB, Shader model 2.0. ATI X800, NVidia 6600 or better<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Storage:</strong> 13 GB available space<br></li><li><strong>Sound Card:</strong> DirectX 9.0c compatible sound card</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows® 7 32/64-bit / Vista 32/64 / XP<br></li><li><strong>Processor:</strong> Intel core 2 duo 2.4GHz<br></li><li><strong>Memory:</strong> 2 GB RAM<br></li><li><strong>Graphics:</strong> Video Card Shader model 3.0. NVidia 7600, ATI X1600 or better<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Storage:</strong> 13 GB available space<br></li><li><strong>Sound Card:</strong> DirectX 9.0c compatible sound card</li></ul>"
+ },
+ {
+  "app_id": 570,
+  "name": "Dota 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 or newer<br></li><li><strong>Processor:</strong> Dual core from Intel or AMD at 2.8 GHz<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce 8600/9600GT, ATI/AMD Radeon HD2600/3600<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 60 GB available space<br></li><li><strong>Sound Card:</strong> DirectX Compatible</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 620,
+  "name": "Portal 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 / Vista / XP<br></li><li><strong>Processor:</strong> 3.0 GHz P4, Dual Core 2.0 (or higher) or AMD64X2 (or higher)<br></li><li><strong>Memory:</strong> 2 GB RAM<br></li><li><strong>Graphics:</strong> Video card must be 128 MB or more and with support for Pixel Shader 2.0b (ATI Radeon X800 or higher / NVIDIA GeForce 7600 or higher / Intel HD Graphics 2000 or higher).<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Storage:</strong> 8 GB available space<br></li><li><strong>Sound Card:</strong> DirectX 9.0c compatible</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 730,
+  "name": "Counter-Strike 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows® 10<br></li><li><strong>Processor:</strong> 4 hardware CPU threads - Intel® Core™ i5 750 or higher<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Video card must be 1 GB or more and should be a DirectX 11-compatible with support for Shader Model 5.0<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 85 GB available space</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 2280,
+  "name": "DOOM + DOOM II",
+  "minimum": "<strong>OS Version: </strong>Windows 10 64-bit<br><strong>Processor: </strong>Intel Core i5-3570 @3.4GHz or AMD Ryzen 5 1400 @3.5GHz<br><strong>Memory: </strong>8GB System RAM<br><strong>Graphics:</strong>NVIDIA Geforce GTX 650 TI (2GB) or AMD HD 7750 (1GB) <br><strong>Direct X: </strong>Version 12<br><strong>Disk Space: </strong>Minimum 2GB free space on hard drive",
+  "recommended": "<strong>OS Version: </strong>Windows 10 64-bit<br><strong>Processor: </strong>Intel Core i5-6600k @3.5GHz or AMD Ryzen 5 1600 @3.2GHz<br><strong>Memory: </strong>8GB System RAM<br><strong>Graphics:</strong>NVIDIA GeForce GTX 1070 TI (8GB) or AMD RX Vega 56 (8GB) or Intel Arc A380 in 3840x2160<br><strong>Direct X: </strong>Version 12<br><strong>Disk Space: </strong>Minimum 2GB free space on hard drive"
+ },
+ {
+  "app_id": 3590,
+  "name": "Plants vs. Zombies GOTY Edition",
+  "minimum": "<ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows XP/Vista/7<br>\t                    </li><li><strong>Processor:</strong> 1.2GHz+ processor<br>\t                    </li><li><strong>Memory:</strong> 1GB of RAM<br>\t                    </li><li><strong>Graphics:</strong> 128MB of video memory, 16-bit or 32-bit color quality<br>\t                    </li><li><strong>DirectX:</strong> DirectX 8 or later<br>\t                    </li><li><strong>Hard Drive:</strong> 65+MB of free hard drive space<br>\t                    </li><li><strong>Sound:</strong> DirectX-compatible sound<br>                    </li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 4000,
+  "name": "Garry's Mod",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows® 10<br></li><li><strong>Processor:</strong> 2 GHz Processor or better<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> 1GB dedicated VRAM or better<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 10 GB available space<br></li><li><strong>Sound Card:</strong> DirectX® 9 compatible<br></li><li><strong>Additional Notes:</strong> Mouse, Keyboard, Monitor</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows® 10/11<br></li><li><strong>Processor:</strong> 2.5 GHz Processor or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> 4GB dedicated VRAM or better<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 25 GB available space</li></ul>"
+ },
+ {
+  "app_id": 4700,
+  "name": "Total War: MEDIEVAL II – Definitive Edition",
+  "minimum": "<strong>Minimum System Requirements:</strong><br>\t\t\t\t\t<ul class=\"bb_ul\"><li>Microsoft® Windows® 2000/XP<br>\t\t\t\t\t</li><li>Celeron 1.5GHz Pentium 4® (1500MHz) or equivalent AMD® processor<br>\t\t\t\t\t</li><li>512MB RAM<br>\t\t\t\t\t</li><li>11GB of uncompressed free hard disk space<br>\t\t\t\t\t</li><li>100% DirectX® 9.0c compatible 16-bit sound cardand latest drivers<br>\t\t\t\t\t</li><li>100% Windows® 2000/XP compatible mouse,keyboard and latest drivers<br>\t\t\t\t\t</li><li>DirectX® 9.0c<br>\t\t\t\t\t</li><li>128MB Hardware Accelerated video card with Shader 1 support and the latest drivers. Must be 100% DirectX® 9.0c compatible<br>\t\t\t\t\t</li><li>1024 x 768 minimum display resolution<br>\t\t\t\t\t</li><li>Internet (TCP / IP) play supported; Internet play requires broadband connection and latest drivers; LAN play requires Network card.</li></ul><strong>Important Note:</strong> Some cards may not be compatible with the 3D acceleration features utilized by Medieval II: Total War. Please refer to your hardware manufacturer for 100% DirectX® 9.0c compatibility.<br><strong>Microsoft no longer supports Windows 10 or older versions.</strong>",
+  "recommended": null
+ },
+ {
+  "app_id": 8930,
+  "name": "Sid Meier's Civilization® V",
+  "minimum": "<strong>Minimum:</strong><br>\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows® Vista SP2/ Windows® 7 <br>\t\t\t\t\t\t</li><li><strong>Processor:</strong> Intel Core 2 Duo 1.8 GHz or AMD Athlon X2 64 2.0 GHz<br>\t\t\t\t\t\t</li><li><strong>Memory:</strong> 2GB RAM <br>\t\t\t\t\t\t</li><li><strong>Graphics:</strong>256 MB ATI HD2600 XT or better, 256 MB nVidia 7900 GS or better, or Core i3 or better integrated graphics <br>\t\t\t\t\t\t</li><li><strong>DirectX®:</strong> DirectX® version 9.0c <br>\t\t\t\t\t\t</li><li><strong>Hard Drive:</strong> 8 GB Free <br>\t\t\t\t\t\t</li><li><strong>Sound:</strong> DirectX 9.0c-compatible sound card <br>\t\t\t\t\t\t</li><li><strong>Note:</strong> Optimized for the touch-screen Ultrabook™ device<br>\t\t\t\t\t</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br>\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows® Vista SP2/ Windows® 7 <br>\t\t\t\t\t\t</li><li><strong>Processor:</strong> 1.8 GHz Quad Core CPU <br>\t\t\t\t\t\t</li><li><strong>Memory:</strong> 4 GB RAM <br>\t\t\t\t\t\t</li><li><strong>Graphics:</strong> 512 MB ATI 4800 series or better, 512 MB nVidia 9800 series or better<br>\t\t\t\t\t\t</li><li><strong>DirectX®:</strong> DirectX® version 11<br>\t\t\t\t\t\t</li><li><strong>Hard Drive:</strong> 8 GB Free <br>\t\t\t\t\t\t</li><li><strong>Sound:</strong> DirectX 9.0c-compatible sound card <br>\t\t\t\t\t\t</li><li><strong>Note:</strong> Optimized for the touch-screen Ultrabook™ device<br>\t\t\t\t\t</li></ul>"
+ },
+ {
+  "app_id": 12100,
+  "name": "Grand Theft Auto III",
+  "minimum": "<strong>Minimum:</strong><br>\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>OS *:</strong> Microsoft® Windows® 2000/XP<br>\t\t\t\t\t</li><li><strong>Processor:</strong> Pentium III® 450 MHz CPU<br>\t\t\t\t\t</li><li><strong>Memory:</strong> 96 MB RAM<br>\t\t\t\t\t</li><li><strong>Graphics:</strong> 16 MB Direct 3D Video Card<br>\t\t\t\t\t</li><li><strong>DirectX Version:</strong> Microsoft DirectX® 8.1<br>\t\t\t\t\t</li><li><strong>Hard Drive:</strong> 500 MB uncompressed free hard disk space<br>\t\t\t\t\t</li><li><strong>Sound Card:</strong>Fully DirectX compatible Sound Card</li></ul><strong>Recommended:</strong><br>\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>Processor:</strong> 700 MHz CPU<br>\t\t\t\t\t</li><li><strong>Memory:</strong> 128 MB RAM<br>\t\t\t\t\t</li><li><strong>Graphics:</strong> 32 MB Direct3D Video Card</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 12120,
+  "name": "Grand Theft Auto: San Andreas",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Microsoft® Windows® 2000/XP<br></li><li><strong>Processor:</strong> 1Ghz Pentium III or AMD Athlon Processor<br></li><li><strong>Memory:</strong> 256MB of RAM<br></li><li><strong>Graphics:</strong> 64MB Video Card (Geforce 3 or better)<br></li><li><strong>Hard Drive:</strong> 3.6GB of free hard disk space (minimal install)<br></li><li><strong>Other Requirements:</strong> Software installations required including DirectX and Sony DADC SecuROM<br></li><li><strong>Partner Requirements:</strong> Please check the terms of service of this site before purchasing this software.</li></ul>",
+  "recommended": "Recommended:<br><ul class=\"bb_ul\"><li><strong>Processor:</strong> Intel Pentium 4 or AMD Athlon XP Processor<br></li><li><strong>Memory:</strong> 384MB of RAM (the more the better!)<br></li><li><strong>Graphics:</strong> 128MB (or greater) Video Card (Geforce 6 Series Recommended)<br></li><li><strong>Hard Drive:</strong> 4.7GB of free hard disk space (full install)<br></li><li><strong>Sound Card:</strong> DirectX 9 compatible Sound Card (Sound Blaster Auidgy 2 Recommended)</li></ul>"
+ },
+ {
+  "app_id": 12210,
+  "name": "Grand Theft Auto IV: The Complete Edition",
+  "minimum": "<ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 (64-bit)                     <br>\t\t\t\t\t</li><li><strong>Processor:</strong> Intel Core 2 Duo 1.8GHz, AMD Athlon X2 64 2.4GHz                    <br>\t\t\t\t\t</li><li><strong>Memory:</strong> 1.5GB                 <br>\t\t\t\t\t</li><li><strong>Graphics:</strong> 256MB Nvidia 7900 / 256MB ATI X1900                    <br>\t\t\t\t\t</li><li><strong>DirectX Version:</strong> DirectX 9.0c Compliant Card                     <br>\t\t\t\t\t</li><li><strong>Hard Drive:</strong> 22GB of Hard Disc Space                     <br>\t\t\t\t\t</li><li><strong>Sound Card:</strong> 5.1 Channel Audio Card                    </li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 21000,
+  "name": "LEGO® Batman™: The Videogame",
+  "minimum": "<strong>Minimum:</strong>                            <br>\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>Supported OS: </strong>Windows Vista®/XP                            <br>\t\t\t\t\t</li><li><strong>Processor: </strong>Intel® P3 1.5 GHz or AMD Athlon™ XP                            <br>\t\t\t\t\t</li><li><strong>Memory: </strong>256 MB RAM, 512 MB RAM required for Windows Vista®                            <br>\t\t\t\t\t</li><li><strong>Graphics: </strong>128 MB with Shader Model 2.0 capability (Shader Model 3.0 recommended)                            </li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 22380,
+  "name": "Fallout: New Vegas",
+  "minimum": "<ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7/Vista/XP <br>\t\t\t\t\t\t\t\t</li><li><strong>Processor:</strong> Dual Core 2.0GHz<br>\t\t\t\t\t\t\t\t</li><li><strong>Memory:</strong> 2GB RAM<br>\t\t\t\t\t\t\t\t</li><li><strong>Hard Disk Space:</strong> 10GB free space<br>\t\t\t\t\t\t\t\t</li><li><strong>Video Card:</strong> NVIDIA GeForce 6 series, ATI 1300XT series<br>\t\t\t\t\t\t\t\t</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 39210,
+  "name": "FINAL FANTASY XIV Online",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 11 64 bit<br></li><li><strong>Processor:</strong> Intel® Core™i5-8400 or higher<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 970 or higher, AMD Radeon RX 480 or higher<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 140 GB available space<br></li><li><strong>Sound Card:</strong> DirectSound® supported sound card<br></li><li><strong>Additional Notes:</strong> System Requirements may be subject to change. If you are using a router, please set up your ports so that the below packets can pass through. [Ports that may be used] TCP：80, 443, 54992～54994, 55006～55007, 55021～55040</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 11 64 bit<br></li><li><strong>Processor:</strong> Intel® Core™i7-9700 or higher<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce RTX 2060 or higher, AMD Radeon RX 5600 XT or higher<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 140 GB available space<br></li><li><strong>Sound Card:</strong> DirectSound® supported sound card<br></li><li><strong>Additional Notes:</strong> System Requirements may be subject to change. If you are using a router, please set up your ports so that the below packets can pass through. [Ports that may be used] TCP：80, 443, 54992～54994, 55006～55007, 55021～55040</li></ul>"
+ },
+ {
+  "app_id": 47890,
+  "name": "The Sims™ 3",
+  "minimum": "<ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows XP (Service Pack 2) or Windows Vista (Service Pack 1)<br>\t</li><li><strong>Processor:</strong> (XP) 2.0 GHz P4 processor or equivalent; (Vista) 2.4 GHz P4 processor or equivalent <br>\t</li><li><strong>Memory:</strong> (XP) 1 GB; (Vista) 1.5 GB<br>\t</li><li><strong>Graphics:</strong> 128 MB Video Card with support for Pixel Shader 2.0<br> \t</li><li><strong>DirectX®:</strong> <br>\t</li><li><strong>Hard Drive:</strong> At least 6.5 GB of hard drive space with at least 1 GB additional space for custom content<br>\t</li><li><strong>Sound:</strong><br>\t</li><li><strong>Built-in Graphics:</strong><ul class=\"bb_ul\"><li>Intel Integrated Chipset, GMA X3000 or above. <br> \t</li><li>2.6 GHz Pentium D CPU, or 1.8 GHz Core 2 Duo, or equivalent <br> \t</li><li>0.5 GB additional RAM</li></ul></li><li><strong>Supported Video Cards:</strong>Nvidia GeForce series: FX5900 or greater, G100, GT 120, GT 130, GTS 150, GTS 250, GTX 260, GTX 275, GTX 280, GTX 285, GTX 295; ATI Radeon™ series: ATI Radeon 9500 series of greater, X300, X600, X700, X800, X850, X1300, X1600, X1800, X1900, X1950, 2400, 2600, 2900, 3450, 3650, 3850, 3870, 4850, 4870 series or greater; Intel® Graphics Media Accelerator (GMA): GMA 3-Series, GMA 4-Series <br>\t</li><li>*Please note that the GeForce 6100 and 7100 cards are not supported</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 72850,
+  "name": "The Elder Scrolls V: Skyrim",
+  "minimum": "<strong>Minimum:</strong><br>\t\t\t\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7/Vista/XP PC (32 or 64 bit)<br>\t\t\t\t\t\t\t\t</li><li><strong>Processor:</strong> Dual Core 2.0GHz or equivalent processor<br>\t\t\t\t\t\t\t\t</li><li><strong>Memory:</strong> 2GB System RAM<br>\t\t\t\t\t\t\t\t</li><li><strong>Hard Disk Space:</strong> 6GB free HDD Space<br>\t\t\t\t\t\t\t\t</li><li><strong>Video Card:</strong> Direct X 9.0c compliant video card with 512 MB of RAM<br>\t\t\t\t\t\t\t\t</li><li><strong>Sound:</strong> DirectX compatible sound card<br>\t\t\t\t\t\t\t\t</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br>\t\t\t\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>Processor:</strong> Quad-core Intel or AMD CPU<br>\t\t\t\t\t\t\t\t</li><li><strong>Memory:</strong> 4GB System RAM<br>\t\t\t\t\t\t\t\t</li><li><strong>Video Card:</strong> DirectX 9.0c compatible NVIDIA or AMD ATI video card with 1GB of RAM (Nvidia GeForce GTX 260 or higher; ATI Radeon 4890 or higher)<br>\t\t\t\t\t\t\t\t</li></ul>"
+ },
+ {
+  "app_id": 105600,
+  "name": "Terraria",
+  "minimum": "<h2 class=\"bb_tag\" ><strong>REQUIRED</strong></h2><ul class=\"bb_ul\"><li><strong>OS: Windows Xp, Vista, 7, 8/8.1, 10</strong> <br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Processor: 2.0 Ghz</strong> <br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Memory: 2.5GB</strong><br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Hard Disk Space: 200MB </strong> \t<br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Video Card: 128mb Video Memory, capable of Shader Model 2.0+</strong> <br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>DirectX®: 9.0c or Greater</strong> \t<br>\t\t\t\t\t\t\t\t\t</li></ul>",
+  "recommended": "<h2 class=\"bb_tag\" ><strong>RECOMMENDED</strong></h2><ul class=\"bb_ul\"><li><strong>OS: Windows 7, 8/8.1, 10</strong> <br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Processor: Dual Core 3.0 Ghz</strong> <br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Memory: 4GB</strong><br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Hard Disk Space: 200MB </strong> \t<br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Video Card: 256mb Video Memory, capable of Shader Model 2.0+</strong> <br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>DirectX®: 9.0c or Greater</strong> \t<br>\t\t\t\t\t\t\t\t\t</li></ul>"
+ },
+ {
+  "app_id": 218620,
+  "name": "PAYDAY 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10<br></li><li><strong>Processor:</strong> 2 GHz Intel Dual Core 64-bit Processor<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA &amp; AMD (1GB VRAM)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 32 GB available space<br></li><li><strong>VR Support:</strong> SteamVR. Standing or Room Scale. Requires installing the free VR DLC.<br></li><li><strong>Additional Notes:</strong> Requires a CPU which supports the SSE4.1 instruction set</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 11<br></li><li><strong>Processor:</strong> 2.3 GHz Intel Quad Core 64-bit Processor<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA &amp; AMD (2GB VRAM)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 32 GB available space<br></li><li><strong>VR Support:</strong> SteamVR. Standing or Room Scale. Requires installing the free VR DLC.</li></ul>"
+ },
+ {
+  "app_id": 227300,
+  "name": "Euro Truck Simulator 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i5-6400 or AMD Ryzen 3 1200 or similar<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 660 or AMD Radeon RX 460 or Intel HD 630 (2GB VRAM)<br></li><li><strong>Hard Drive:</strong> 25 GB available space (Euro Truck Simulator 2 base game)</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i5-9600 or AMD Ryzen 5 3600 or similar<br></li><li><strong>Memory:</strong> 12 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 1660 or AMD Radeon RX 590 (2GB VRAM)<br></li><li><strong>Hard Drive:</strong> 25 GB available space (Euro Truck Simulator 2 base game)</li></ul>"
+ },
+ {
+  "app_id": 230230,
+  "name": "Divinity: Original Sin (Classic)",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows XP SP3 or higher<br></li><li><strong>Processor:</strong> Intel Core2 Duo E6600 or equivalent<br></li><li><strong>Memory:</strong> 2048 MB RAM<br></li><li><strong>Graphics:</strong> HD Intel Graphics 4000 or NVIDIA® GeForce® 8800 GT (512 MB) or ATI™ Radeon™ HD 4850 or equivalent<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Storage:</strong> 10 GB available space<br></li><li><strong>Sound Card:</strong> DirectX9c compliant</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 SP1 or Windows 8.1<br></li><li><strong>Processor:</strong> Intel i5 2400 or higher<br></li><li><strong>Memory:</strong> 4096 MB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 550 ti 1GB ram or or ATI™ Radeon™ HD 6XXX or higher<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Storage:</strong> 10 GB available space<br></li><li><strong>Sound Card:</strong> DirectX9c compliant</li></ul>"
+ },
+ {
+  "app_id": 230410,
+  "name": "Warframe",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong>Windows 7 64-Bit (32-bit not supported)<br>\t</li><li><strong>Processor:</strong>Intel Core i7 860, Intel Core i5 750, or AMD FX-4100 (SSE 4.2 support required)<br>        </li><li><strong>Video:</strong>DirectX 11+ capable Graphics Card<br>\t</li><li><strong>Memory:</strong>4 GB RAM<br>\t</li><li><strong>Storage:</strong>75 GB available HD space<br>\t</li><li><strong>Internet:</strong>Broadband Internet Connection Required</li></ul><br>Note: There is no Mac or Linux client currently available.<br><br>DirectX 12 support requires at least Windows 10 20H2 (released in 2020) or Windows 11",
+  "recommended": null
+ },
+ {
+  "app_id": 236390,
+  "name": "War Thunder",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 (64bit)<br></li><li><strong>Processor:</strong> Dual-Core 2.2 GHz<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> DirectX 11 level video card: AMD Radeon 77XX / NVIDIA GeForce GTX 660. The minimum supported resolution for the game is 720p.<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 70 GB available space<br></li><li><strong>VR Support:</strong> SteamVR. Keyboard or gamepad required</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10/11 (64bit)<br></li><li><strong>Processor:</strong> Intel Core i5 or Ryzen 5 3600 or better<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> DirectX 11 level video card or higher and drivers: Nvidia GeForce 1060 and higher, Radeon RX 570 and higher<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 95 GB available space</li></ul>"
+ },
+ {
+  "app_id": 236850,
+  "name": "Europa Universalis IV",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows® 10 Home 64 bit<br>\t</li><li><strong>Processor:</strong> Intel® Core™ i3-2105 / AMD® FX 4300<br>\t</li><li><strong>Memory:</strong> 4 GB RAM<br>\t</li><li><strong>Graphics:</strong> Nvidia® GeForce™ GTX 460 / AMD® Radeon™ HD 5850<br>\t</li><li><strong>Video Memory:</strong> 1 GB RAM<br>\t</li><li><strong>DirectX®:</strong>9.0c<br>\t</li><li><strong>Hard Drive:</strong>6 GB HD space<br>\t</li><li><strong>Sound:</strong>Direct X- compatible soundcard <br>\t</li><li><strong>Other Requirements:</strong>Broadband Internet connection<br>\t</li><li><strong>Additional:</strong>Controller support: 3-button mouse, keyboard and speakers. Internet Connection or LAN for multiplayer</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows® 10 Home 64 bit<br>\t</li><li><strong>Processor:</strong> Intel® Core™ i3 3240 / AMD® FX 8120<br>\t</li><li><strong>Memory:</strong> 8 GB RAM<br>\t</li><li><strong>Graphics:</strong> Nvidia® GeForce™ GTX 560 Ti<br>\t</li><li><strong>Video Memory:</strong> 1 GB RAM<br>\t</li><li><strong>DirectX®:</strong>9.0c<br>\t</li><li><strong>Hard Drive:</strong>6 GB HD space<br>\t</li><li><strong>Sound:</strong>Direct X-compatible soundcard<br>\t</li><li><strong>Other Requirements:</strong>Broadband Internet connection<br>\t</li><li><strong>Additional:</strong>Controller support: 3-button mouse, keyboard and speakers. Internet Connection or LAN for multiplayer</li></ul>"
+ },
+ {
+  "app_id": 244210,
+  "name": "Assetto Corsa",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 Sp1 - 8 - 8.1 - 10<br></li><li><strong>Processor:</strong> AMD Athlon X2 2.8 GHZ, Intel Core 2 Duo 2.4 GHZ<br></li><li><strong>Memory:</strong> 2 GB RAM<br></li><li><strong>Graphics:</strong> DirectX 10.1 (e.g. AMD Radeon HD 6450, Nvidia GeForce GT 460)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 15 GB available space<br></li><li><strong>Sound Card:</strong> Integrated<br></li><li><strong>VR Support:</strong> SteamVR or Oculus PC. Keyboard or gamepad required</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 Sp1 - 8 - 8.1 - 10<br></li><li><strong>Processor:</strong> AMD Six-Core CPU, Intel Quad-Core CPU<br></li><li><strong>Memory:</strong> 6 GB RAM<br></li><li><strong>Graphics:</strong> DirectX 11 (e.g. AMD Radeon 290x, Nvidia GeForce GTX 970)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 30 GB available space<br></li><li><strong>Sound Card:</strong> Integrated</li></ul>"
+ },
+ {
+  "app_id": 250900,
+  "name": "The Binding of Isaac: Rebirth",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> XP<br></li><li><strong>Processor:</strong> Core 2 Duo<br></li><li><strong>Memory:</strong> 2 GB RAM<br></li><li><strong>Graphics:</strong> Discreet video card<br></li><li><strong>Storage:</strong> 449 MB available space<br></li><li><strong>Sound Card:</strong> Yes</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 8 / 7 / Vista / XP<br></li><li><strong>Processor:</strong> 2.4 GHz Quad Core 2.0 (or higher)<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Intel HD Graphics 4000 and higher, ATI Radeon HD-Series 4650 and higher, Nvidia GeForce 2xx-Series and up<br></li><li><strong>Storage:</strong> 449 MB available space<br></li><li><strong>Sound Card:</strong> Yes</li></ul>"
+ },
+ {
+  "app_id": 252490,
+  "name": "Rust",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 11 64bit<br></li><li><strong>Processor:</strong> AMD Ryzen 5 1400 or Intel Core i5-6600<br></li><li><strong>Memory:</strong> 12 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 470, NVIDIA GeForce GTX 1060, Intel® Arc™ A580<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 45 GB available space<br></li><li><strong>Additional Notes:</strong> SSD is highly recommended or expect longer than average load times.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 11 64bit<br></li><li><strong>Processor:</strong> AMD Ryzen 7 3700X or Intel® Core i7-6700K<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 6600XT, NVIDIA GeForce RTX 3060, Intel Arc B580<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 45 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Required</li></ul>"
+ },
+ {
+  "app_id": 255710,
+  "name": "Cities: Skylines",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 Home 64 Bit<br></li><li><strong>Processor:</strong> Intel® Core™ I7 930  |  AMD® FX 6350<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia® GeForce™ GTS 450 (1 GB) |  AMD® R7 250 (2 GB)  |  Intel Iris Xe G7 (Tiger Lake)<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 4 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 Home 64 bit<br></li><li><strong>Processor:</strong> Intel® Core™ I7 2700K  |   AMD® Ryzen 7 2700X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia® GeForce™ GTX 580 (1.5 GB)  |   AMD® Radeon™ RX 560 (4 GB)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 4 GB available space</li></ul>"
+ },
+ {
+  "app_id": 264710,
+  "name": "Subnautica",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows Vista SP2 or newer, 64-bit<br></li><li><strong>Processor:</strong> Intel Haswell 2 cores / 4 threads @ 2.5Ghz or equivalent<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> Intel HD 4600 or equivalent - This includes most GPUs scoring greater than 950 points in the 3DMark Fire Strike benchmark<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 20 GB available space<br></li><li><strong>VR Support:</strong> SteamVR. Keyboard or gamepad required</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows Vista SP2 or newer, 64-bit<br></li><li><strong>Processor:</strong> Intel Haswell 4 cores / 4 threads @ 3.2Ghz or equivalent<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GTX 550 Ti or equivalent, 2GB VRAM<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 20 GB available space</li></ul>"
+ },
+ {
+  "app_id": 268910,
+  "name": "Cuphead",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 7<br></li><li><strong>Processor:</strong> Intel Core2 Duo E8400, 3.0GHz or AMD Athlon 64 X2 6000+, 3.0GHz or higher<br></li><li><strong>Memory:</strong> 3 GB RAM<br></li><li><strong>Graphics:</strong> Geforce 9600 GT or AMD HD 3870 512MB or higher<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 4 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system</li></ul>"
+ },
+ {
+  "app_id": 270880,
+  "name": "American Truck Simulator",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows  10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i5-6400 or AMD Ryzen 3 1200 or similar<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 660 or AMD Radeon RX 460 or Intel HD 630 (2GB VRAM)<br></li><li><strong>Storage:</strong> 25 GB available space<br></li><li><strong>Additional Notes:</strong> Disk Space for American Truck Simulator base game</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i5-9600 or AMD Ryzen 5 3600 or similar<br></li><li><strong>Memory:</strong> 12 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 1660 or AMD Radeon RX 590 (2GB VRAM)<br></li><li><strong>Storage:</strong> 25 GB available space<br></li><li><strong>Additional Notes:</strong> Disk Space for American Truck Simulator base game</li></ul>"
+ },
+ {
+  "app_id": 271590,
+  "name": "Grand Theft Auto V Legacy",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64 Bit<br></li><li><strong>Processor:</strong> Intel Core 2 Quad CPU Q6600 @ 2.40GHz (4 CPUs) / AMD Phenom 9850 Quad-Core Processor (4 CPUs) @ 2.5GHz<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA 9800 GT 1GB / AMD HD 4870 1GB (DX 10, 10.1, 11)<br></li><li><strong>Storage:</strong> 125 GB available space<br></li><li><strong>Sound Card:</strong> 100% DirectX 10 compatible<br></li><li><strong>Additional Notes:</strong> Over time downloadable content and programming changes will change the system requirements for this game.  Please refer to your hardware manufacturer and  for current compatibility information. Some system components such as mobile chipsets, integrated, and AGP graphics cards may be incompatible. Unlisted specifications may not be supported by publisher.     Other requirements:  Installation and online play requires log-in to Rockstar Games Social Club (13+) network; internet connection required for activation, online play, and periodic entitlement verification; software installations required including Rockstar Games Social Club platform, DirectX , Chromium, and Microsoft Visual C++ 2008 sp1 Redistributable Package, and authentication software that recognizes certain hardware attributes for entitlement, digital rights management, system, and other support purposes.     SINGLE USE SERIAL CODE REGISTRATION VIA INTERNET REQUIRED; REGISTRATION IS LIMITED TO ONE ROCKSTAR GAMES SOCIAL CLUB ACCOUNT (13+) PER SERIAL CODE; ONLY ONE PC LOG-IN ALLOWED PER SOCIAL CLUB ACCOUNT AT ANY TIME; SERIAL CODE(S) ARE NON-TRANSFERABLE ONCE USED; SOCIAL CLUB ACCOUNTS ARE NON-TRANSFERABLE.  Partner Requirements:  Please check the terms of service of this site before purchasing this software.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64 Bit<br></li><li><strong>Processor:</strong> Intel Core i5 3470 @ 3.2GHz (4 CPUs) / AMD X8 FX-8350 @ 4GHz (8 CPUs)<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 660 2GB / AMD HD 7870 2GB<br></li><li><strong>Storage:</strong> 125 GB available space<br></li><li><strong>Sound Card:</strong> 100% DirectX 10 compatible</li></ul>"
+ },
+ {
+  "app_id": 275850,
+  "name": "No Man's Sky",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10/11 (64-bit versions)<br></li><li><strong>Processor:</strong> Intel Core i3<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GTX 1060 3GB, AMD RX 470 4GB, Intel UHD graphics 630<br></li><li><strong>Storage:</strong> 15 GB available space<br></li><li><strong>VR Support:</strong> SteamVR</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system</li></ul>"
+ },
+ {
+  "app_id": 281990,
+  "name": "Stellaris",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 Home 64 Bit<br></li><li><strong>Processor:</strong> Intel® iCore™ i3-530 or AMD® FX-6350<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia® GeForce™ GTX 460 or AMD® ATI Radeon™ HD 5870  (1GB VRAM), or AMD® Radeon™  RX Vega 11 or Intel® HD Graphics 4600<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 10 GB available space<br></li><li><strong>Sound Card:</strong> Direct X 9.0c- compatible sound card<br></li><li><strong>Additional Notes:</strong> Controller support: 3-button mouse, keyboard and speakers. Special multiplayer requirements: Internet Connection</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 Home 64 Bit<br></li><li><strong>Processor:</strong> Intel® iCore™ i5-3570K or AMD® Ryzen™ 5 2400G<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia® GeForce™ GTX 560 Ti  (1GB VRAM) or AMD® Radeon™ R7 370 (2 GB VRAM)<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 10 GB available space<br></li><li><strong>Sound Card:</strong> DirectX 9.0c-compatible sound card<br></li><li><strong>Additional Notes:</strong> Controller support: 3-button mouse, keyboard and speakers. Special multiplayer requirements: Internet Connection</li></ul>"
+ },
+ {
+  "app_id": 289070,
+  "name": "Sid Meier’s Civilization® VI",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 7x64 / Windows 8.1x64 / Windows 10x64<br></li><li><strong>Processor:</strong> Intel Core i3 2.5 Ghz or AMD Phenom II 2.6 Ghz or greater<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> 1 GB &amp; AMD 5570 or nVidia 450 or Intel Integrated Graphics 530<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 17 GB available space<br></li><li><strong>Sound Card:</strong> DirectX Compatible Sound Device<br></li><li><strong>Additional Notes:</strong> Initial installation requires one-time Internet connection for Steam authentication; software installations required (included with the game) include Steam Client, Microsoft Visual C++ 2012 and 2015 Runtime Libraries, and Microsoft DirectX. Internet connection and acceptance of Steam™ Subscriber Agreement required for activation. See  for details.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 7x64 / Windows 8.1x64 / Windows 10x64<br></li><li><strong>Processor:</strong> Fourth Generation Intel Core i5 2.5 Ghz or AMD FX8350 4.0 Ghz or greater<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> 2GB &amp; AMD 7970 or nVidia 770 or greater<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 23 GB available space<br></li><li><strong>Sound Card:</strong> DirectX Compatible Sound Device</li></ul>"
+ },
+ {
+  "app_id": 292030,
+  "name": "The Witcher 3: Wild Hunt — Remastered",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> 64-bit Windows 11<br></li><li><strong>Processor:</strong> Core i5-8400 / Ryzen 5 2600<br></li><li><strong>Memory:</strong> 12 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 1660 / Radeon RX 5500 XT 8GB / Arc A580<br></li><li><strong>Storage:</strong> 60 SSD GB available space<br></li><li><strong>Additional Notes:</strong> VRAM 6 GB</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> 64-bit Windows 11<br></li><li><strong>Processor:</strong> Intel Core i7 8700K / AMD Ryzen 5 3600X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> RTX 2060 Super / AMD Radeon RX 6600 XT / Intel Arc B580<br></li><li><strong>Storage:</strong> 60 SSD GB available space<br></li><li><strong>Additional Notes:</strong> VRAM 8 GB</li></ul>"
+ },
+ {
+  "app_id": 294100,
+  "name": "RimWorld",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7<br></li><li><strong>Processor:</strong> Core 2 Duo<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> Intel HD Graphics 4000 or other shader model 4.0<br></li><li><strong>Storage:</strong> 1 GB available space</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 322330,
+  "name": "Don't Starve Together",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows Vista/Windows 7/Windows 8<br></li><li><strong>Processor:</strong> 1.7+ GHz or better<br></li><li><strong>Memory:</strong> 1 GB RAM<br></li><li><strong>Graphics:</strong> Radeon HD5450 or better; 256 MB or higher<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 3 GB available space<br></li><li><strong>Sound Card:</strong> 100% DirectX9.0c compatible sound card and drivers</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 346110,
+  "name": "ARK: Survival Evolved",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7/8.1/10 (64-bit versions)<br></li><li><strong>Processor:</strong> Intel Core i5-2400/AMD FX-8320 or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 670 2GB/AMD Radeon HD 7870 2GB or better<br></li><li><strong>DirectX:</strong> Version 10<br></li><li><strong>Storage:</strong> 60 GB available space<br></li><li><strong>Additional Notes:</strong> Requires broadband internet connection for multiplayer</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 359550,
+  "name": "Tom Clancy's Rainbow Six Siege",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10, Windows 11 (64-bit versions)<br></li><li><strong>Processor:</strong> AMD Ryzen 3 3100 / Intel i3-8100<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GTX 1650 4GB / AMD RX 5500XT 4GB / Intel ARC A380 6GB<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 65 GB available space<br></li><li><strong>Sound Card:</strong> DirectX® 9.0c compatible sound card with latest drivers<br></li><li><strong>Additional Notes:</strong> For an up-to-date list of supported chipsets, please visit the FAQ for this game on our support website. Game contains BattleEye anti-cheat technology.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 11 (64-bit versions)<br></li><li><strong>Processor:</strong> AMD Ryzen5 3600 / Intel i5-10400<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA RTX 2060 6GB / AMD RX 6600 8GB<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 65 GB available space<br></li><li><strong>Sound Card:</strong> DirectX® 9.0c compatible sound card 5.1 with latest drivers<br></li><li><strong>Additional Notes:</strong> For an up-to-date list of supported chipsets, please visit the FAQ for this game on our support website. Game contains BattleEye anti-cheat technology.</li></ul>"
+ },
+ {
+  "app_id": 367520,
+  "name": "Hollow Knight",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 version 21H1 (build 19043) or newer<br></li><li><strong>Processor:</strong> Intel Core i3-3240, AMD FX-4300<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 560 Ti (1GB), Radeon HD 7750 (1GB)<br></li><li><strong>DirectX:</strong> Version 10<br></li><li><strong>Storage:</strong> 9 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 version 21H1 (build 19043) or newer<br></li><li><strong>Processor:</strong> Intel Core i5-3470<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 1050 (2GB), Radeon R9 380 (2GB)<br></li><li><strong>DirectX:</strong> Version 10<br></li><li><strong>Storage:</strong> 9 GB available space</li></ul>"
+ },
+ {
+  "app_id": 374320,
+  "name": "DARK SOULS™ III",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 SP1 64bit, Windows 8.1 64bit Windows 10 64bit<br></li><li><strong>Processor:</strong> Intel Core i3-2100 / AMD® FX-6300<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce GTX 750 Ti / ATI Radeon HD 7950<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 25 GB available space<br></li><li><strong>Sound Card:</strong> DirectX 11 sound device<br></li><li><strong>Additional Notes:</strong> Internet connection required for online play and product activation</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 SP1 64bit, Windows 8.1 64bit Windows 10 64bit<br></li><li><strong>Processor:</strong> Intel Core i7-3770 / AMD® FX-8350<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce GTX 970 / ATI Radeon R9 series<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 25 GB available space<br></li><li><strong>Sound Card:</strong> DirectX 11 sound device<br></li><li><strong>Additional Notes:</strong> Internet connection required for online play and product activation</li></ul>"
+ },
+ {
+  "app_id": 377160,
+  "name": "Fallout 4",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 7/8/10 (64-bit OS required)<br></li><li><strong>Processor:</strong> Intel Core i5-2300 2.8 GHz/AMD Phenom II X4 945 3.0 GHz or equivalent<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 550 Ti 2GB/AMD Radeon HD 7870 2GB or equivalent<br></li><li><strong>Storage:</strong> 30 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 7/8/10 (64-bit OS required)<br></li><li><strong>Processor:</strong> Intel Core i7 4790 3.6 GHz/AMD FX-9590 4.7 GHz or equivalent<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 780 3GB/AMD Radeon R9 290X 4GB or equivalent<br></li><li><strong>Storage:</strong> 30 GB available space</li></ul>"
+ },
+ {
+  "app_id": 379720,
+  "name": "DOOM",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7/8.1/10 (64-bit versions)<br></li><li><strong>Processor:</strong> Intel Core i5-2400/AMD FX-8320 or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 670 2GB/AMD Radeon HD 7870 2GB or better<br></li><li><strong>Storage:</strong> 55 GB available space<br></li><li><strong>Additional Notes:</strong> Requires Steam activation and broadband internet connection for Multiplayer and SnapMap</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7/8.1/10 (64-bit versions)<br></li><li><strong>Processor:</strong> Intel Core i7-3770/AMD FX-8350 or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 970 4GB/AMD Radeon R9 290 4GB or better<br></li><li><strong>Storage:</strong> 55 GB available space<br></li><li><strong>Additional Notes:</strong> Requires Steam activation and broadband internet connection for Multiplayer and SnapMap</li></ul>"
+ },
+ {
+  "app_id": 381210,
+  "name": "Dead by Daylight",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bit Operating System<br></li><li><strong>Processor:</strong> Intel Core i3-4170 or AMD FX-8120<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> DX11 Compatible GeForce GTX 460 1GB or AMD HD 6850 1GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 50 GB available space<br></li><li><strong>Sound Card:</strong> DX11 compatible<br></li><li><strong>Additional Notes:</strong> With these requirements, it is recommended that the game is played on Low quality settings.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bit Operating System<br></li><li><strong>Processor:</strong> Intel Core i3-4170 or AMD FX-8300 or higher<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> DX11 Compatible GeForce 760 or AMD HD 8800 or higher with 4GB of RAM<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 50 GB available space<br></li><li><strong>Sound Card:</strong> DX11 compatible</li></ul>"
+ },
+ {
+  "app_id": 391540,
+  "name": "Undertale",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows XP, Vista, 7, 8, or 10<br></li><li><strong>Memory:</strong> 2 GB RAM<br></li><li><strong>Graphics:</strong> 128MB<br></li><li><strong>Storage:</strong> 200 MB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows XP, Vista, 7, or 10<br></li><li><strong>Processor:</strong> 2GHz+<br></li><li><strong>Memory:</strong> 3 GB RAM<br></li><li><strong>Graphics:</strong> 512MB<br></li><li><strong>Storage:</strong> 200 MB available space</li></ul>"
+ },
+ {
+  "app_id": 394360,
+  "name": "Hearts of Iron IV",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows® 10 Home 64 Bit<br></li><li><strong>Processor:</strong> Intel® Core™ i5 750 | AMD® FX 4300<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia® GeForce™ GTX 470 (1.28GB) | AMD® HD 5850 (1GB) | Intel Iris Xe G7 (Tiger Lake) | AMD® Radeon™ RX Vega 11<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Storage:</strong> 2 GB available space<br></li><li><strong>Sound Card:</strong> Direct X- compatible soundcard.<br></li><li><strong>Additional Notes:</strong> Mouse and keyboard are required. / Latest available WHQL drivers from both manufacturers/  Internet Connection or LAN for multiplayer, Up to 32 other players in multiplayer mode.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows® 10 Home 64 bit<br></li><li><strong>Processor:</strong> Intel® Core™ i5 2500K | AMD® Ryzen 3 2200G<br></li><li><strong>Memory:</strong> 6 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia® GeForce™ GTX 570 (1.28GB) | AMD® Radeon™ HD 7970 (3GB) | Intel Iris Xe G7 (Tiger Lake)<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Storage:</strong> 2 GB available space<br></li><li><strong>Sound Card:</strong> Direct X- compatible soundcard.<br></li><li><strong>Additional Notes:</strong> Mouse and keyboard are required. / Latest available WHQL drivers from both manufacturers. / Internet Connection or LAN for multiplayer, Up to 32 other players in multiplayer mode.</li></ul>"
+ },
+ {
+  "app_id": 413150,
+  "name": "Stardew Valley",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows Vista or greater<br></li><li><strong>Processor:</strong> 2 Ghz<br></li><li><strong>Memory:</strong> 2 GB RAM<br></li><li><strong>Graphics:</strong> 256 mb video memory, shader model 3.0+<br></li><li><strong>DirectX:</strong> Version 10<br></li><li><strong>Storage:</strong> 500 MB available space</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 427520,
+  "name": "Factorio",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 11, 10<br></li><li><strong>Processor:</strong> Quad core 3Ghz+<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> DirectX 11 capable GPU with 1GB VRAM - GeForce GTX 750 Ti, Radeon R7 360 or Intel UHD Graphics 730<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 5 GB available space<br></li><li><strong>Additional Notes:</strong> Normal sprite resolution, Low quality compression, 1080p resolution</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 11, 10<br></li><li><strong>Processor:</strong> Quad core 4Ghz+ from 2020 or newer<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> DirectX 11 capable GPU with 4 GB VRAM - GeForce GTX 1050 Ti, Radeon RX 570, Intel Arc<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 10 GB available space<br></li><li><strong>Additional Notes:</strong> High sprite resolution, High quality compression</li></ul>"
+ },
+ {
+  "app_id": 435150,
+  "name": "Divinity: Original Sin 2 - Definitive Edition",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 7 SP1 64-bit or Windows 8.1 64-bit or Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i5 or equivalent<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 550 or ATI™ Radeon™ HD 6XXX or higher<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 60 GB available space<br></li><li><strong>Additional Notes:</strong> Minimum requirements may change during development.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 7 SP1 64-bit or Windows 8.1 64-bit or Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i7 or equivalent<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 770 or AMD R9 280<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 60 GB available space<br></li><li><strong>Additional Notes:</strong> Recommended requirements may change during development.</li></ul>"
+ },
+ {
+  "app_id": 444090,
+  "name": "Paladins®",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 64-bit or newer<br></li><li><strong>Processor:</strong> Core 2 Duo 2.4 GHz or Athlon X2 2.7 GHz<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce 8800 GT<br></li><li><strong>Storage:</strong> 30 GB available space<br></li><li><strong>Sound Card:</strong> DirectX compatible sound card</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 8/10 64-bit (latest Service Pack)<br></li><li><strong>Processor:</strong> Intel Core i5-750, 2.67 GHz / AMD Phenom II X4 965, 3.4 GHz<br></li><li><strong>Memory:</strong> 6 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX 660 or ATI Radeon HD 7950<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 30 GB available space<br></li><li><strong>Sound Card:</strong> DirectX compatible sound card</li></ul>"
+ },
+ {
+  "app_id": 489830,
+  "name": "The Elder Scrolls V: Skyrim Special Edition",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7/8.1/10 (64-bit Version)<br></li><li><strong>Processor:</strong> Intel i5-750/AMD Phenom II X4-945<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 470 1GB /AMD HD 7870 2GB<br></li><li><strong>Storage:</strong> 12 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7/8.1/10 (64-bit Version)<br></li><li><strong>Processor:</strong> Intel i5-2400/AMD FX-8320<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 780 3GB /AMD R9 290 4GB<br></li><li><strong>Storage:</strong> 12 GB available space</li></ul>"
+ },
+ {
+  "app_id": 504230,
+  "name": "Celeste",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 or newer<br></li><li><strong>Processor:</strong> Intel Core i3 M380<br></li><li><strong>Memory:</strong> 2 GB RAM<br></li><li><strong>Graphics:</strong> Intel HD 4000<br></li><li><strong>DirectX:</strong> Version 10<br></li><li><strong>Storage:</strong> 1200 MB available space</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 524220,
+  "name": "NieR:Automata™",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 /8.1 /10 64bit<br></li><li><strong>Processor:</strong> Intel Core i3 2100 or AMD A8-6500<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 770 VRAM 2GB or AMD Radeon R9 270X VRAM 2GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 50 GB available space<br></li><li><strong>Sound Card:</strong> DirectX® 11 supported<br></li><li><strong>Additional Notes:</strong> Mouse, keyboard and game pad (XInput only). Screen resolution: 1280x720. This product only supports MS-IME keyboard input. There is a possibility that other IME will not function correctly with it.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 8.1 /10 64bit<br></li><li><strong>Processor:</strong> Intel Core i5 4670 or AMD A10-7850K<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 980 VRAM 4GB or AMD Radeon R9 380X VRAM 4GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 50 GB available space<br></li><li><strong>Sound Card:</strong> DirectX® 11 supported<br></li><li><strong>Additional Notes:</strong> Mouse, keyboard and game pad (XInput only). Screen resolution: 1920x1080. Depending on the monitor and PC graphics card environment and setup used, this title can expand its display resolution to 4K. However, please be aware that 4K resolutions are not officially supported. This product only supports MS-IME keyboard input. There is a possibility that other IME will not function correctly with it.</li></ul>"
+ },
+ {
+  "app_id": 546560,
+  "name": "Half-Life: Alyx",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10<br></li><li><strong>Processor:</strong> Core i5-7500 / Ryzen 5 1600<br></li><li><strong>Memory:</strong> 12 GB RAM<br></li><li><strong>Graphics:</strong> GTX 1060 / RX 580 - 6GB VRAM<br></li><li><strong>VR Support:</strong> SteamVR</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system</li></ul>"
+ },
+ {
+  "app_id": 550650,
+  "name": "Black Squad",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64bit<br></li><li><strong>Processor:</strong> CORE2 DUO 2.2GHZ / AMD Athlon 64 X2 2.66GHz<br></li><li><strong>Memory:</strong> 6 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GEFORCE 8600 OR GT630 / RADEON HD 6750<br></li><li><strong>DirectX:</strong> Version 9.0<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 8 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64bit<br></li><li><strong>Processor:</strong> CORE i3-4170 / AMD FX-8300<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 760 or AMD Radeon HD 7950<br></li><li><strong>DirectX:</strong> Version 9.0<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 8 GB available space</li></ul>"
+ },
+ {
+  "app_id": 570940,
+  "name": "DARK SOULS™: REMASTERED",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 7 64-bit, Service Pack 1<br></li><li><strong>Processor:</strong> Intel Core i5-2300 2.8 GHz / AMD FX-6300, 3.5 GHz<br></li><li><strong>Memory:</strong> 6 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 460, 1 GB / Radeon HD 6870, 1 GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 8 GB available space<br></li><li><strong>Sound Card:</strong> DirectX 11 sound device<br></li><li><strong>Additional Notes:</strong> Low Settings, 60 FPS @ 1080p</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i5-4570 3.2 GHz / AMD FX-8350 4.2 GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 660, 2 GB / Radeon HD 7870, 2 GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 8 GB available space<br></li><li><strong>Sound Card:</strong> DirectX 11 sound device<br></li><li><strong>Additional Notes:</strong> High Settings, 60 FPS @ 1080p</li></ul>"
+ },
+ {
+  "app_id": 578080,
+  "name": "PUBG: BATTLEGROUNDS",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Intel Core i5-4430 / AMD FX-6300<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 960 2GB / AMD Radeon R7 370 2GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 40 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Intel Core i5-6600K / AMD Ryzen 5 1600<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 1060 3GB / AMD Radeon RX 580 4GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 50 GB available space</li></ul>"
+ },
+ {
+  "app_id": 582010,
+  "name": "Monster Hunter: World",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64-bit)<br></li><li><strong>Processor:</strong> Intel Core i5-4460 / Intel Core i3-9100F / AMD FX-6300 / AMD Ryzen 3 3200G<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 760 / NVIDIA GeForce GTX 1050 / AMD Radeon R7 260x / AMD Radeon RX 560<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 52 GB available space<br></li><li><strong>Sound Card:</strong> DirectSound<br></li><li><strong>Additional Notes:</strong> - These specs allow for the game to be played in 1080p/30fps with graphics settings at &quot;Low&quot;. - 64-bit processor and operating system are required.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64-bit) / Windows 11<br></li><li><strong>Processor:</strong> Intel Core i7-3770 / Intel Core i3-8350 / Intel Core i3-9350F / AMD Ryzen 5 1500X / AMD Ryzen 5 3400G<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 1060 (VRAM 3GB) / NVIDIA GeForce GTX 1650 / AMD Radeon RX 480 / AMD Radeon RX 570<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 52 GB available space<br></li><li><strong>Sound Card:</strong> DirectSound<br></li><li><strong>Additional Notes:</strong> - These specs allow for the game to be played in 1080p/30fps with graphics settings at &quot;High&quot;. - 64-bit processor and operating system are required. - Windows 10 (Version 1809 or later) and a 4GB VRAM GPU (graphics board or video card) are required for DirectX 12 API. ※ If you are using Windows 11, please ensure that your system meets the Windows 11 system requirements.</li></ul>"
+ },
+ {
+  "app_id": 582160,
+  "name": "Assassin's Creed® Origins",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64-bit versions only)<br></li><li><strong>Processor:</strong> Intel Core i5-2400s @ 2.5 GHz or AMD FX-6350 @ 3.9 GHz or equivalent<br></li><li><strong>Memory:</strong> 6 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 660 or AMD R9 270 (2048 MB VRAM with Shader Model 5.0 or better)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 42 GB available space<br></li><li><strong>Additional Notes:</strong> Video Preset: Lowest (720p). Game contains Denuvo  and VMProtect  anti-piracy technology.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64-bit versions only)<br></li><li><strong>Processor:</strong> Intel Core i7- 3770 @ 3.5 GHz or AMD FX-8350 @ 4.0 GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 760 or AMD R9 280X (3GB VRAM with Shader Model 5.0 or better)<br></li><li><strong>Storage:</strong> 42 GB available space<br></li><li><strong>Additional Notes:</strong> Video Preset: High (1080p). Game contains Denuvo  and VMProtect  anti-piracy technology.</li></ul>"
+ },
+ {
+  "app_id": 588650,
+  "name": "Dead Cells",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7+<br></li><li><strong>Processor:</strong> Intel i5+<br></li><li><strong>Memory:</strong> 2 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia 450 GTS / Radeon HD 5750 or better<br></li><li><strong>Storage:</strong> 500 MB available space<br></li><li><strong>Additional Notes:</strong> DirectX 9.1+ or OpenGL 3.2+</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7+<br></li><li><strong>Processor:</strong> Intel i5+<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GTX 460 / Radeon HD 7800 or better<br></li><li><strong>Storage:</strong> 500 MB available space<br></li><li><strong>Additional Notes:</strong> DirectX 9.1+ or OpenGL 3.2+</li></ul>"
+ },
+ {
+  "app_id": 594570,
+  "name": "Total War: WARHAMMER II",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 64Bit<br></li><li><strong>Processor:</strong> Intel® Core™ 2 Duo 3.0Ghz<br></li><li><strong>Memory:</strong> 5 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 460 1GB | AMD Radeon HD 5770 1GB | Intel HD4000 @720p<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 60 GB available space<br></li><li><strong>Additional Notes:</strong> Microsoft no longer supports Windows 10 or older versions.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 / 8 (8.1)/ 10 64Bit<br></li><li><strong>Processor:</strong> Intel® Core™ i5-4570 3.20GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 770 4GB | AMD Radeon R9 290X 4GB @1080p<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 60 GB available space<br></li><li><strong>Additional Notes:</strong> Microsoft no longer supports Windows 10 or older versions.</li></ul>"
+ },
+ {
+  "app_id": 601150,
+  "name": "Devil May Cry 5",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> WINDOWS® 10 (64-BIT Required)<br></li><li><strong>Processor:</strong> Intel® Core™ i5-4460, AMD FX™-6300, or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 760 or AMD Radeon™ R7 260x with 2GB Video RAM, or better<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 35 GB available space<br></li><li><strong>Additional Notes:</strong> *Xinput support Controllers recommended *Internet connection required for game activation. (Network connectivity uses Steam® developed by Valve® Corporation.)</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> WINDOWS® 10 / 11<br></li><li><strong>Processor:</strong> Intel® Core™ i7-3770, AMD FX™-9590, or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 1060 with 6GB VRAM, AMD Radeon™ RX 480 with 8GB VRAM, or better<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 35 GB available space<br></li><li><strong>Additional Notes:</strong> *Xinput support Controllers recommended *Internet connection required for game activation. (Network connectivity uses Steam® developed by Valve® Corporation.)</li></ul>"
+ },
+ {
+  "app_id": 646570,
+  "name": "Slay the Spire",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows XP, Vista, 7, 8/8.1, 10<br></li><li><strong>Processor:</strong> 2.0 Ghz<br></li><li><strong>Memory:</strong> 2 GB RAM<br></li><li><strong>Graphics:</strong> 1Gb Video Memory, capable of OpenGL 3.0+ support (2.1 with ARB extensions acceptable)<br></li><li><strong>Storage:</strong> 1 GB available space</li></ul>",
+  "recommended": null
+ },
+ {
+  "app_id": 739630,
+  "name": "Phasmophobia",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64Bit<br></li><li><strong>Processor:</strong> Intel Core i5-4590 / AMD Ryzen 5 2600<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 970 / AMD Radeon R9 390<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 21 GB available space<br></li><li><strong>VR Support:</strong> OpenXR<br></li><li><strong>Additional Notes:</strong> Minimum Specs are for VR, lower specs may work for Non-VR.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64Bit<br></li><li><strong>Processor:</strong> Intel Core i5-10600 / AMD Ryzen 5 3600<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA RTX 2060 / AMD Radeon RX 5700<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 21 GB available space</li></ul>"
+ },
+ {
+  "app_id": 782330,
+  "name": "DOOM Eternal",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> 64-bit Windows 7 / 64-Bit Windows 10<br></li><li><strong>Processor:</strong> Intel Core i5 @ 3.3 GHz or better, or AMD Ryzen 3 @ 3.1 GHz or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 1050Ti (4GB), GTX 1060 (3GB), GTX 1650 (4GB) or AMD Radeon R9 280(3GB), AMD Radeon R9 290 (4GB), RX 470 (4GB)<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 80 GB available space<br></li><li><strong>Additional Notes:</strong> ( 1080p / 60 FPS / Low Quality Settings )</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Intel Core i7-6700K or better, or AMD Ryzen 7 1800X or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 1060 (6GB), NVIDIA GeForce 970 (4GB), AMD RX 480 (8GB)<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 80 GB available space<br></li><li><strong>Additional Notes:</strong> ( 1080p / 60 FPS / High Quality Settings ) - *On NVIDIA GTX 970 cards Texture Quality should be set to Medium</li></ul>"
+ },
+ {
+  "app_id": 805550,
+  "name": "Assetto Corsa Competizione",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 x64 20H2 (October 2020 Update)<br></li><li><strong>Processor:</strong> Intel Core i5-4460 or AMD FX-8120<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 750 4GB, Radeon RX 460 4GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 50 GB available space<br></li><li><strong>Sound Card:</strong> Integrated<br></li><li><strong>VR Support:</strong> SteamVR or Oculus PC. Keyboard or gamepad required</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 x64 - 21H2<br></li><li><strong>Processor:</strong> Intel Core i5-8600K or AMD Ryzen 5 2600X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 1070 8 GB, Radeon RX 580 8GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 50 GB available space<br></li><li><strong>Sound Card:</strong> Integrated</li></ul>"
+ },
+ {
+  "app_id": 812140,
+  "name": "Assassin's Creed® Odyssey",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64bit versions only)<br></li><li><strong>Processor:</strong> AMD FX 6300 @ 3.8 GHz, Ryzen 3 - 1200, Intel Core i5 2400 @ 3.1 GHz (MORE DETAILS HERE)<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon R9 285, NVIDIA GeForce GTX 660 (2GB VRAM with Shader Model 5.0) (MORE DETAILS HERE)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 46+ GB available space<br></li><li><strong>Additional Notes:</strong> Video Preset: Lowest (720p)</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64bit versions only)<br></li><li><strong>Processor:</strong> AMD FX-8350 @ 4.0 GHz, Ryzen 5 - 1400, Intel Core i7-3770 @ 3.5 GHz or better (MORE DETAILS HERE)<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon R9 290, NVIDIA GeForce GTX 970  (4GB VRAM with Shader Model 5.0) or better (MORE DETAILS HERE)<br></li><li><strong>Storage:</strong> 46+ GB available space<br></li><li><strong>Additional Notes:</strong> Video Preset: High (1080p)</li></ul>"
+ },
+ {
+  "app_id": 814380,
+  "name": "Sekiro™: Shadows Die Twice - GOTY Edition",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 64-bit | Windows 8 64-bit | Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i3-2100 | AMD FX-6300<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 760 | AMD Radeon HD 7950<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 25 GB available space<br></li><li><strong>Sound Card:</strong> DirectX 11 Compatible</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 64-bit | Windows 8 64-bit | Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i5-2500K | AMD Ryzen 5 1400<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 970 | AMD Radeon RX 570<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 25 GB available space<br></li><li><strong>Sound Card:</strong> DirectX 11 Compatible</li></ul>"
+ },
+ {
+  "app_id": 848450,
+  "name": "Subnautica: Below Zero",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 7 64-bit<br></li><li><strong>Processor:</strong> Intel Core i3 4XXX series / AMD Ryzen 3 2.6ghz+<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Intel HD 530 or better<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 15 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i5 4XXX series/ AMD Ryzen 5 @ 3Ghz +<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia 1050 Ti / AMD Radeon 570, 4GB VRAM<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 15 GB available space</li></ul>"
+ },
+ {
+  "app_id": 863550,
+  "name": "HITMAN™ 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> OS 64-bit Windows 7<br></li><li><strong>Processor:</strong> Intel CPU Core i5-2500K 3.3GHz / AMD CPU Phenom II X4 940<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 660 / Radeon HD 7870<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 60 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> OS 64-bit Windows 10<br></li><li><strong>Processor:</strong> Intel CPU Core i7 4790 4 GHz<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GPU GeForce GTX 1070 / AMD GPU Radeon RX Vega 56 8GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 60 GB available space</li></ul>"
+ },
+ {
+  "app_id": 883710,
+  "name": "Resident Evil 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> WINDOWS® 10 (64-BIT Required)<br></li><li><strong>Processor:</strong> Intel® Core™ i5-4460 or AMD FX™-6300 or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 960 or AMD Radeon™ RX 460<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 26 GB available space<br></li><li><strong>Additional Notes:</strong> This game is expected to run at 1080p/30 FPS. If you have don't have enough graphics memory to run the game at your selected texture quality, you must go to Options &gt; Graphics and lower the texture quality or shadow quality, or decrease the resolution. An internet connection is required for product activation. (Network connectivity uses Steam® developed by Valve® Corporation.)</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> WINDOWS® 10 (64-BIT Required)<br></li><li><strong>Processor:</strong> Intel® Core™ i7-3770 or AMD FX™-9590 or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 1060 or AMD Radeon™ RX 480  with 3GB VRAM<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 26 GB available space<br></li><li><strong>Additional Notes:</strong> This game is expected to run at 1080p/60 FPS. An internet connection is required for product activation. (Network connectivity uses Steam® developed by Valve® Corporation.)</li></ul>"
+ },
+ {
+  "app_id": 892970,
+  "name": "Valheim",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 or later<br></li><li><strong>Processor:</strong> 2.6 GHz Quad Core or similar<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 950 or Radeon HD 7970<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 1 GB available space<br></li><li><strong>Additional Notes:</strong> The following languages have been partially translated by the community: Svenska, Italiano, Romanian, български, македонски, Suomi, Dansk, íslenska, Lietuvių kalba, čeština, Magyar nyelv, Português europeu, 한국어 (불완전한), Norsk, ภาษาไทย, ქართული ენა, Abenaki, Slovenčina</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 or later<br></li><li><strong>Processor:</strong> i5 3GHz or Ryzen 5 3GHz<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 1060 or Radeon RX 580<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 1 GB available space</li></ul>"
+ },
+ {
+  "app_id": 945360,
+  "name": "Among Us",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 x32bit<br></li><li><strong>Processor:</strong> INTEL i3-4330<br></li><li><strong>Memory:</strong> 1 GB RAM<br></li><li><strong>Graphics:</strong> INTEL HD Graphics 4600</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 x64bit<br></li><li><strong>Processor:</strong> INTEL i3-4330<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GTX 650</li></ul>"
+ },
+ {
+  "app_id": 949230,
+  "name": "Cities: Skylines II",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 Home 64 Bit<br></li><li><strong>Processor:</strong> Intel® Core™ i7-6700K | AMD® Ryzen™ 5 2600X<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia® GeForce™ GTX 970 (4 GB)  | AMD® Radeon™ RX 480 (8 GB)<br></li><li><strong>Storage:</strong> 60 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 Home 64 Bit | Windows® 11<br></li><li><strong>Processor:</strong> Intel® Core™ i5-12600K | AMD® Ryzen™ 7 5800X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia® GeForce™ RTX 3080 (10 GB) | AMD® Radeon™ RX 6800 XT (16 GB)<br></li><li><strong>Storage:</strong> 60 GB available space</li></ul>"
+ },
+ {
+  "app_id": 952060,
+  "name": "Resident Evil 3",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> WINDOWS® 10 (64-BIT Required)<br></li><li><strong>Processor:</strong> Intel® Core™ i5-4460 or AMD FX™-6300 or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 960 or AMD Radeon™ RX 460<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 45 GB available space<br></li><li><strong>Additional Notes:</strong> Anticipated performance at these specifications is 1080p/30FPS for Resident Evil 3 and 720p/30FPS for Resident Evil Resistance. If you don't have enough graphics memory to run the game at your selected texture quality, you must go to Options &gt; Graphics and lower the texture quality or shadow quality, or decrease the resolution. An internet connection is required for product activation. In addition, an internet connection is required at all times when playing Resident Evil Resistance. (Network connectivity uses Steam® developed by Valve® Corporation.)</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> WINDOWS® 10 (64-BIT) / 11<br></li><li><strong>Processor:</strong> Intel® Core™ i7-3770 or AMD FX™-9590 or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 1060 or AMD Radeon™ RX 480 with 3GB VRAM<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 45 GB available space<br></li><li><strong>Additional Notes:</strong> Anticipated performance at these specifications is 1080p/60FPS. An internet connection is required for product activation. In addition, an internet connection is required at all times when playing Resident Evil Resistance. (Network connectivity uses Steam® developed by Valve® Corporation.)</li></ul>"
+ },
+ {
+  "app_id": 976730,
+  "name": "Halo: The Master Chief Collection",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 7<br></li><li><strong>Processor:</strong> AMD Phenom II X4 960T ; Intel i3550<br></li><li><strong>Graphics:</strong> AMD HD 6850 ; NVIDIA GeForce GTS 450<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 43 GB available space<br></li><li><strong>Additional Notes:</strong> Direct3D feature Level 11.1</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system</li></ul>"
+ },
+ {
+  "app_id": 990080,
+  "name": "Hogwarts Legacy",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Intel Core i5-6600 (3.3Ghz) or AMD Ryzen 5 1400 (3.2Ghz)<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 960 4GB or AMD Radeon RX 470 4GB<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 85 GB available space<br></li><li><strong>Additional Notes:</strong> SSD (Preferred), HDD (Supported), 720p/30 fps, Low Quality Settings</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Intel Core i7-8700 (3.2Ghz) or AMD Ryzen 5 3600 (3.6 Ghz)<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce 1080 Ti or AMD Radeon RX 5700 XT or INTEL Arc A770<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 85 GB available space<br></li><li><strong>Additional Notes:</strong> SSD, 1080p/60 fps, High Quality Settings</li></ul>"
+ },
+ {
+  "app_id": 1063730,
+  "name": "New World: Aeternum",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10/11 64-bit<br></li><li><strong>Processor:</strong> Intel® Core i5-10500 @ 3.10GHz / AMD Ryzen 3 3300X<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 1060 3 GB / AMD Radeon RX 590<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 100 GB available space<br></li><li><strong>Additional Notes:</strong> Additional Notes: Internet connection required to play, offers in-game purchases. PC specifications for New World: Aeternum may continue to evolve over time.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10/11 64-bit<br></li><li><strong>Processor:</strong> Intel Core i7-10700K @ 3.80Ghz / AMD Ryzen 5 3600X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 2060 / AMD Radeon RX 6600<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 100 GB available space<br></li><li><strong>Additional Notes:</strong> Additional Notes: Internet connection required to play, offers in-game purchases. System requirements for New World: Aeternum may change over time.</li></ul>"
+ },
+ {
+  "app_id": 1066890,
+  "name": "Automobilista 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 10 (+ specific versions of 7)<br></li><li><strong>Processor:</strong> 3.5 GHz Intel Core i5 3450 or AMD FX-8350<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> GTX680 or equivalent<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 120 GB available space<br></li><li><strong>Sound Card:</strong> DirectX compatible sound card<br></li><li><strong>VR Support:</strong> SteamVR or Oculus PC. Keyboard or gamepad required</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10<br></li><li><strong>Processor:</strong> Intel Core i7 8700K / AMD Ryzen7 2700X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVidia GTX 1080Ti or equivalent<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 120 GB available space<br></li><li><strong>Sound Card:</strong> DirectX compatible sound card</li></ul>"
+ },
+ {
+  "app_id": 1085660,
+  "name": "Destiny 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 64-bit (latest Service Pack)<br></li><li><strong>Processor:</strong> Intel® Core™ i3 3250 3.5 GHz or Intel Pentium G4560 3.5 GHz / AMD FX-4350 4.2 GHz<br></li><li><strong>Memory:</strong> 6 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 660 2GB or GTX 1050 2GB / AMD Radeon HD 7850 2GB<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 105 GB available space<br></li><li><strong>Additional Notes:</strong> Beginning on June 4, 2024, Destiny 2 is ending support for Windows 7, Windows 8, and Windows 8.1 operating systems.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 64-bit (latest Service Pack)<br></li><li><strong>Processor:</strong> Processor Intel® Core™ i5 2400 3.4 GHz or i5 7400 3.5 GHz / AMD Ryzen R5 1600X 3.6 GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 970 4GB or GTX 1060 6GB / AMD R9 390 8GB Memory 8 GB RAM<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 105 GB available space<br></li><li><strong>Additional Notes:</strong> Beginning on June 4, 2024, Destiny 2 is ending support for Windows 7, Windows 8, and Windows 8.1 operating systems.</li></ul>"
+ },
+ {
+  "app_id": 1086940,
+  "name": "Baldur's Gate 3",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel I5 4690 / AMD FX 8350 / Snapdragon X Elite<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GTX 970 / RX 480 / Intel Arc A380 / Qualcomm Adreno X1 (4GB+ of VRAM)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 150 GB available space<br></li><li><strong>Additional Notes:</strong> SSD required</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel i7 8700K / AMD r5 3600<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia 2060 Super / RX 5700 XT / Intel Arc A580 (8GB+ of VRAM)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 150 GB available space<br></li><li><strong>Additional Notes:</strong> SSD required</li></ul>"
+ },
+ {
+  "app_id": 1091500,
+  "name": "Cyberpunk 2077",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Core i7-6700 or Ryzen 5 1600<br></li><li><strong>Memory:</strong> 12 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 1060 6GB or Radeon RX 580 8GB or Arc A380<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 70 GB available space<br></li><li><strong>Additional Notes:</strong> SSD required. Attention: In this game you will encounter a variety of visual effects that may provide seizures or loss of consciousness in a minority of people. If you or someone you know experiences any of the above symptoms while playing, stop and seek medical attention immediately.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Core i7-12700 or Ryzen 7 7800X3D<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> GeForce RTX 2060 SUPER or Radeon RX 5700 XT or Arc A770<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 70 GB available space<br></li><li><strong>Additional Notes:</strong> SSD required.</li></ul>"
+ },
+ {
+  "app_id": 1097150,
+  "name": "Fall Guys",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64bit only<br></li><li><strong>Processor:</strong> Intel Core i5 or AMD equivalent<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 660 or AMD Radeon HD 7950<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 2 GB available space<br></li><li><strong>Additional Notes:</strong> Gamepad Recommended</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system</li></ul>"
+ },
+ {
+  "app_id": 1113560,
+  "name": "NieR Replicant™ ver.1.22474487139...",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 64-bit<br></li><li><strong>Processor:</strong> AMD Ryzen™ 3 1300X; Intel® Core™ i5-6400<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon™ R9 270X; NVIDIA® GeForce® GTX 960<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 26 GB available space<br></li><li><strong>Sound Card:</strong> DirectX Compatible Sound Card<br></li><li><strong>Additional Notes:</strong> 60 FPS @ 1280x720</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 64-bit<br></li><li><strong>Processor:</strong> AMD Ryzen™ 3 1300X; Intel® Core™ i5-6400<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon™ RX Vega 56; NVIDIA® GeForce® GTX 1660<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 26 GB available space<br></li><li><strong>Sound Card:</strong> DirectX Compatible Sound Card<br></li><li><strong>Additional Notes:</strong> 60 FPS @ 1920x1080</li></ul>"
+ },
+ {
+  "app_id": 1142710,
+  "name": "Total War: WARHAMMER III",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 64-bit<br></li><li><strong>Processor:</strong> Intel i3/Ryzen 3 series<br></li><li><strong>Memory:</strong> 6 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GTX 900/AMD RX 400 series | Intel Iris Xe Graphics<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 120 GB available space<br></li><li><strong>Additional Notes:</strong> This game may be updated over time and have paid for and free. additional content released for it. Please be aware that this may increase the minimum requirements for running the game above the specification stated here. Microsoft no longer supports Windows 10 or older versions.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel i5/Ryzen 5 series<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX 1660 Ti/AMD RX 5600-XT/Intel Arc A750<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 120 GB available space<br></li><li><strong>Additional Notes:</strong> 8GB Memory if using integrated GPU. Microsoft no longer supports Windows 10 or older versions.</li></ul>"
+ },
+ {
+  "app_id": 1144200,
+  "name": "Ready or Not",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10, Windows 11<br></li><li><strong>Processor:</strong> Intel Core i5-4430 / AMD FX-6300<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 960 2GB / AMD Radeon R7 370 2GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 60 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10, 64-bit Windows 11<br></li><li><strong>Processor:</strong> AMD Ryzen 5-1600 / Intel Core i5-7600K<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GTX 1060 6GB or better<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 60 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1145350,
+  "name": "Hades II",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Dual Core 2.4 GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 950, Radeon R7 360, or Intel HD Graphics 630<br></li><li><strong>Storage:</strong> 11 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Quad Core 2.4ghz<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> GeForce RTX 2060, Radeon RX 5600 XT, or Intel Arc A580<br></li><li><strong>Storage:</strong> 11 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1145360,
+  "name": "Hades",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 SP1<br></li><li><strong>Processor:</strong> Dual Core 2.4 GHz<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> 1GB VRAM / DirectX 10+ support<br></li><li><strong>Storage:</strong> 15 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7 SP1<br></li><li><strong>Processor:</strong> Dual Core 3.0 GHz+<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> 2GB VRAM / DirectX 10+ support<br></li><li><strong>Storage:</strong> 20 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1150690,
+  "name": "OMORI",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Microsoft Windows 8.1 (32bit/64bit)<br></li><li><strong>Processor:</strong> Intel N4100 (or similar) or better<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> DirectX 9/OpenGL 4.1 capable GPU<br></li><li><strong>DirectX:</strong> Version 9.0c<br></li><li><strong>Storage:</strong> 2 GB available space<br></li><li><strong>Additional Notes:</strong> 1280x720 display is recommended at x2 resolution but is not required</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Microsoft Windows 10 (32bit/64bit)<br></li><li><strong>Processor:</strong> Intel Core i3-6100 or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> OpenGL ES 2.0 hardware driver support required for WebGL acceleration<br></li><li><strong>DirectX:</strong> Version 9.0<br></li><li><strong>Storage:</strong> 2 GB available space<br></li><li><strong>Additional Notes:</strong> 1280x720 display is recommended at x2 resolution but is not required</li></ul>"
+ },
+ {
+  "app_id": 1151640,
+  "name": "Horizon Zero Dawn™ Complete Edition",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bits<br></li><li><strong>Processor:</strong> Intel Core i5-2500K@3.3GHz or AMD FX 6300@3.5GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX 780 (3 GB) or AMD Radeon R9 290 (4GB)<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 100 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bits<br></li><li><strong>Processor:</strong> Intel Core i7-4770K@3.5GHz or Ryzen 5 1500X@3.5GHz<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX 1060 (6 GB) or AMD Radeon RX 580 (8GB)<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 100 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1158310,
+  "name": "Crusader Kings III",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 Home 64 bit<br></li><li><strong>Processor:</strong> Intel Core i5-750 | AMD FX 4300<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 660 | AMD Radeon HD 7870 | Intel Arc A310 | Intel Iris Plus G7 | AMD Radeon Vega 11<br></li><li><strong>Storage:</strong> 20 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 Home 64 bit or Windows® 11<br></li><li><strong>Processor:</strong> Intel Core i5-8400 | AMD Ryzen 5 1600X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 970 | AMD Radeon RX 480 | Intel Arc A580<br></li><li><strong>Storage:</strong> 20 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1172380,
+  "name": "STAR WARS Jedi: Fallen Order™",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> 64-bit Windows 7/8.1/10<br></li><li><strong>Processor:</strong> AMD FX-6100/Intel i3-3220 or Equivalent<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon HD 7750, NVIDIA GeForce GTX 650 or Equivalent<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 55 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> 64-bit Windows 7/8.1/10<br></li><li><strong>Processor:</strong> AMD Ryzen 7 1700/Intel  i7-6700K or Equivalent<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> AMD RX Vega 56, Nvidia GTX 1070/GTX1660Ti or Equivalent<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 55 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1172470,
+  "name": "Apex Legends™",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> AMD FX 4350 or Equivalent, Intel Core i3 6300 or Equivalent<br></li><li><strong>Memory:</strong> 6 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon™ HD 7790 (2 GB), NVIDIA GeForce® GTX 950<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 75 GB available space<br></li><li><strong>Additional Notes:</strong> ~3.8GB for 1 localized language</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Ryzen 5 CPU or Equivalent<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon™ R9 290, NVIDIA GeForce® GTX 970<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 75 GB available space<br></li><li><strong>Additional Notes:</strong> ~3.8GB for 1 localized language</li></ul>"
+ },
+ {
+  "app_id": 1174180,
+  "name": "Red Dead Redemption 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 - 64-bit<br></li><li><strong>Processor:</strong> Intel® Core™ i5-2500K / AMD FX-6300<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX 770 2GB / AMD Radeon R9 280 3GB<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 150 GB available space<br></li><li><strong>Sound Card:</strong> Direct X Compatible</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 - 64-bit<br></li><li><strong>Processor:</strong> Intel® Core™ i7-4770K / AMD Ryzen 5 1500X<br></li><li><strong>Memory:</strong> 12 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX 1060 6GB / AMD Radeon RX 480 4GB<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 150 GB available space<br></li><li><strong>Sound Card:</strong> Direct X Compatible</li></ul>"
+ },
+ {
+  "app_id": 1196590,
+  "name": "Resident Evil Village",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64 bit)<br></li><li><strong>Processor:</strong> AMD Ryzen 3 1200  ／ Intel Core i5-7500<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 560 with 4GB VRAM ／ NVIDIA GeForce GTX 1050 Ti with 4GB VRAM<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Additional Notes:</strong> Estimated performance (when set to Prioritize Performance): 1080p/60fps. ・Framerate might drop in graphics-intensive scenes. ・AMD Radeon RX 6700 XT or NVIDIA GeForce RTX 2060 required to support ray tracing.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64 bit)/Windows 11 (64 bit)<br></li><li><strong>Processor:</strong> AMD Ryzen 5 3600 ／ Intel Core i7 8700<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 5700 ／ NVIDIA GeForce GTX 1070<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Additional Notes:</strong> Estimated performance: 1080p/60fps ・Framerate might drop in graphics-intensive scenes. ・AMD Radeon RX 6700 XT or NVIDIA GeForce RTX 2070 required to support ray tracing.</li></ul>"
+ },
+ {
+  "app_id": 1203220,
+  "name": "NARAKA: BLADEPOINT",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64-bit or newer<br></li><li><strong>Processor:</strong> Intel i5 4th generation or AMD FX 6300 or equivalent<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 750TI, Intel Arc A380, AMD HD 6950 or equivalent<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 90 GB available space<br></li><li><strong>Additional Notes:</strong> a) Can run at 720p/60fps; b) We advise you install the game on an SSD for a more streamlined experience. c) Requires “Windows Memory integrity and VBS enablement” to be disabled</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel i7 7th generation or equivalent<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 1060 6G, Intel Arc A750, AMD RX480 or equivalent<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 90 GB available space<br></li><li><strong>Additional Notes:</strong> a) Can run at 1080p/60fps; b) We advise you install the game on an SSD for a more streamlined experience. c) Requires “Windows Memory integrity and VBS enablement” to be disabled</li></ul>"
+ },
+ {
+  "app_id": 1222140,
+  "name": "Detroit: Become Human",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64 bit)<br></li><li><strong>Processor:</strong> Intel Core i5-2300 @ 2.8 GHz or AMD Ryzen 3 1200 @ 3.1GHz or AMD FX-8350 @ 4.2GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX 780 or AMD HD 7950 with 3GB VRAM minimum (Support of Vulkan 1.1 required)<br></li><li><strong>Storage:</strong> 55 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64 bit)<br></li><li><strong>Processor:</strong> Intel Core i5-6600 @ 3.3 GHz or AMD Ryzen 3 1300 X @ 3.4 GHz<br></li><li><strong>Memory:</strong> 12 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX 1060 or AMD Radeon RX 580 with 4GB VRAM minimum (Support of Vulkan 1.1 required)<br></li><li><strong>Storage:</strong> 55 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1222670,
+  "name": "The Sims™ 4",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64 Bit Required. Windows 10<br></li><li><strong>Processor:</strong> 3.3 GHz Intel Core i3-3220 (2 cores, 4 threads), AMD Ryzen 3 1200 3.1 GHz (4 cores) or better<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> 128 MB of Video RAM and support for Pixel Shader 3.0. Supported Video Cards: NVIDIA GeForce 6600 or better, ATI Radeon X1300 or better, Intel GMA X4500 or better<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 26 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64 Bit Windows 10<br></li><li><strong>Processor:</strong> Intel core i5 (4 cores), AMD Ryzen 5 or better<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> 1 GB of Video RAM, NVIDIA GTX 650, AMD Radeon HD 7750, or better<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 51 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1237970,
+  "name": "Titanfall® 2",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Win 7/8/8.1/10 64bit<br></li><li><strong>Processor:</strong> Intel Core i3-6300t or equivalent [4 or more hardware threads]<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA Geforce GTX 660 2GB or AMD Radeon HD 7850 2GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 45 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Win 7/8/8.1/10 64bit<br></li><li><strong>Processor:</strong> Intel Core i5-6600 or equivalent<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA Geforce GTX 1060 6GB or AMD Radeon RX 480 8GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 45 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1238810,
+  "name": "Battlefield™ V",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> AMD FX-8350/ Core i5 6600K<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce® GTX 1050 / NVIDIA GeForce® GTX 660 2GB or AMD Radeon™ RX 560 / HD 7850 2GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 50 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10 or later<br></li><li><strong>Processor:</strong> AMD Ryzen 3 1300X/Intel Core i7 4790<br></li><li><strong>Memory:</strong> 12 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce® GTX 1060 6GB/AMD Radeon™ RX 580 8GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 50 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1238840,
+  "name": "Battlefield™ 1",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Processor (AMD): AMD FX-6350 Processor (Intel): Intel Core i5 6600K<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Graphics card (AMD): AMD Radeon™ HD 7850 2GB Graphics card (NVIDIA): NVIDIA GeForce® GTX 660 2GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 50 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10 or later<br></li><li><strong>Processor:</strong> Processor (AMD): AMD FX 8350 Wraith Processor (Intel): Intel Core i7 4790 or equivalent<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> Graphics card (AMD): AMD Radeon™ RX 480 4GB Graphics card (NVIDIA): NVIDIA GeForce® GTX 1060 3GB<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 50 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1240440,
+  "name": "Halo Infinite",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 RS5 x64<br></li><li><strong>Processor:</strong> AMD Ryzen 5 1600 or Intel i5-4440<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD RX 570 or Nvidia GTX 1050 Ti<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 50 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 19H2 x64<br></li><li><strong>Processor:</strong> AMD Ryzen 7 3700X or Intel i7-9700k<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> Radeon RX 5700 XT or Nvidia RTX 2070<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 50 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1245620,
+  "name": "ELDEN RING",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10<br></li><li><strong>Processor:</strong> INTEL CORE I5-8400 or AMD RYZEN 3 3300X<br></li><li><strong>Memory:</strong> 12 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GEFORCE GTX 1060 3 GB or AMD RADEON RX 580 4 GB<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 60 GB available space<br></li><li><strong>Sound Card:</strong> Windows Compatible Audio Device<br></li><li><strong>Additional Notes:</strong> </li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10/11<br></li><li><strong>Processor:</strong> INTEL CORE I7-8700K or AMD RYZEN 5 3600X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GEFORCE GTX 1070 8 GB or AMD RADEON RX VEGA 56 8 GB<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 60 GB available space<br></li><li><strong>Sound Card:</strong> Windows Compatible Audio Device<br></li><li><strong>Additional Notes:</strong> </li></ul>"
+ },
+ {
+  "app_id": 1250410,
+  "name": "Microsoft Flight Simulator (2020) 40th Anniversary Edition",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10<br></li><li><strong>Processor:</strong> Intel i5-4460 | AMD Ryzen 3 1200<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 770 | AMD Radeon RX 570<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 150 GB available space<br></li><li><strong>VR Support:</strong> SteamVR, Oculus PC, or OpenXR. Keyboard and mouse required</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10<br></li><li><strong>Processor:</strong> Intel i5-8400 | AMD Ryzen 5 1500X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 970 | AMD Radeon RX 590<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 150 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1259420,
+  "name": "Days Gone",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bits<br></li><li><strong>Processor:</strong> Intel Core i5-2500K@3.3GHz or AMD FX 6300@3.5GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX 780 (3 GB) or AMD Radeon R9 290 (4 GB)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 70 GB available space<br></li><li><strong>Additional Notes:</strong> Though not required, SSD for storage and 16 GB of memory is recommended</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bits<br></li><li><strong>Processor:</strong> Intel Core i7-4770K@3.5GHz or Ryzen 5 1500X@3.5GHz<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX 1060 (6 GB) or AMD Radeon RX 580 (8 GB)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 70 GB available space<br></li><li><strong>Additional Notes:</strong> Though not required, SSD for storage is recommended</li></ul>"
+ },
+ {
+  "app_id": 1293830,
+  "name": "Forza Horizon 4",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 version 15063.0 or higher<br></li><li><strong>Processor:</strong> Intel i3-4170 @ 3.7Ghz OR Intel i5 750 @ 2.67Ghz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVidia 650TI OR AMD R7 250x<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 80 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 version 15063.0 or higher<br></li><li><strong>Processor:</strong> Intel i7-3820 @ 3.6Ghz<br></li><li><strong>Memory:</strong> 12 GB RAM<br></li><li><strong>Graphics:</strong> NVidia GTX 970 OR NVidia GTX 1060 3GB OR AMD R9 290x OR AMD RX 470<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 100 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1325200,
+  "name": "Nioh 2 – The Complete Edition",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 64bit<br></li><li><strong>Processor:</strong> Intel Core i5 4460 or over<br></li><li><strong>Memory:</strong> 6 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 970 or over, VRAM 4GB or over<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 85 GB available space<br></li><li><strong>Sound Card:</strong> 16 bit stereo, 48KHz WAVE file can be played</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 64bit<br></li><li><strong>Processor:</strong> Intel Core i7 6700K or over<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 1660 SUPER or over, VRAM 6GB or over<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 85 GB available space<br></li><li><strong>Sound Card:</strong> 16 bit stereo, 48KHz WAVE file can be played</li></ul>"
+ },
+ {
+  "app_id": 1328670,
+  "name": "Mass Effect™ Legendary Edition",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Intel Core i5 3570 or AMD FX-8350<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> GPU: NVIDIA GTX 760, AMD Radeon 7970 / R9280X GPU RAM: 2 GB Video Memory<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 120 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Intel Core i7-7700 or AMD Ryzen 7 3700X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> GPU: NVIDIA GTX 1070 / RTX 200, Radeon Vega 56, GPU RAM: 4 GB Video Memory<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 120 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1426210,
+  "name": "It Takes Two",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 8.1 64-bit or Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i3-2100T or AMD FX 6100<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX 660 or AMD R7 260x<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 50 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 8.1 64-bit or Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i5 3570K or AMD Ryzen 3 1300x<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX 980 or AMD R9 290X<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 50 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1446780,
+  "name": "MONSTER HUNTER RISE",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64-bit)<br></li><li><strong>Processor:</strong> Intel Core i3-4130 / Intel Core i5-3470 / AMD FX-6100<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GT 1030 (DDR4) / AMD Radeon RX 550<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 36 GB available space<br></li><li><strong>Additional Notes:</strong> 1080p/30fps when graphics settings are set to &quot;Low&quot;.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64-bit) / Windows 11<br></li><li><strong>Processor:</strong> Intel Core i5-4460 / AMD FX-8300<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 1060 (VRAM 3GB) / AMD Radeon RX 570 (VRAM 4GB)<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 36 GB available space<br></li><li><strong>Additional Notes:</strong> 1080p/30fps when graphics settings are set to &quot;Average&quot;. If you are using Windows 11, please ensure that your system meets the Windows 11 system requirements.</li></ul>"
+ },
+ {
+  "app_id": 1449850,
+  "name": "Yu-Gi-Oh! Master Duel",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 11 Home (64bit) latest revision<br></li><li><strong>Processor:</strong> Intel Core i5-9400F<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 1650<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 64 GB available space<br></li><li><strong>Sound Card:</strong> On Board<br></li><li><strong>Additional Notes:</strong> 1280 x 720 monitor resolution</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 11 Home (64bit) latest revision<br></li><li><strong>Processor:</strong> Intel Core i5-11400F<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce RTX 3060<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 128 GB available space<br></li><li><strong>Sound Card:</strong> On Board<br></li><li><strong>Additional Notes:</strong> 1920 x 1080 monitor resolution</li></ul>"
+ },
+ {
+  "app_id": 1462040,
+  "name": "FINAL FANTASY VII REMAKE INTERGRADE",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 64-bit (ver. 2004 or later)<br></li><li><strong>Processor:</strong> AMD FX-8350 / Intel® Core™ i5-3330<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon™ RX 480 / NVIDIA® GeForce® GTX 780 / 3GB VRAM required<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 100 GB available space<br></li><li><strong>Additional Notes:</strong> Assuming a Resolution of 1920 x 1080</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 64-bit (ver. 2004 or later)<br></li><li><strong>Processor:</strong> AMD Ryzen™ 3 3100 / Intel® Core™ i7-3770<br></li><li><strong>Memory:</strong> 12 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon™ RX 5700 / NVIDIA® GeForce® GTX 1080 / 8GB VRAM required<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 100 GB available space<br></li><li><strong>Additional Notes:</strong> Assuming a Resolution of 2560 x 1440 (This title supports max resolution of 3840 x 2160)</li></ul>"
+ },
+ {
+  "app_id": 1517290,
+  "name": "Battlefield™ 2042",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> AMD Ryzen 5 1600, Core i5 6600K<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 560,Nvidia GeForce GTX 1050 Ti<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 100 GB available space<br></li><li><strong>Sound Card:</strong> No recommendation</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> AMD Ryzen 7 2700X, Intel Core i7 4790<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 6600 XT, Nvidia GeForce RTX 3060<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 100 GB available space<br></li><li><strong>Sound Card:</strong> No recommendation</li></ul>"
+ },
+ {
+  "app_id": 1551360,
+  "name": "Forza Horizon 5",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 version 18362.0 or higher<br></li><li><strong>Processor:</strong> Intel i5-4460 or AMD Ryzen 3 1200<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVidia GTX 970, AMD RX 470, OR Intel Arc A380<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 110 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 version 18362.0 or higher<br></li><li><strong>Processor:</strong> Intel i5-8400 or AMD Ryzen 5 1500X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVidia GTX 1070, AMD RX 590, OR Intel Arc A750<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 110 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1593500,
+  "name": "God of War",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10<br></li><li><strong>Processor:</strong> Intel i5-2500k (4 core 3.3 GHz) or AMD Ryzen 3 1200 (4 core 3.1 GHz)<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 960 (4 GB) or AMD R9 290X (4 GB)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 70 GB available space<br></li><li><strong>Additional Notes:</strong> DirectX feature level 11_1 required</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10<br></li><li><strong>Processor:</strong> Intel i5-6600k (4 core 3.5 GHz) or AMD Ryzen 5 2400 G (4 core 3.6 GHz)<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 1060 (6 GB) or AMD RX 570 (4 GB)<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 70 GB available space<br></li><li><strong>Additional Notes:</strong> DirectX feature level 11_1 required</li></ul>"
+ },
+ {
+  "app_id": 1599340,
+  "name": "Lost Ark",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64-bit only)<br></li><li><strong>Processor:</strong> Intel Core i3 – 10100 AMD Ryzen3 3100<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia Geforce GTX 1050 Ti / AMD Radeon RX 560<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 110 GB available space<br></li><li><strong>Additional Notes:</strong> Internet connection required to play, offers in-game purchases. System requirements for this game may change over time.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 11 (64-bit only)<br></li><li><strong>Processor:</strong> Intel Core i5 – 9400 AMD Ryzen5 2600<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia Geforce GTX 1660 Super / AMD Radeon RX 6600<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 110 GB available space<br></li><li><strong>Additional Notes:</strong> Internet connection required to play, offers in-game purchases. System requirements for this game may change over time. The specifications listed are recommended for Full High Definition (FHD).</li></ul>"
+ },
+ {
+  "app_id": 1623730,
+  "name": "Palworld",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64-Bit)<br></li><li><strong>Processor:</strong> Intel Core i5-9400F<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 1660<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 40 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Required - Performance may vary depending on the amount of active Pals.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 11 (64-Bit)<br></li><li><strong>Processor:</strong> Intel Core i5-12400 / AMD Ryzen 5 5600X<br></li><li><strong>Memory:</strong> 32 GB RAM<br></li><li><strong>Graphics:</strong> GeForce RTX 3060 Ti / Radeon RX 6700 XT<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 40 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Required - Performance may vary depending on the amount of active Pals.</li></ul>"
+ },
+ {
+  "app_id": 1659040,
+  "name": "HITMAN World of Assassination",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> OS 64-bit Windows 10<br></li><li><strong>Processor:</strong> Intel CPU Core i5-2500K 3.3GHz / AMD CPU Phenom II X4 940<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 660 / Radeon HD 7870<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 60 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> OS 64-bit Windows 10<br></li><li><strong>Processor:</strong> Intel CPU Core i7 4790 4 GHz<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> Nvidia GPU GeForce GTX 1070 / AMD GPU Radeon RX Vega 56 8GB<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 60 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1665460,
+  "name": "eFootball™",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 11 - 64bit<br></li><li><strong>Processor:</strong> Intel Core i5-2300, / AMD FX-4350<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 660 Ti / Radeon HD 7790<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 70 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 11 - 64bit<br></li><li><strong>Processor:</strong> Intel Core i5-7600 / AMD Ryzen 5 1600<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> GeForce GTX 1060 / AMD Radeon RX 590<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 70 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1716740,
+  "name": "Starfield",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 version 21H1 (10.0.19043)<br></li><li><strong>Processor:</strong> AMD Ryzen 5 2600X, Intel Core i7-6800K<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 5700, NVIDIA GeForce 1070 Ti<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 125 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Required</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10/11 with updates<br></li><li><strong>Processor:</strong> AMD Ryzen 5 3600X, Intel i5-10600K<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 6800 XT, NVIDIA GeForce RTX 2080<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 125 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Required</li></ul>"
+ },
+ {
+  "app_id": 1774580,
+  "name": "STAR WARS Jedi: Survivor™",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> 4 core / 8 threads  | Intel Core i7-7700  | Ryzen 5 1400<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> 8GB VRAM |  GTX 1070  |  Radeon RX 580<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 155 GB available space<br></li><li><strong>Additional Notes:</strong> Internet required for non-optional patching, no online play.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> 4 core / 8 threads  |  Intel Core i5 11600K  |  Ryzen 5 5600X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> 8GB VRAM |  RTX2070  |  RX 6700 XT<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 155 GB available space<br></li><li><strong>Additional Notes:</strong> Internet required for non-optional patching, no online play.</li></ul>"
+ },
+ {
+  "app_id": 1782210,
+  "name": "Crab Game",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 7<br></li><li><strong>Processor:</strong> Intel Core i3 2,00 GHz<br></li><li><strong>Memory:</strong> 2 GB RAM<br></li><li><strong>Graphics:</strong> Intel HD 520<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 200 MB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10<br></li><li><strong>Processor:</strong> Intel Core I5-4440 3,10 GHz<br></li><li><strong>Graphics:</strong> Nvidia GeForce GTX650<br></li><li><strong>Storage:</strong> 200 MB available space</li></ul>"
+ },
+ {
+  "app_id": 1794680,
+  "name": "Vampire Survivors",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64bit<br></li><li><strong>Processor:</strong> x64 architecture with SSE2 instruction set support<br></li><li><strong>Memory:</strong> 1 GB RAM<br></li><li><strong>Graphics:</strong> DX11, DX12 capable<br></li><li><strong>Storage:</strong> 2500 MB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system</li></ul>"
+ },
+ {
+  "app_id": 1817070,
+  "name": "Marvel’s Spider-Man Remastered",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i3-4160, 3.6 GHz or AMD equivalent<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 950 or AMD Radeon RX 470<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 75 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 64-bit<br></li><li><strong>Processor:</strong> Intel Core i5-4670, 3.4 Ghz or AMD Ryzen5 1600, 3.2 Ghz<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 1060 6GB or AMD Radeon RX 580 8GB<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 75 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1868140,
+  "name": "DAVE THE DIVER",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64 bit<br></li><li><strong>Processor:</strong> Intel Core i3 Dual Core<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA Geforce GTS 450 / AMD Radeon HD 5570<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 10 GB available space<br></li><li><strong>Sound Card:</strong> Windows Compatible Audio Device</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64 bit<br></li><li><strong>Processor:</strong> Intel Core i5 (Hexa Core) / i7 (Quad Core)<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GTX 1060 3GB / AMD RX 480<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 10 GB available space<br></li><li><strong>Sound Card:</strong> Windows Compatible Audio Device</li></ul>"
+ },
+ {
+  "app_id": 1888930,
+  "name": "The Last of Us™ Part I",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (Version 1909 or Newer)<br></li><li><strong>Processor:</strong> AMD Ryzen 5 1500X, Intel Core i7-4770K<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 470 (4 GB), AMD Radeon RX 6500 XT (4 GB), NVIDIA GeForce GTX 970 (4 GB), NVIDIA GeForce GTX 1050 Ti (4 GB)<br></li><li><strong>Storage:</strong> 100 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Recommended</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (Version 1909 or Newer)<br></li><li><strong>Processor:</strong> AMD Ryzen 5 3600X, Intel Core i7-8700<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 5700 XT (8 GB), AMD Radeon RX 6600 XT (8 GB), NVIDIA GeForce RTX 2070 SUPER (8 GB), NVIDIA GeForce RTX 3060 (8 GB)<br></li><li><strong>Storage:</strong> 100 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Recommended</li></ul>"
+ },
+ {
+  "app_id": 1938090,
+  "name": "Call of Duty®",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 64 Bit (latest update)*<br></li><li><strong>Processor:</strong> AMD Ryzen™ 5 1400 or Intel® Core™ i5-6600<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon™ RX 470, NVIDIA® GeForce® GTX 970 / 1060 or Intel® Arc™ A580<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 115 GB available space<br></li><li><strong>Sound Card:</strong> DirectX compatible<br></li><li><strong>Additional Notes:</strong> *Trial, Beta or Insider versions of compatible Windows® operating systems may not be supported. SSD with 115 GB available space at launch.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 11 64 Bit (latest update)*<br></li><li><strong>Processor:</strong> AMD Ryzen™ 5 3600 or Intel® Core™ i7-8700K<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon™ RX 6600XT, NVIDIA® GeForce® RTX 3060 or Intel® Arc™ B580<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 115 GB available space<br></li><li><strong>Sound Card:</strong> DirectX compatible<br></li><li><strong>Additional Notes:</strong> *Trial, Beta or Insider versions of compatible Windows® operating systems may not be supported. SSD with 115 GB available space at launch.</li></ul>"
+ },
+ {
+  "app_id": 1966720,
+  "name": "Lethal Company",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10<br></li><li><strong>Processor:</strong> Intel Core i5-7400 CPU @ 3.00GHz ; Shader Model 5<br></li><li><strong>Graphics:</strong> NVIDIA GForce GTX 1050<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 4 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system</li></ul>"
+ },
+ {
+  "app_id": 2050650,
+  "name": "Resident Evil 4",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64 bit)<br></li><li><strong>Processor:</strong> AMD Ryzen 3 1200 / Intel Core i5-7500<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 560 with 4GB VRAM / NVIDIA GeForce GTX 1050 Ti with 4GB VRAM<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Additional Notes:</strong> Estimated performance (when set to Prioritize Performance): 1080p/45fps. ・Framerate might drop in graphics-intensive scenes. ・AMD Radeon RX 6700 XT or NVIDIA GeForce RTX 2060 required to support ray tracing.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (64 bit)/Windows 11 (64 bit)<br></li><li><strong>Processor:</strong> AMD Ryzen 5 3600 / Intel Core i7 8700<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 5700 / NVIDIA GeForce GTX 1070<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Additional Notes:</strong> Estimated performance: 1080p/60fps ・Framerate might drop in graphics-intensive scenes. ・AMD Radeon RX 6700 XT or NVIDIA GeForce RTX 2070 required to support ray tracing.</li></ul>"
+ },
+ {
+  "app_id": 2208920,
+  "name": "Assassin's Creed Valhalla",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (versions 64 bits uniquement)<br></li><li><strong>Processor:</strong> AMD Ryzen 3 1200 3.1 GHz / Intel Core i5-4460 3.2 GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD R9 380 /NVIDIA GeForce GTX 960<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 160 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 (versions 64 bits uniquement)<br></li><li><strong>Processor:</strong> AMD Ryzen 5 1600 3.2 GHz / Intel Core i7-4790 3.6 GHz<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> AMD R9 380 /NVIDIA GeForce GTX 960<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 160 GB available space</li></ul>"
+ },
+ {
+  "app_id": 2215430,
+  "name": "Ghost of Tsushima DIRECTOR'S CUT",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10<br></li><li><strong>Processor:</strong> Intel Core i3-7100 or AMD Ryzen 3 1200<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 960 or AMD Radeon RX 5500 XT<br></li><li><strong>Storage:</strong> 75 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Recommended</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10<br></li><li><strong>Processor:</strong> Intel Core i5-8600 or AMD Ryzen 5 3600<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce RTX 2060 or AMD Radeon RX 5600 XT<br></li><li><strong>Storage:</strong> 75 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Required</li></ul>"
+ },
+ {
+  "app_id": 2246340,
+  "name": "Monster Hunter Wilds",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows®10 (64-bit Required)/Windows®11 (64-bit Required)<br></li><li><strong>Processor:</strong> Intel® Core™ i5-10400 or Intel® Core™ i3-12100 or AMD Ryzen™ 5 3600<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 1660(VRAM 6GB) or AMD Radeon™ RX 5500 XT(VRAM 8GB)<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 75 GB available space<br></li><li><strong>Additional Notes:</strong> SSD required. This game is expected to run at 1080p (upscaled from 720 native resolution) / 30 fps under the &quot;Lowest&quot; graphics setting. DirectStorage supported.</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows®10 (64-bit Required)/Windows®11 (64-bit Required)<br></li><li><strong>Processor:</strong> Intel® Core™ i5-10400 or Intel® Core™ i3-12100 or AMD Ryzen™ 5 3600<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® RTX 2060 Super(VRAM 8GB) or　AMD Radeon™  RX 6600(VRAM 8GB)<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 75 GB available space<br></li><li><strong>Additional Notes:</strong> SSD required. This game is expected to run at 1080p / 60 fps (with Frame Generation enabled) under the &quot;Medium&quot; graphics setting. DirectStorage supported.</li></ul>"
+ },
+ {
+  "app_id": 2357570,
+  "name": "Overwatch®",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 64-bit (latest Service Pack)<br></li><li><strong>Processor:</strong> Intel® Core™ i3 or AMD Phenom™ X3 8650<br></li><li><strong>Memory:</strong> 6 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 600 series, AMD Radeon™ HD 7000 series<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 50 GB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows® 10 64-bit (latest Service Pack)<br></li><li><strong>Processor:</strong> Intel® Core™ i7 or AMD Ryzen™ 5<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA® GeForce® GTX 1060/ GeForce® GTX 1650 or AMD R9 380/AMD RX 6400 or Intel® Arc™ A770<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 50 GB available space</li></ul>"
+ },
+ {
+  "app_id": 2379780,
+  "name": "Balatro",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS *:</strong> Windows 7, 8, 10, 11 x64<br></li><li><strong>Processor:</strong> Intel Core i3<br></li><li><strong>Memory:</strong> 1 GB RAM<br></li><li><strong>Graphics:</strong> OpenGL 2.1 compatible graphics card, integrated graphics<br></li><li><strong>Storage:</strong> 150 MB available space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system</li></ul>"
+ },
+ {
+  "app_id": 2399830,
+  "name": "ARK: Survival Ascended",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10/11 with updates<br></li><li><strong>Processor:</strong> AMD Ryzen 5 2600X, Intel Core i7-6800K<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 5600 XT, NVIDIA GeForce 1080<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 180 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Required</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10/11 with updates<br></li><li><strong>Processor:</strong> AMD Ryzen 5 3600X, Intel i5-10600K<br></li><li><strong>Memory:</strong> 32 GB RAM<br></li><li><strong>Graphics:</strong> AMD Radeon RX 6800, NVIDIA GeForce RTX 3080<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 180 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Required</li></ul>"
+ },
+ {
+  "app_id": 2420110,
+  "name": "Horizon Forbidden West™ Complete Edition",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64-bit (version 1909 or higher)<br></li><li><strong>Processor:</strong> Intel Core i3-8100 or AMD Ryzen 3 1300X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce GTX 1650 4GB or AMD Radeon RX 5500XT 4GB<br></li><li><strong>Storage:</strong> 150 GB available space<br></li><li><strong>Additional Notes:</strong> 150GB SSD Space</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Windows 10 64-bit (version 1909 or higher)<br></li><li><strong>Processor:</strong> Intel Core i5-8600 or AMD Ryzen 5 3600<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVIDIA GeForce RTX 3060 or AMD Radeon RX 5700<br></li><li><strong>Storage:</strong> 150 GB available space<br></li><li><strong>Additional Notes:</strong> 150GB SSD Space</li></ul>"
+ },
+ {
+  "app_id": 2440510,
+  "name": "Forza Motorsport",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 version 19041 or higher<br></li><li><strong>Processor:</strong> Intel i5-8400 or AMD Ryzen 5 1600<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> NVidia GTX 1060 or AMD RX 5500 XT or Intel A380<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 130 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Required</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> Windows 10 version 19041 or higher<br></li><li><strong>Processor:</strong> Intel i5-11600k or AMD Ryzen 5 5600X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> NVidia RTX 2080 TI or AMD RX 6800 XT or Intel A770<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Storage:</strong> 130 GB available space<br></li><li><strong>Additional Notes:</strong> SSD Required</li></ul>"
+ }
+]
