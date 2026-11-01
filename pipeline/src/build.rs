@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use rigcheck_gamedb::GameDb;
 
 use crate::Error;
+use crate::applist::App;
 use crate::awacy::AntiCheatInfo;
 use crate::protondb::Summary;
 
@@ -20,13 +21,19 @@ tiers computed by rigcheck's own rule. \
 Anti-cheat status: AreWeAntiCheatYet (areweanticheatyet.com), MIT, © AreWeAntiCheatYet contributors. \
 Hardware table: rigcheck (github.com/Glory42/rigcheck).";
 
-/// Adds ProtonDB tiers and popularity and anti-cheat status to the stored
-/// games, then rebuilds the name search.
+/// Adds every app-list game not crawled yet (by name), ProtonDB tiers and
+/// popularity and anti-cheat status, then rebuilds the name search.
 pub fn build(
     db: &GameDb,
+    apps: &[App],
     protondb: &HashMap<u32, Summary>,
     anticheat: &HashMap<u32, AntiCheatInfo>,
 ) -> Result<(), Error> {
+    let names: Vec<(u32, &str)> = apps
+        .iter()
+        .map(|app| (app.app_id, app.name.as_str()))
+        .collect();
+    db.store_names(&names)?;
     let proton: Vec<_> = protondb
         .iter()
         .map(|(&app_id, summary)| (app_id, summary.tier, summary.reports))

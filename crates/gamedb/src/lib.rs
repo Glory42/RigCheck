@@ -263,6 +263,21 @@ impl GameDb {
         Ok(())
     }
 
+    /// Adds games known only by name (from the app list) as `not_crawled`,
+    /// so search finds them. Games already stored are left as they are.
+    pub fn store_names(&self, games: &[(u32, &str)]) -> Result<(), Error> {
+        let tx = self.conn.unchecked_transaction()?;
+        for (app_id, name) in games {
+            tx.execute(
+                "INSERT OR IGNORE INTO games (app_id, name, requirements_status, updated_at)
+                 VALUES (?1, ?2, 'not_crawled', 0)",
+                params![app_id, name],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
     /// Writes ProtonDB's tier and report count for games already stored.
     /// The report count is also the game's popularity.
     pub fn set_protondb(&self, facts: &[(u32, Option<ProtonTier>, u32)]) -> Result<(), Error> {

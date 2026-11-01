@@ -3,8 +3,9 @@
 
 use std::collections::HashMap;
 
-use rigcheck_core::{AntiCheat, Catalog, ProtonTier};
+use rigcheck_core::{AntiCheat, Catalog, ParsedTier, ProtonTier};
 use rigcheck_gamedb::{GameDb, GameRecord};
+use rigcheck_pipeline::applist::App;
 use rigcheck_pipeline::awacy::AntiCheatInfo;
 use rigcheck_pipeline::build::build;
 use rigcheck_pipeline::protondb::Summary;
@@ -54,7 +55,7 @@ fn games_are_searchable_by_name_most_popular_first() {
         ),
     ]);
 
-    build(&db, &protondb, &HashMap::new()).unwrap();
+    build(&db, &[], &protondb, &HashMap::new()).unwrap();
 
     let found: Vec<u32> = db
         .search("witcher", 10)
@@ -84,7 +85,7 @@ fn games_get_their_proton_tier_and_anti_cheat_status() {
         },
     )]);
 
-    build(&db, &protondb, &anticheat).unwrap();
+    build(&db, &[], &protondb, &anticheat).unwrap();
 
     let destiny = db.game(1085660).unwrap().unwrap();
     assert_eq!(destiny.linux.protondb, Some(ProtonTier::Borked));
@@ -97,7 +98,7 @@ fn the_built_database_names_its_license_and_sources() {
     let dir = TempDir::new().unwrap();
     let db = crawled(&dir);
 
-    build(&db, &HashMap::new(), &HashMap::new()).unwrap();
+    build(&db, &[], &HashMap::new(), &HashMap::new()).unwrap();
 
     // ROADMAP §1.2: games.db includes ProtonDB data (ODbL, share-alike).
     let license = db.meta("license").unwrap().expect("a license notice");
@@ -106,4 +107,48 @@ fn the_built_database_names_its_license_and_sources() {
     for source in ["Steam", "ProtonDB", "AreWeAntiCheatYet"] {
         assert!(sources.contains(source), "{source} missing from: {sources}");
     }
+}
+
+#[test]
+fn every_game_in_the_app_list_is_searchable_before_its_crawled() {
+    let dir = TempDir::new().unwrap();
+    let db = crawled(&dir);
+    let witcher = GameRecord {
+        app_id: 292030,
+        name: "The Witcher 3: Wild Hunt".to_owned(),
+        minimum: Some(ParsedTier {
+            ram_mb: Some(6144),
+            ..ParsedTier::default()
+        }),
+        ..GameRecord::default()
+    };
+    db.store(&witcher, &catalog()).unwrap();
+    let apps = [
+        App {
+            app_id: 292030,
+            name: "The Witcher 3: Wild Hunt".to_owned(),
+            last_modified: 0,
+        },
+        App {
+            app_id: 367520,
+            name: "Hollow Knight".to_owned(),
+            last_modified: 0,
+        },
+    ];
+
+    build(&db, &apps, &HashMap::new(), &HashMap::new()).unwrap();
+
+    let found: Vec<u32> = db
+        .search("hollow", 10)
+        .unwrap()
+        .into_iter()
+        .map(|(id, _)| id)
+        .collect();
+    assert_eq!(found, [367520], "not crawled yet, but findable");
+    let witcher = db.game(292030).unwrap().unwrap();
+    assert_eq!(
+        witcher.minimum.unwrap().ram_mb,
+        Some(6144),
+        "crawled data is kept"
+    );
 }

@@ -7,8 +7,9 @@
 //!       Fetches up to <budget> store pages into games.db (created if
 //!       missing): changed or never-fetched ones, most ProtonDB reports first
 //!       when ProtonDB's reports_piiremoved.json is given. Run again to continue.
-//!   rigcheck-pipeline build <games.db> <reports.json> <awacy-games.json>
-//!       Adds ProtonDB tiers and anti-cheat status; rebuilds name search.
+//!   rigcheck-pipeline build <games.db> <apps.json> <reports.json> <awacy-games.json>
+//!       Adds uncrawled games by name, ProtonDB tiers and anti-cheat status;
+//!       rebuilds name search.
 //!   rigcheck-pipeline validate <games.db>
 //!       Fails (exit 1) if games.db shouldn't be published.
 //!   rigcheck-pipeline report <games.db>
@@ -44,9 +45,12 @@ fn main() -> Result<(), Error> {
             budget.parse()?,
             Some(Path::new(reports)),
         ),
-        ["build", db, reports, awacy] => {
-            build_db(Path::new(db), Path::new(reports), Path::new(awacy))
-        }
+        ["build", db, apps, reports, awacy] => build_db(
+            Path::new(db),
+            Path::new(apps),
+            Path::new(reports),
+            Path::new(awacy),
+        ),
         ["validate", db] => validate_db(Path::new(db)),
         ["report", db] => report_db(Path::new(db)),
         _ => Err("usage: see the comment at the top of pipeline/src/main.rs".into()),
@@ -88,11 +92,12 @@ fn protondb_summaries(reports: &Path) -> Result<HashMap<u32, protondb::Summary>,
     Ok(protondb::summarize(&reports, now()?))
 }
 
-fn build_db(db: &Path, reports: &Path, awacy: &Path) -> Result<(), Error> {
+fn build_db(db: &Path, apps: &Path, reports: &Path, awacy: &Path) -> Result<(), Error> {
     let db = GameDb::open(db)?;
+    let apps: Vec<App> = serde_json::from_str(&std::fs::read_to_string(apps)?)?;
     let protondb = protondb_summaries(reports)?;
     let anticheat = awacy::statuses(&std::fs::read_to_string(awacy)?)?;
-    build::build(&db, &protondb, &anticheat)?;
+    build::build(&db, &apps, &protondb, &anticheat)?;
     println!(
         "built: ProtonDB facts for {} games, anti-cheat for {}",
         protondb.len(),
