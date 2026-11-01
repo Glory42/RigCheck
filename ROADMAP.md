@@ -394,11 +394,11 @@ Each phase ends with a usable, tested result. Check items off as you go.
 **Done when:** the app shows your installed Steam games with cover art, including games on secondary drives.
 
 ### Phase 2: My Hardware (v0.2)
-- [ ] `hardware` crate: CPU, RAM, GPU(s) via PCI IDs, VRAM, driver, Vulkan, disk, distro/kernel (§8.1)
-- [ ] Handle hybrid GPUs, iGPU-only systems, `nouveau`, and a missing `vulkaninfo`
-- [ ] Fixture tests: fake `/proc` + `/sys` trees for an AMD desktop, an NVIDIA desktop, an Intel laptop, a hybrid laptop and a Steam Deck
-- [ ] My Hardware page with a "Copy as text" button (useful for asking for help; copying stays local)
-- [ ] Manual hardware override UI
+- [x] `hardware` crate: CPU, RAM, GPU(s) via PCI IDs, VRAM, driver, Vulkan, disk, distro/kernel (§8.1)
+- [x] Handle hybrid GPUs, iGPU-only systems, `nouveau`, and a missing `vulkaninfo`
+- [x] Fixture tests: fake `/proc` + `/sys` trees for an AMD desktop, an NVIDIA desktop, an Intel laptop, a hybrid laptop and a Steam Deck
+- [x] My Hardware page with a "Copy as text" button (useful for asking for help; copying stays local)
+- [ ] Manual hardware override UI (`Hardware::with_overrides` is done; the picker needs the hardware list from Phase 3)
 
 **Done when:** the hardware page is correct on your machine and every fixture test passes.
 
