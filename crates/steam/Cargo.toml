@@ -6,3 +6,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+steamlocate = "2.1"
+
+[dev-dependencies]
+tempfile = "3.27.0"

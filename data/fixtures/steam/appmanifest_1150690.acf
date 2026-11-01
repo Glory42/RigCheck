@@ -1,0 +1,40 @@
+"AppState"
+{
+	"appid"		"1150690"
+	"Universe"		"1"
+	"name"		"OMORI"
+	"StateFlags"		"4"
+	"installdir"		"OMORI"
+	"LastUpdated"		"1793478632"
+	"LastPlayed"		"0"
+	"SizeOnDisk"		"2039368158"
+	"StagingSize"		"0"
+	"buildid"		"8879120"
+	"LastOwner"		"0"
+	"DownloadType"		"1"
+	"UpdateResult"		"0"
+	"BytesToDownload"		"2435447616"
+	"BytesDownloaded"		"2435447616"
+	"BytesToStage"		"4287775488"
+	"BytesStaged"		"4287775488"
+	"TargetBuildID"		"8879120"
+	"AutoUpdateBehavior"		"0"
+	"AllowOtherDownloadsWhileRunning"		"0"
+	"ScheduledAutoUpdate"		"0"
+	"InstalledDepots"
+	{
+		"1150694"
+		{
+			"manifest"		"1684408267486790136"
+			"size"		"2039368158"
+		}
+	}
+	"UserConfig"
+	{
+		"language"		"english"
+	}
+	"MountedConfig"
+	{
+		"language"		"english"
+	}
+}
