@@ -1,0 +1,160 @@
+# Seed games.db (ROADMAP Phase 3): ~20 games covering the range of verdicts.
+# Hand-written Linux facts (ProtonDB tier, Steam Deck status, anti-cheat per
+# AreWeAntiCheatYet) as of 2026-11. Requirement text comes from
+# data/fixtures/requirements/corpus.json by app ID. Phase 4's pipeline
+# replaces this with real data.
+#
+# protondb: platinum | gold | silver | bronze | borked (omit for native games)
+# deck: verified | playable | unsupported | unknown
+# anticheat: supported | running | planned | broken | denied (omit if none)
+
+# Installed on the dev machine
+[[game]]
+app_id = 1150690
+name = "OMORI"
+protondb = "gold"
+deck = "verified"
+
+[[game]]
+app_id = 21000
+name = "LEGO® Batman™: The Videogame"
+protondb = "platinum"
+deck = "playable"
+
+# Native Linux
+[[game]]
+app_id = 413150
+name = "Stardew Valley"
+native = true
+deck = "verified"
+
+[[game]]
+app_id = 620
+name = "Portal 2"
+native = true
+deck = "verified"
+
+[[game]]
+app_id = 105600
+name = "Terraria"
+native = true
+deck = "verified"
+
+[[game]]
+app_id = 570
+name = "Dota 2"
+native = true
+deck = "verified"
+
+[[game]]
+app_id = 730
+name = "Counter-Strike 2"
+native = true
+deck = "verified"
+
+# Proton Platinum
+[[game]]
+app_id = 1145360
+name = "Hades"
+protondb = "platinum"
+deck = "verified"
+
+[[game]]
+app_id = 1086940
+name = "Baldur's Gate 3"
+protondb = "platinum"
+deck = "verified"
+
+# Anti-cheat that blocks Linux
+[[game]]
+app_id = 1085660
+name = "Destiny 2"
+protondb = "borked"
+deck = "unsupported"
+anticheat = "denied"
+anticheat_name = "BattlEye"
+
+[[game]]
+app_id = 578080
+name = "PUBG: BATTLEGROUNDS"
+protondb = "borked"
+deck = "unsupported"
+anticheat = "denied"
+anticheat_name = "BattlEye"
+
+[[game]]
+app_id = 1172470
+name = "Apex Legends™"
+protondb = "borked"
+deck = "unsupported"
+anticheat = "denied"
+anticheat_name = "Easy Anti-Cheat"
+
+# Anti-cheat that works
+[[game]]
+app_id = 1245620
+name = "ELDEN RING"
+protondb = "gold"
+deck = "verified"
+anticheat = "running"
+anticheat_name = "Easy Anti-Cheat"
+
+[[game]]
+app_id = 976730
+name = "Halo: The Master Chief Collection"
+protondb = "gold"
+deck = "verified"
+anticheat = "supported"
+anticheat_name = "Easy Anti-Cheat"
+
+# DX12-heavy
+[[game]]
+app_id = 1091500
+name = "Cyberpunk 2077"
+protondb = "platinum"
+deck = "verified"
+
+[[game]]
+app_id = 1716740
+name = "Starfield"
+protondb = "gold"
+deck = "playable"
+
+[[game]]
+app_id = 990080
+name = "Hogwarts Legacy"
+protondb = "gold"
+deck = "verified"
+
+# Ancient
+[[game]]
+app_id = 70
+name = "Half-Life"
+native = true
+deck = "verified"
+
+[[game]]
+app_id = 12100
+name = "Grand Theft Auto III"
+protondb = "silver"
+deck = "unknown"
+
+# Brand new
+[[game]]
+app_id = 2246340
+name = "Monster Hunter Wilds"
+protondb = "gold"
+deck = "unsupported"
+
+# Missing or thin requirements
+[[game]]
+app_id = 2379780
+name = "Balatro"
+protondb = "platinum"
+deck = "verified"
+
+[[game]]
+app_id = 1782210
+name = "Crab Game"
+protondb = "silver"
+deck = "unknown"

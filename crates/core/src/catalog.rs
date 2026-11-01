@@ -46,6 +46,15 @@ pub struct Catalog {
 }
 
 impl Catalog {
+    pub fn new(cpus: Vec<CatalogEntry>, gpus: Vec<CatalogEntry>) -> Catalog {
+        Catalog {
+            cpu_keys: keys(&cpus),
+            cpus,
+            gpu_keys: keys(&gpus),
+            gpus,
+        }
+    }
+
     /// Reads the format of `data/hardware.toml`.
     pub fn from_toml(text: &str) -> Result<Catalog, toml::de::Error> {
         #[derive(Deserialize)]
@@ -56,12 +65,15 @@ impl Catalog {
             gpu: Vec<CatalogEntry>,
         }
         let file: File = toml::from_str(text)?;
-        Ok(Catalog {
-            cpu_keys: keys(&file.cpu),
-            cpus: file.cpu,
-            gpu_keys: keys(&file.gpu),
-            gpus: file.gpu,
-        })
+        Ok(Catalog::new(file.cpu, file.gpu))
+    }
+
+    pub fn cpus(&self) -> &[CatalogEntry] {
+        &self.cpus
+    }
+
+    pub fn gpus(&self) -> &[CatalogEntry] {
+        &self.gpus
     }
 
     /// Every CPU the text names that the table knows, in order. Also finds
