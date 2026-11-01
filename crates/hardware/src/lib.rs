@@ -73,6 +73,45 @@ impl Hardware {
     }
 }
 
+/// Values the user set by hand, replacing what was detected.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Overrides {
+    pub cpu: Option<String>,
+    pub ram_bytes: Option<u64>,
+    pub gpu: Option<GpuOverride>,
+}
+
+/// A GPU picked by the user, e.g. from a list of known models.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GpuOverride {
+    pub vendor_id: u16,
+    pub device_id: u16,
+    pub vram_bytes: u64,
+}
+
+impl Hardware {
+    /// This hardware with the user's overrides applied. An overridden GPU
+    /// replaces every detected one, so it's the GPU verdicts use.
+    pub fn with_overrides(mut self, overrides: &Overrides) -> Hardware {
+        if let Some(cpu) = &overrides.cpu {
+            self.cpu = Some(cpu.clone());
+        }
+        if let Some(bytes) = overrides.ram_bytes {
+            self.ram_bytes = Some(bytes);
+        }
+        if let Some(gpu) = &overrides.gpu {
+            self.gpus = vec![Gpu {
+                vendor_id: gpu.vendor_id,
+                device_id: gpu.device_id,
+                kernel_driver: None,
+                vram: Vram::Dedicated(gpu.vram_bytes),
+                vulkan: None,
+            }];
+        }
+        self
+    }
+}
+
 /// Bytes as GiB with one decimal, e.g. "15.0 GiB".
 fn gib(bytes: u64) -> String {
     format!("{:.1} GiB", bytes as f64 / f64::from(1 << 30))
