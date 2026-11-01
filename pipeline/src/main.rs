@@ -29,7 +29,7 @@ use rigcheck_pipeline::applist::{self, App};
 use rigcheck_pipeline::crawl::plan;
 use rigcheck_pipeline::ingest::{Ingested, ingest};
 use rigcheck_pipeline::validate::{Rules, validate};
-use rigcheck_pipeline::{awacy, build, protondb, report};
+use rigcheck_pipeline::{awacy, build, deck, protondb, report};
 
 const HARDWARE: &str = include_str!("../../data/hardware.toml");
 
@@ -169,6 +169,15 @@ fn crawl(apps: &Path, db_path: &Path, budget: usize, reports: Option<&Path>) -> 
         {
             Ok(Ingested::Game(mut record)) => {
                 record.updated_at = fetched_at;
+                // A failed Deck lookup only leaves the status empty.
+                let deck_url = format!(
+                    "https://store.steampowered.com/saleaction/ajaxgetdeckappcompatibilityreport?nAppID={app_id}&l=english"
+                );
+                record.deck = client
+                    .get_text(&deck_url)
+                    .and_then(|json| deck::status(&json))
+                    .ok()
+                    .map(str::to_owned);
                 db.store(&record, &catalog)?;
                 games += 1;
             }

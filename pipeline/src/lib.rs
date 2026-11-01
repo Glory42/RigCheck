@@ -5,6 +5,7 @@ pub mod applist;
 pub mod awacy;
 pub mod build;
 pub mod crawl;
+pub mod deck;
 pub mod ingest;
 pub mod protondb;
 pub mod report;
