@@ -1,0 +1,8 @@
+{
+  "response": {
+    "apps": [
+      { "appid": 413150, "name": "Stardew Valley", "last_modified": 1751320135, "price_change_number": 25881002 },
+      { "appid": 1086940, "name": "Baldur's Gate 3", "last_modified": 1759276802, "price_change_number": 26290513 }
+    ]
+  }
+}

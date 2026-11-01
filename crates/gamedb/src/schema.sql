@@ -5,6 +5,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE games (
   app_id              INTEGER PRIMARY KEY,
   name                TEXT NOT NULL,
+  release_date        TEXT,              -- as the store page writes it
   linux_native        INTEGER NOT NULL DEFAULT 0,
   protondb_tier       TEXT,
   deck_status         TEXT,
@@ -52,4 +53,11 @@ CREATE TABLE gpu_pci_id (
   device_id   INTEGER NOT NULL,
   hardware_id INTEGER NOT NULL,
   PRIMARY KEY (vendor_id, device_id)
+);
+
+-- Pipeline bookkeeping: when each app (game or not) was last fetched, so a
+-- run continues where the last stopped and unchanged pages aren't fetched again.
+CREATE TABLE crawl_log (
+  app_id     INTEGER PRIMARY KEY,
+  fetched_at INTEGER NOT NULL
 );

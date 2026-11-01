@@ -6,8 +6,8 @@
 use std::path::Path;
 
 use rigcheck_core::{
-    AntiCheat, Catalog, CatalogEntry, GameRequirements, LinuxInfo, ProtonTier, Requirement, Specs,
-    Vendor, Verdict, evaluate, parse,
+    AntiCheat, Catalog, CatalogEntry, GameRequirements, LinuxInfo, ParsedTier, ProtonTier,
+    Requirement, Specs, Vendor, Verdict, evaluate, parse,
 };
 use rigcheck_hardware::{Hardware, Vram};
 use rusqlite::{Connection, OptionalExtension, params};
@@ -50,6 +50,28 @@ pub struct Tier {
     pub vram_mb: Option<u32>,
     pub storage_mb: Option<u32>,
     pub directx: Option<u8>,
+}
+
+/// A game to write: what the pipeline (or the seed) knows about it.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct GameRecord {
+    pub app_id: u32,
+    pub name: String,
+    /// As the store page writes it, e.g. "Feb 26, 2016".
+    pub release_date: Option<String>,
+    /// Has a Linux build.
+    pub native: bool,
+    /// platinum | gold | silver | bronze | borked
+    pub protondb: Option<String>,
+    /// verified | playable | unsupported | unknown
+    pub deck: Option<String>,
+    /// supported | running | planned | broken | denied
+    pub anticheat: Option<String>,
+    pub anticheat_name: Option<String>,
+    pub minimum: Option<ParsedTier>,
+    pub recommended: Option<ParsedTier>,
+    /// When this was fetched, as a Unix timestamp.
+    pub updated_at: i64,
 }
 
 impl Game {
@@ -116,23 +138,130 @@ impl GameDb {
         })
     }
 
-    /// Builds the seed database at `path`, replacing any file there.
-    pub fn create_seed(path: &Path) -> Result<GameDb, Error> {
+    /// An empty games.db at `path` with the schema, replacing any file there.
+    pub fn create(path: &Path) -> Result<GameDb, Error> {
         if path.exists() {
             std::fs::remove_file(path)?;
         }
-        let mut conn = Connection::open(path)?;
-        let tx = conn.transaction()?;
-        tx.execute_batch(SCHEMA)?;
-        let catalog = Catalog::from_toml(HARDWARE)?;
-        let ids = insert_hardware(&tx, &catalog)?;
-        insert_seed_games(&tx, &catalog, &ids)?;
-        tx.execute(
-            "INSERT INTO meta (key, value) VALUES ('schema_version', '1'), ('source', 'seed')",
+        let conn = Connection::open(path)?;
+        conn.execute_batch(SCHEMA)?;
+        conn.execute(
+            "INSERT INTO meta (key, value) VALUES ('schema_version', '1')",
             [],
         )?;
-        tx.commit()?;
         Ok(GameDb { conn })
+    }
+
+    /// Builds the seed database at `path`, replacing any file there.
+    pub fn create_seed(path: &Path) -> Result<GameDb, Error> {
+        let db = GameDb::create(path)?;
+        let catalog = Catalog::from_toml(HARDWARE)?;
+        db.store_catalog(&catalog)?;
+        for record in seed_records()? {
+            db.store(&record, &catalog)?;
+        }
+        db.conn.execute(
+            "INSERT INTO meta (key, value) VALUES ('source', 'seed')",
+            [],
+        )?;
+        Ok(db)
+    }
+
+    /// Writes the hardware table, which ships inside games.db.
+    pub fn store_catalog(&self, catalog: &Catalog) -> Result<(), Error> {
+        let tx = self.conn.unchecked_transaction()?;
+        insert_hardware(&tx, catalog)?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Writes a game, replacing what was stored for it. CPU and GPU text are
+    /// matched against `catalog`, which must already be stored.
+    pub fn store(&self, record: &GameRecord, catalog: &Catalog) -> Result<(), Error> {
+        let tx = self.conn.unchecked_transaction()?;
+        let status = match &record.minimum {
+            None => "missing",
+            Some(m) if m.cpu.is_some() && m.gpu.is_some() && m.ram_mb.is_some() => "parsed",
+            Some(_) => "partial",
+        };
+        for table in ["requirement_hardware", "requirements"] {
+            tx.execute(
+                &format!("DELETE FROM {table} WHERE app_id = ?1"),
+                [record.app_id],
+            )?;
+        }
+        tx.execute(
+            "INSERT OR REPLACE INTO games (app_id, name, release_date, linux_native, protondb_tier,
+                 deck_status, anticheat_status, anticheat_name, requirements_status, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![
+                record.app_id,
+                record.name,
+                record.release_date,
+                record.native,
+                record.protondb,
+                record.deck,
+                record.anticheat,
+                record.anticheat_name,
+                status,
+                record.updated_at
+            ],
+        )?;
+        let tiers = [
+            ("minimum", &record.minimum),
+            ("recommended", &record.recommended),
+        ];
+        for (tier, parsed) in tiers {
+            let Some(parsed) = parsed else { continue };
+            tx.execute(
+                "INSERT INTO requirements (app_id, tier, ram_mb, vram_mb, storage_mb, directx, cpu_raw, gpu_raw)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                params![
+                    record.app_id,
+                    tier,
+                    parsed.ram_mb,
+                    parsed.vram_mb,
+                    parsed.storage_mb,
+                    parsed.directx,
+                    parsed.cpu,
+                    parsed.gpu
+                ],
+            )?;
+            let matched = [
+                ("cpu", parsed.cpu.as_deref().map(|t| catalog.match_cpus(t))),
+                ("gpu", parsed.gpu.as_deref().map(|t| catalog.match_gpus(t))),
+            ];
+            for (kind, entries) in matched {
+                for (position, entry) in entries.unwrap_or_default().into_iter().enumerate() {
+                    tx.execute(
+                        "INSERT INTO requirement_hardware (app_id, tier, kind, position, hardware_id)
+                         SELECT ?1, ?2, ?3, ?4, id FROM hardware WHERE kind = ?3 AND name = ?5",
+                        params![record.app_id, tier, kind, position as i64, entry.name],
+                    )?;
+                }
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Remembers that `app_id` was fetched at `fetched_at` (Unix time),
+    /// whether or not it turned out to be a game.
+    pub fn record_fetch(&self, app_id: u32, fetched_at: i64) -> Result<(), Error> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO crawl_log (app_id, fetched_at) VALUES (?1, ?2)",
+            params![app_id, fetched_at],
+        )?;
+        Ok(())
+    }
+
+    /// When each app was last fetched.
+    pub fn fetched(&self) -> Result<std::collections::HashMap<u32, i64>, Error> {
+        let mut statement = self
+            .conn
+            .prepare("SELECT app_id, fetched_at FROM crawl_log")?;
+        let rows = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?;
+        Ok(rows.collect::<Result<_, _>>()?)
     }
 
     /// The game with `app_id`, or `None` if the database doesn't have it.
@@ -285,12 +414,8 @@ impl GameDb {
     }
 }
 
-/// Writes the hardware table; returns each entry's row ID by name.
-fn insert_hardware(
-    tx: &rusqlite::Transaction,
-    catalog: &Catalog,
-) -> Result<std::collections::HashMap<String, i64>, Error> {
-    let mut ids = std::collections::HashMap::new();
+/// Writes the hardware table.
+fn insert_hardware(tx: &rusqlite::Transaction, catalog: &Catalog) -> Result<(), Error> {
     let entries = catalog
         .cpus()
         .iter()
@@ -326,16 +451,13 @@ fn insert_hardware(
                 ],
             )?;
         }
-        ids.insert(entry.name.clone(), id);
     }
-    Ok(ids)
+    Ok(())
 }
 
-fn insert_seed_games(
-    tx: &rusqlite::Transaction,
-    catalog: &Catalog,
-    ids: &std::collections::HashMap<String, i64>,
-) -> Result<(), Error> {
+/// The seed games: hand-written Linux facts from data/seed/games.toml, with
+/// requirement text from the corpus.
+fn seed_records() -> Result<Vec<GameRecord>, Error> {
     #[derive(Deserialize)]
     struct Seed {
         game: Vec<SeedGame>,
@@ -360,68 +482,26 @@ fn insert_seed_games(
 
     let seed: Seed = toml::from_str(SEED_GAMES)?;
     let corpus: Vec<CorpusGame> = serde_json::from_str(CORPUS)?;
-    for game in seed.game {
-        let pages = corpus.iter().find(|c| c.app_id == game.app_id);
-        let minimum = pages.and_then(|p| p.minimum.as_deref()).map(parse);
-        let status = match &minimum {
-            None => "missing",
-            Some(m) if m.cpu.is_some() && m.gpu.is_some() && m.ram_mb.is_some() => "parsed",
-            Some(_) => "partial",
-        };
-        tx.execute(
-            "INSERT INTO games (app_id, name, linux_native, protondb_tier, deck_status,
-                                anticheat_status, anticheat_name, requirements_status, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0)",
-            params![
-                game.app_id,
-                game.name,
-                game.native,
-                game.protondb,
-                game.deck,
-                game.anticheat,
-                game.anticheat_name,
-                status
-            ],
-        )?;
-        let tiers = [
-            ("minimum", minimum),
-            (
-                "recommended",
-                pages.and_then(|p| p.recommended.as_deref()).map(parse),
-            ),
-        ];
-        for (tier, parsed) in tiers {
-            let Some(parsed) = parsed else { continue };
-            tx.execute(
-                "INSERT INTO requirements (app_id, tier, ram_mb, vram_mb, storage_mb, directx, cpu_raw, gpu_raw)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-                params![
-                    game.app_id,
-                    tier,
-                    parsed.ram_mb,
-                    parsed.vram_mb,
-                    parsed.storage_mb,
-                    parsed.directx,
-                    parsed.cpu,
-                    parsed.gpu
-                ],
-            )?;
-            let matched = [
-                ("cpu", parsed.cpu.as_deref().map(|t| catalog.match_cpus(t))),
-                ("gpu", parsed.gpu.as_deref().map(|t| catalog.match_gpus(t))),
-            ];
-            for (kind, entries) in matched {
-                for (position, entry) in entries.unwrap_or_default().into_iter().enumerate() {
-                    tx.execute(
-                        "INSERT INTO requirement_hardware (app_id, tier, kind, position, hardware_id)
-                         VALUES (?1, ?2, ?3, ?4, ?5)",
-                        params![game.app_id, tier, kind, position as i64, ids[&entry.name]],
-                    )?;
-                }
+    Ok(seed
+        .game
+        .into_iter()
+        .map(|game| {
+            let pages = corpus.iter().find(|c| c.app_id == game.app_id);
+            GameRecord {
+                app_id: game.app_id,
+                name: game.name,
+                release_date: None,
+                native: game.native,
+                protondb: game.protondb,
+                deck: game.deck,
+                anticheat: game.anticheat,
+                anticheat_name: game.anticheat_name,
+                minimum: pages.and_then(|p| p.minimum.as_deref()).map(parse),
+                recommended: pages.and_then(|p| p.recommended.as_deref()).map(parse),
+                updated_at: 0,
             }
-        }
-    }
-    Ok(())
+        })
+        .collect())
 }
 
 fn vendor_name(vendor: Vendor) -> &'static str {
