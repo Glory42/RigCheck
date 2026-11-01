@@ -352,7 +352,7 @@ struct Verdict {
 | CPU/GPU scores | Blender Open Data | Public dataset | Check the license |
 | PCI IDs | `pci.ids` | Public | BSD-3 / GPL-2 |
 | Popularity | ProtonDB report counts, Steam's most-played charts | Free | n/a |
-| App icon / logo | "Oil Pump" icon (Color Pixels style) by Icons8, in `assets/brand/` | Free with a link to icons8.com | Icons8 free license: link required in the About page, README, store listings and website. Allowed as a logo but **not trademarkable or exclusive**. If we ever want a trademarkable logo, commission or draw our own |
+| App icon / logo | Original pixel art in `assets/brand/` (drawn by scripts in `assets/brand/src/`) | n/a | MIT, our own work: no attribution needed, and it can be trademarked later |
 
 **Rules:**
 - An in-app **Credits** page lists every source with its license.
@@ -449,9 +449,9 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 - [ ] Test on at least Arch, Ubuntu/Debian, Fedora and SteamOS (Deck desktop mode)
 - [ ] Test on NVIDIA proprietary drivers, including the WebKitGTK blank-window issue. Apply `WEBKIT_DISABLE_DMABUF_RENDERER=1` automatically if needed
 - [ ] AUR package (`rigcheck-bin`)
-- [ ] Flathub submission (manifest, permissions: read-only access to Steam folders and network). Include the Icons8 credit in the listing
+- [ ] Flathub submission (manifest, permissions: read-only access to Steam folders and network).
 - [ ] App icons: run `pnpm tauri icon assets/brand/icon-1024.png`, then install hicolor icons (`128`, `256`, `512`) for the `.desktop` entry
-- [ ] About page in the app with an "Icon by Icons8" link (required by the Icons8 free license)
+- [ ] About page in the app: version, license, links, data-source credits (§9)
 - [ ] README with screenshots, privacy section and credits
 
 **Done when:** a stranger can install the app from Flathub or AUR and it works.
@@ -474,7 +474,7 @@ A static showcase page. It describes the app and sends people to GitHub, Flathub
 - [ ] Host on a subdomain of `gorkemkaryol.dev` (e.g. `rigcheck.gorkemkaryol.dev`)
 - [ ] Free hosting: GitHub Pages (custom domain via a `CNAME` DNS record) or Cloudflare Pages
 - [ ] Content: what it does, screenshots or a short video, privacy promise (§6), install buttons (Flathub, AUR, AppImage/deb/rpm from GitHub Releases), credits
-- [ ] Favicon from `assets/brand/` (`icon-16.png`, `icon-32.png`, `icon-96.png`), with the Icons8 link in the footer
+- [ ] Favicon from `assets/brand/` (`icon-16.png`, `icon-32.png`, `icon-64.png`)
 - [ ] Optional: a "latest version" badge, read at build time from the GitHub Releases API
 
 **Done when:** the subdomain serves the page over HTTPS and every install link works.

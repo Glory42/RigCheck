@@ -1,18 +1,29 @@
 # Brand assets
 
+The rigcheck icon: a pixel-art oil derrick (the "rig") with a check badge. Original artwork made for this project and covered by the repository's MIT license.
+
 | File | Source |
 |---|---|
-| `icon-16.png`, `icon-32.png`, `icon-96.png` | Original files from Icons8 |
-| `icon-128.png` … `icon-1024.png` | Generated from `icon-32.png` with nearest-neighbor scaling (the art sits on a 32×32 pixel grid, so it stays sharp) |
+| `src/draw_icon_32.py` | Draws the 32×32 master icon |
+| `src/draw_icon_16.py` | Hand-drawn 16×16 version for favicons, stored as a text pixel map: edit the characters to change pixels |
+| `icon-16.png`, `icon-32.png` | Output of the scripts above |
+| `icon-64.png` … `icon-1024.png` | `icon-32.png` scaled up with nearest-neighbor, so the pixels stay sharp |
 
-Regenerate the large sizes:
+Regenerate everything after editing a script:
 
 ```sh
-for s in 128 256 512 1024; do magick icon-32.png -filter point -resize ${s}x${s} PNG32:icon-$s.png; done
+./build.sh
 ```
 
-## Attribution
+Requires `python3` (standard library only) and ImageMagick 7.
 
-"Oil Pump" (Color Pixels) icon by [Icons8](https://icons8.com), used under the Icons8 free license. The license requires a link to icons8.com wherever the icon appears publicly: the app's About page, the README, store listings and the website.
+## Palette
 
-These icons are **not** covered by this repository's MIT license.
+| Name | Hex | Use |
+|---|---|---|
+| Steel dark | `#333D47` | Outlines, crown block, platform |
+| Steel | `#5B6B7A` | Bracing, platform edge |
+| Steel light | `#8A9BAB` | Leg highlights |
+| Orange | `#F58A1F` / `#C25E0A` | Pennant |
+| Green | `#2EA043` / `#1A6B2A` | Check badge |
+| White | `#FFFFFF` | Badge ring and check |
