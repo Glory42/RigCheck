@@ -25,7 +25,7 @@ These are the rules every decision below follows. If a feature breaks one of the
 | Before Phase 4 | **Public** | Required for zero cost: release assets in a private repo need authentication, so the app couldn't download `games.db` or app updates. A daily crawl would also use up the private Actions quota within days |
 
 **While private:**
-- Run CI only on pushes to `main` and on pull requests.
+- Run CI only on pushes to `master` and on pull requests.
 - Cache Rust builds (`Swatinem/rust-cache`) to save minutes.
 - Develop against the hand-written seed database instead of a published one.
 
@@ -378,7 +378,7 @@ Each phase ends with a usable, tested result. Check items off as you go.
 - [x] Create a **private** GitHub repo (`Glory42/rigcheck`) with the MIT license (see §1.1)
 - [x] Set up the Cargo workspace and the crate skeletons from §5
 - [x] iced app skeleton in `app/` that opens an empty window with the brand icon, plus a headless `iced_test` test
-- [x] CI (`ci.yml`): `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, `cargo deny check bans`. Run on `main` + PRs only, with Rust caching, to stay inside the private-repo minutes
+- [x] CI (`ci.yml`): `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, `cargo deny check bans`. Run on `master` + PRs only, with Rust caching, to stay inside the private-repo minutes
 - [x] Network lock: `crates/net` skeleton, and a `deny.toml` that bans HTTP clients from every other crate (§6)
 
 **Done when:** an empty app window opens, and CI passes on a pull request.
@@ -512,7 +512,7 @@ A static showcase page. It describes the app and sends people to GitHub, Flathub
 | Steam installed via Flatpak or Snap | Library not found | Check all known paths, plus a manual "add Steam folder" option |
 | First crawl takes days | Slow start | Crawl popular games first, make it resumable, and optionally run the first crawl locally |
 | Data license conflicts | Legal risk | Verify every license in §9 before v0.4. Keep attribution in the app and the database `meta` table |
-| Private-repo Actions minutes run out (2,000/month) | CI blocked during Phases 0–3 | CI only on `main` + PRs with Rust caching, no scheduled jobs while private, go public before Phase 4 |
+| Private-repo Actions minutes run out (2,000/month) | CI blocked during Phases 0–3 | CI only on `master` + PRs with Rust caching, no scheduled jobs while private, go public before Phase 4 |
 | Learning Rust while building | Slow progress | Phases 1–3 need only basic Rust. Keep the `core` crate pure and test-driven, and don't optimize early. For the UI, start each screen from the closest iced example |
 
 ---
