@@ -108,3 +108,22 @@ fn memory_sizes_written_with_a_space_still_match() {
 
     assert_eq!(names(gpus), ["GeForce GTX 1060 3GB", "Radeon RX 580"]);
 }
+
+#[test]
+fn a_bare_model_number_reuses_the_previous_names_series() {
+    let catalog = catalog();
+
+    // Call of Duty, minimum: "GTX 970 / 1060" means GTX 970 or GTX 1060.
+    let gpus = catalog
+        .match_gpus("AMD Radeon™ RX 470, NVIDIA® GeForce® GTX 970 / 1060 or Intel® Arc™ A580");
+
+    assert_eq!(
+        names(gpus),
+        [
+            "Radeon RX 470",
+            "GeForce GTX 970",
+            "GeForce GTX 1060 6GB",
+            "Arc A580"
+        ]
+    );
+}

@@ -85,7 +85,7 @@ crates/
   hardware/   Linux hardware detection
   steam/      Steam installs, libraries and cover art
   gamedb/     games.db (SQLite): schema, seed, queries, verdicts
-  net/        the only crate allowed an HTTP client (unused so far)
+  net/        the only crate allowed an HTTP client (used by the pipeline)
 pipeline/     data pipeline that builds games.db (Phase 4)
 data/         hardware table, seed games, test fixtures
 ```
@@ -107,9 +107,9 @@ Wrong verdicts, missing hardware, translations and captures of your machine all 
 
 ## Credits
 
-- Game data comes from Steam's store pages; Proton compatibility from [ProtonDB](https://www.protondb.com) reports ([ODbL](https://opendatacommons.org/licenses/odbl/1-0/)), rated by rigcheck's own rule ([ROADMAP §9](ROADMAP.md#9-data-sources--licenses)); anti-cheat status from [AreWeAntiCheatYet](https://areweanticheatyet.com) (MIT).
+- Game data comes from Steam's store pages; Proton compatibility from [ProtonDB](https://www.protondb.com) reports ([ODbL](https://opendatacommons.org/licenses/odbl/1-0/)), rated by rigcheck's own rule ([ROADMAP §9](ROADMAP.md#9-data-sources--licenses)); anti-cheat status from [AreWeAntiCheatYet](https://areweanticheatyet.com) (MIT); Steam Deck status from Steam's Deck compatibility reports.
 - Requirement text in `data/fixtures/requirements/` comes from Steam's store pages, for testing the parser.
-- Hardware scores in `data/hardware.toml` are rough hand estimates until the pipeline brings in benchmark data.
+- Hardware scores in `data/hardware.toml` are rough hand estimates. The published database fills in parts the table lacks from [Blender Open Data](https://opendata.blender.org) (CC0), and GPU PCI IDs come from [pci.ids](https://pci-ids.ucw.cz).
 - The pixel-art icon is original, drawn by scripts in [`assets/brand/`](assets/brand/).
 
 ## License

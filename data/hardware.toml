@@ -244,6 +244,30 @@ score = 260
 vram_mb = 12288
 
 [[gpu]]
+name = "Radeon RX 7600"
+vendor = "amd"
+score = 215
+vram_mb = 8192
+
+[[gpu]]
+name = "Radeon RX 6800 XT"
+vendor = "amd"
+score = 390
+vram_mb = 16384
+
+[[gpu]]
+name = "Radeon RX 7800 XT"
+vendor = "amd"
+score = 420
+vram_mb = 16384
+
+[[gpu]]
+name = "Radeon RX 7900 XTX"
+vendor = "amd"
+score = 620
+vram_mb = 24576
+
+[[gpu]]
 name = "Radeon Vega 7 (Ryzen 5000/7000U)"
 vendor = "amd"
 score = 32
@@ -450,6 +474,36 @@ score = 280
 name = "Ryzen 5 7530U"
 vendor = "amd"
 score = 190
+
+[[cpu]]
+name = "Ryzen 7 5800X"
+vendor = "amd"
+score = 270
+
+[[cpu]]
+name = "Ryzen 5 7600X"
+vendor = "amd"
+score = 320
+
+[[cpu]]
+name = "Ryzen 7 7800X3D"
+vendor = "amd"
+score = 380
+
+[[cpu]]
+name = "Core i5-12600K"
+vendor = "intel"
+score = 280
+
+[[cpu]]
+name = "Core i5-13600K"
+vendor = "intel"
+score = 320
+
+[[cpu]]
+name = "Core i7-12700K"
+vendor = "intel"
+score = 310
 
 [[cpu]]
 name = "Custom APU 0405 (Steam Deck)"

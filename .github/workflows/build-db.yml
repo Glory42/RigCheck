@@ -1,0 +1,114 @@
+name: Build games.db
+
+# Daily: continue crawling Steam where yesterday stopped, merge the data
+# sources, validate, and publish games.db.zst + manifest.json to the rolling
+# `db-latest` release (ROADMAP Phase 4, §7.3).
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: Games to crawl this run (each is 2 store requests)
+        default: "3000"
+
+permissions:
+  contents: write # upload release assets
+  actions: write # re-enable this workflow so GitHub doesn't pause it
+
+# Never two crawls at once: they'd race on the release.
+concurrency:
+  group: build-db
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  GH_TOKEN: ${{ github.token }}
+  PIPELINE: target/release/rigcheck-pipeline
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350 # GitHub's limit is 360
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/master' }}
+      - run: cargo build --release --locked -p rigcheck-pipeline
+
+      - name: Restore yesterday's database
+        run: |
+          if gh release download db-latest --pattern games.db.zst --dir previous; then
+            zstd -d previous/games.db.zst -o games.db
+          else
+            echo "No previous release; starting fresh."
+          fi
+
+      - name: Download data sources
+        run: |
+          set -euo pipefail
+          # ProtonDB: the newest monthly dump (names like reports_oct1_2026.tar.gz).
+          dump=$(gh api repos/bdefore/protondb-data/contents/reports --jq '.[].name' | python3 -c '
+          import re, sys, datetime
+          def when(name):
+              m = re.match(r"reports_([a-z]+)(\d+)_(\d{4})\.tar\.gz", name)
+              return datetime.datetime.strptime(f"{m[1]} {m[2]} {m[3]}", "%b %d %Y") if m else datetime.datetime.min
+          print(max(sys.stdin.read().split(), key=when))')
+          echo "ProtonDB dump: $dump"
+          curl -sfL "https://github.com/bdefore/protondb-data/raw/master/reports/$dump" | tar xz
+          curl -sfL -o awacy.json https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/master/games.json
+          curl -sfL -o blender.zip https://opendata.blender.org/snapshots/opendata-latest.zip
+          unzip -p blender.zip '*.jsonl' > blender.jsonl
+          curl -sfL -o pci.ids https://pci-ids.ucw.cz/v2.2/pci.ids
+          ls -la reports_piiremoved.json awacy.json blender.jsonl pci.ids
+
+      - name: Fetch the app list
+        run: $PIPELINE applist apps.json
+        env:
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
+
+      # Saved progress survives a timeout: the next steps still publish it.
+      - name: Crawl
+        timeout-minutes: 240
+        continue-on-error: true
+        run: $PIPELINE crawl apps.json games.db "${{ inputs.budget || '3000' }}" reports_piiremoved.json
+
+      - name: Build
+        run: $PIPELINE build games.db apps.json reports_piiremoved.json awacy.json pci.ids blender.jsonl
+
+      - name: Validate
+        run: $PIPELINE validate games.db
+
+      - name: Unknown hardware (for data/hardware.toml)
+        run: |
+          {
+            echo "## Most-mentioned hardware missing from data/hardware.toml"
+            echo '```'
+            $PIPELINE report games.db | head -40
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Package
+        run: |
+          $PIPELINE publish games.db out \
+            "$(date -u +%Y-%m-%d).${{ github.run_number }}" \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            "https://github.com/${{ github.repository }}/releases/download/db-latest/games.db.zst" \
+            "0.4.0"
+          cat out/manifest.json
+
+      - name: Publish to the db-latest release
+        run: |
+          if ! gh release view db-latest > /dev/null 2>&1; then
+            gh release create db-latest --prerelease --title "games.db (updated daily)" \
+              --notes "The game database rigcheck downloads. Rebuilt daily by the Build games.db workflow. Licensed under the ODbL (see the license and sources rows in its meta table)."
+          fi
+          gh release upload db-latest out/games.db.zst out/manifest.json --clobber
+
+      # GitHub pauses scheduled workflows after 60 days without repo activity.
+      # Re-enabling through the API resets that, without a commit (master
+      # only takes pull requests).
+      - name: Keep the schedule alive
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/build-db.yml/enable"

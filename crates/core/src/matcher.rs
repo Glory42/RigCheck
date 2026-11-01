@@ -29,7 +29,7 @@ pub struct HardwareRef {
     pub score: u32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Vendor {
     Amd,
