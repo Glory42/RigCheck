@@ -3,7 +3,7 @@ name: CI
 # Private repo: run only where it matters to stay inside the free minutes (ROADMAP §1.1).
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
 
 # A new push to the same branch or PR cancels the run still in progress.
@@ -28,7 +28,7 @@ jobs:
       # Caches ~/.cargo and target/ between runs; the biggest time (and minutes) saver.
       - uses: Swatinem/rust-cache@v2
         with:
-          save-if: ${{ github.ref == 'refs/heads/main' }}
+          save-if: ${{ github.ref == 'refs/heads/master' }}
 
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings

@@ -38,7 +38,7 @@ cargo fmt --all
 cargo deny check bans            # only crates/net may use an HTTP client
 ```
 
-CI runs fmt, clippy, tests and `cargo deny` on pushes to `main` and on pull requests.
+CI runs fmt, clippy, tests and `cargo deny` on pushes to `master` and on pull requests.
 
 ## License
 
