@@ -1,0 +1,23 @@
+#
+#	List of PCI IDs
+#
+#	Version: 2026.10.01
+#	Date:    2026-10-01 03:15:02
+#
+#	Maintained by Albert Pool, Martin Mares, and other volunteers from
+#	the PCI ID Project at https://pci-ids.ucw.cz/.
+#
+#	New data are always welcome, especially if they are accurate. If you have
+#	anything to contribute, please follow the instructions at the web site.
+#
+1002  Advanced Micro Devices, Inc. [AMD/ATI]
+	15e7  Barcelo
+	67df  Ellesmere [Radeon RX 470/480/570/570X/580/580X/590]
+	73ff  Navi 23 [Radeon RX 6600/6600 XT/6600M]
+10de  NVIDIA Corporation
+	13c2  GM204 [GeForce GTX 970]
+	1c03  GP106 [GeForce GTX 1060 6GB]
+		1043 85b6  DUAL-GTX1060-O6G [GeForce GTX 1060 6GB Dual]
+	1f08  TU106 [GeForce RTX 2060 Rev. A]
+8086  Intel Corporation
+	56a5  DG2 [Arc A380]

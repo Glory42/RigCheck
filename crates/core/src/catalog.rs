@@ -140,14 +140,29 @@ fn unmatched(text: &str, keys: &HashMap<String, usize>) -> Vec<String> {
 }
 
 /// "GTX 970 / RX 480 or Arc A380 (4GB)" → ["GTX 970", "RX 480", "Arc A380"].
+/// A bare model number reuses the previous name's series: "GTX 970 / 1060"
+/// → ["GTX 970", "GTX 1060"].
 fn alternatives(text: &str) -> Vec<String> {
     static ALTERNATIVES: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r"(?i)\s*(?:/|,|;|\||\bor\b)\s*").unwrap());
-    ALTERNATIVES
-        .split(&strip_parentheses(text))
-        .map(|token| token.trim().to_owned())
-        .filter(|token| !token.is_empty())
-        .collect()
+    let mut tokens: Vec<String> = Vec::new();
+    for token in ALTERNATIVES.split(&strip_parentheses(text)) {
+        let token = token.trim();
+        if token.is_empty() {
+            continue;
+        }
+        let series = tokens.last().and_then(|previous: &String| {
+            let digits = previous.find(|c: char| c.is_ascii_digit())?;
+            Some(previous[..digits].to_owned())
+        });
+        match series {
+            Some(series) if token.starts_with(|c: char| c.is_ascii_digit()) => {
+                tokens.push(format!("{series}{token}"));
+            }
+            _ => tokens.push(token.to_owned()),
+        }
+    }
+    tokens
 }
 
 fn lookup(token: &str, keys: &HashMap<String, usize>) -> Option<usize> {

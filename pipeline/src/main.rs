@@ -7,9 +7,9 @@
 //!       Fetches up to <budget> store pages into games.db (created if
 //!       missing): changed or never-fetched ones, most ProtonDB reports first
 //!       when ProtonDB's reports_piiremoved.json is given. Run again to continue.
-//!   rigcheck-pipeline build <games.db> <apps.json> <reports.json> <awacy-games.json>
-//!       Adds uncrawled games by name, ProtonDB tiers and anti-cheat status;
-//!       rebuilds name search.
+//!   rigcheck-pipeline build <games.db> <apps.json> <reports.json> <awacy-games.json> <pci.ids>
+//!       Adds uncrawled games by name, ProtonDB tiers, anti-cheat status and
+//!       GPU PCI IDs; rebuilds name search.
 //!   rigcheck-pipeline validate <games.db>
 //!       Fails (exit 1) if games.db shouldn't be published.
 //!   rigcheck-pipeline report <games.db>
@@ -29,7 +29,7 @@ use rigcheck_pipeline::applist::{self, App};
 use rigcheck_pipeline::crawl::plan;
 use rigcheck_pipeline::ingest::{Ingested, ingest};
 use rigcheck_pipeline::validate::{Rules, validate};
-use rigcheck_pipeline::{awacy, build, deck, protondb, report};
+use rigcheck_pipeline::{awacy, build, deck, pci, protondb, report};
 
 const HARDWARE: &str = include_str!("../../data/hardware.toml");
 
@@ -45,11 +45,12 @@ fn main() -> Result<(), Error> {
             budget.parse()?,
             Some(Path::new(reports)),
         ),
-        ["build", db, apps, reports, awacy] => build_db(
+        ["build", db, apps, reports, awacy, pci_ids] => build_db(
             Path::new(db),
             Path::new(apps),
             Path::new(reports),
             Path::new(awacy),
+            Path::new(pci_ids),
         ),
         ["validate", db] => validate_db(Path::new(db)),
         ["report", db] => report_db(Path::new(db)),
@@ -92,12 +93,24 @@ fn protondb_summaries(reports: &Path) -> Result<HashMap<u32, protondb::Summary>,
     Ok(protondb::summarize(&reports, now()?))
 }
 
-fn build_db(db: &Path, apps: &Path, reports: &Path, awacy: &Path) -> Result<(), Error> {
+fn build_db(
+    db: &Path,
+    apps: &Path,
+    reports: &Path,
+    awacy: &Path,
+    pci_ids: &Path,
+) -> Result<(), Error> {
     let db = GameDb::open(db)?;
     let apps: Vec<App> = serde_json::from_str(&std::fs::read_to_string(apps)?)?;
     let protondb = protondb_summaries(reports)?;
     let anticheat = awacy::statuses(&std::fs::read_to_string(awacy)?)?;
     build::build(&db, &apps, &protondb, &anticheat)?;
+    let pci_ids = pci::ids(&db.catalog()?, &std::fs::read_to_string(pci_ids)?);
+    let pci_rows: Vec<(u16, u16, &str)> = pci_ids
+        .iter()
+        .map(|id| (id.vendor_id, id.device_id, id.name.as_str()))
+        .collect();
+    db.add_pci_ids(&pci_rows)?;
     println!(
         "built: ProtonDB facts for {} games, anti-cheat for {}",
         protondb.len(),

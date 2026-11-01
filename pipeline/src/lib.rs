@@ -7,6 +7,7 @@ pub mod build;
 pub mod crawl;
 pub mod deck;
 pub mod ingest;
+pub mod pci;
 pub mod protondb;
 pub mod report;
 pub mod validate;

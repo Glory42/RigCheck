@@ -278,6 +278,21 @@ impl GameDb {
         Ok(())
     }
 
+    /// Adds PCI IDs to hardware-table GPUs, by entry name. IDs already
+    /// known (e.g. from data/hardware.toml) are kept.
+    pub fn add_pci_ids(&self, ids: &[(u16, u16, &str)]) -> Result<(), Error> {
+        let tx = self.conn.unchecked_transaction()?;
+        for (vendor_id, device_id, name) in ids {
+            tx.execute(
+                "INSERT OR IGNORE INTO gpu_pci_id (vendor_id, device_id, hardware_id)
+                 SELECT ?1, ?2, id FROM hardware WHERE kind = 'gpu' AND name = ?3",
+                params![vendor_id, device_id, name],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
     /// Writes ProtonDB's tier and report count for games already stored.
     /// The report count is also the game's popularity.
     pub fn set_protondb(&self, facts: &[(u32, Option<ProtonTier>, u32)]) -> Result<(), Error> {
