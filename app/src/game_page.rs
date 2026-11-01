@@ -1,0 +1,238 @@
+//! The game page: the verdict, why, and the requirements next to your PC.
+
+use std::path::PathBuf;
+
+use iced::widget::image::Handle;
+use iced::widget::{Column, button, column, container, image, row, scrollable, text};
+use iced::{Center, ContentFit, Element, Fill};
+use rigcheck_core::{Blocker, Component, Level};
+use rigcheck_gamedb::{Game, Tier};
+use rigcheck_steam::InstalledGame;
+
+use crate::i18n::I18n;
+use crate::library::{Status, stamp};
+use crate::style::{BOLD, Colors};
+use crate::{Message, Page};
+
+/// The user's machine as the page shows it.
+pub struct Rig {
+    pub cpu: String,
+    pub gpu: String,
+    pub ram: String,
+    pub vram: String,
+    pub api: String,
+}
+
+pub fn view<'a>(
+    game: &'a InstalledGame,
+    record: Option<&'a Game>,
+    status: &Status,
+    rig: &Rig,
+    cover: Option<&PathBuf>,
+    i18n: &I18n,
+    colors: Colors,
+) -> Element<'a, Message> {
+    let (label, color) = stamp(status, i18n);
+    let stamp = container(text(label).font(BOLD).size(18))
+        .padding([4, 10])
+        .style(move |_| container::Style {
+            text_color: Some(colors.line),
+            ..container::Style::default().background(color)
+        });
+    let back = button(text(i18n.t("game-back")).font(BOLD).size(13))
+        .padding([7, 12])
+        .style(colors.button(false))
+        .on_press(Message::Open(Page::Library));
+    let mut header = row![].spacing(18).align_y(Center);
+    if let Some(cover) = cover {
+        header = header.push(
+            image(Handle::from_path(cover))
+                .width(110)
+                .height(165)
+                .content_fit(ContentFit::Cover),
+        );
+    }
+    header = header.push(
+        column![
+            text(game.name.clone()).font(BOLD).size(24),
+            stamp,
+            text(reason(status, record, i18n)),
+        ]
+        .spacing(10),
+    );
+
+    let mut page = column![back, header].spacing(18);
+    if let Some(record) = record {
+        page = page.push(requirements(record, status, rig, i18n, colors));
+        page = page.push(linux(record, i18n, colors));
+    }
+    scrollable(page.padding([0, 6])).into()
+}
+
+/// One sentence on why the game got its stamp.
+fn reason(status: &Status, record: Option<&Game>, i18n: &I18n) -> String {
+    let verdict = match status {
+        Status::Verdict(verdict) => verdict,
+        Status::NoData => return i18n.t("why-no-data"),
+        Status::Checking => return i18n.t("detecting-hardware"),
+    };
+    let part = |component| i18n.t(part_id(component));
+    match (verdict.overall, verdict.bottleneck, verdict.blocker) {
+        (Level::Blocked, _, Some(Blocker::Proton)) => i18n.t("why-blocked-proton"),
+        (Level::Blocked, _, _) => {
+            let name = record
+                .and_then(|game| game.anticheat_name.clone())
+                .unwrap_or_else(|| "Anti-cheat".to_owned());
+            i18n.t_with("why-blocked-anticheat", &[("name", &name)])
+        }
+        (Level::Below, Some(component), _) => {
+            i18n.t_with("why-below", &[("part", &part(component))])
+        }
+        (Level::Minimum, Some(component), _) => {
+            i18n.t_with("why-minimum", &[("part", &part(component))])
+        }
+        (Level::Recommended, _, _) => i18n.t("why-recommended"),
+        _ => i18n.t("why-unknown"),
+    }
+}
+
+/// A size as Steam writes it: "256 MB", "8 GB", "1.5 GB".
+fn size(mb: u32) -> String {
+    match mb {
+        mb if mb < 1024 => format!("{mb} MB"),
+        mb if mb % 1024 == 0 => format!("{} GB", mb / 1024),
+        mb => format!("{:.1} GB", f64::from(mb) / 1024.0),
+    }
+}
+
+/// Reads one field of a tier as display text.
+type TierField = fn(&Tier) -> Option<String>;
+
+/// Your PC next to each tier, with the bottleneck row highlighted.
+fn requirements<'a>(
+    game: &'a Game,
+    status: &Status,
+    rig: &Rig,
+    i18n: &I18n,
+    colors: Colors,
+) -> Element<'a, Message> {
+    let bottleneck = match status {
+        Status::Verdict(verdict) => verdict.bottleneck,
+        _ => None,
+    };
+    let (minimum, recommended) = (game.minimum.as_ref(), game.recommended.as_ref());
+    let tier_text = |tier: Option<&Tier>, pick: TierField| {
+        tier.and_then(pick).unwrap_or_else(|| "—".to_owned())
+    };
+    let rows: [(Component, String, TierField); 5] = [
+        (Component::Cpu, rig.cpu.clone(), |t| t.cpu_text.clone()),
+        (Component::Gpu, rig.gpu.clone(), |t| t.gpu_text.clone()),
+        (Component::Ram, rig.ram.clone(), |t| t.ram_mb.map(size)),
+        (Component::Vram, rig.vram.clone(), |t| t.vram_mb.map(size)),
+        (Component::GraphicsApi, rig.api.clone(), |t| {
+            t.directx.map(|dx| format!("DirectX {dx}"))
+        }),
+    ];
+
+    let cell = |content: String, bold: bool, width: f32| {
+        let label = text(content).size(13);
+        container(if bold { label.font(BOLD) } else { label })
+            .padding([8, 10])
+            .width(iced::Length::FillPortion(width as u16))
+    };
+    let mut table = Column::new().push(
+        row![
+            cell(String::new(), true, 2.0),
+            cell(i18n.t("game-your-pc"), true, 3.0),
+            cell(i18n.t("game-minimum"), true, 4.0),
+            cell(i18n.t("game-recommended"), true, 4.0),
+        ]
+        .width(Fill),
+    );
+    for (component, yours, pick) in rows {
+        let highlight = bottleneck == Some(component);
+        let line = row![
+            cell(i18n.t(row_id(component)), true, 2.0),
+            cell(yours, highlight, 3.0),
+            cell(tier_text(minimum, pick), false, 4.0),
+            cell(tier_text(recommended, pick), false, 4.0),
+        ]
+        .width(Fill);
+        table = table.push(container(line).style(move |_| {
+            let background = if highlight {
+                colors.accent
+            } else {
+                colors.panel
+            };
+            container::Style {
+                text_color: Some(if highlight {
+                    colors.on_accent
+                } else {
+                    colors.text
+                }),
+                ..container::Style::default().background(background)
+            }
+        }));
+    }
+    container(table)
+        .padding(3)
+        .width(Fill)
+        .style(move |_| colors.boxed(colors.panel))
+        .into()
+}
+
+/// ProtonDB, anti-cheat and Steam Deck boxes.
+fn linux<'a>(game: &'a Game, i18n: &I18n, colors: Colors) -> Element<'a, Message> {
+    let proton = if game.linux.native {
+        i18n.t("game-native-linux")
+    } else {
+        game.linux
+            .protondb
+            .map(|tier| format!("{tier:?}").to_uppercase())
+            .unwrap_or_else(|| "—".to_owned())
+    };
+    let anticheat = match (&game.anticheat_name, game.linux.anticheat) {
+        (Some(name), Some(status)) => format!("{name}: {}", format!("{status:?}").to_uppercase()),
+        _ => i18n.t("game-none"),
+    };
+    let deck = game
+        .deck
+        .clone()
+        .map(|deck| deck.to_uppercase())
+        .unwrap_or_else(|| "—".to_owned());
+    let tile = |label: String, value: String| {
+        container(column![text(label).size(11).font(BOLD), text(value).font(BOLD)].spacing(4))
+            .padding(12)
+            .width(Fill)
+            .style(move |_| colors.boxed(colors.panel))
+    };
+    row![
+        tile(i18n.t("game-protondb"), proton),
+        tile(i18n.t("game-anticheat"), anticheat),
+        tile(i18n.t("game-deck"), deck),
+    ]
+    .spacing(16)
+    .into()
+}
+
+fn part_id(component: Component) -> &'static str {
+    match component {
+        Component::Cpu => "part-cpu",
+        Component::Gpu => "part-gpu",
+        Component::Ram => "part-ram",
+        Component::Vram => "part-vram",
+        Component::Storage => "part-storage",
+        Component::GraphicsApi => "part-api",
+    }
+}
+
+fn row_id(component: Component) -> &'static str {
+    match component {
+        Component::Cpu => "row-cpu",
+        Component::Gpu => "row-gpu",
+        Component::Ram => "row-ram",
+        Component::Vram => "row-vram",
+        Component::Storage => "row-storage",
+        Component::GraphicsApi => "row-api",
+    }
+}

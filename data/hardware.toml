@@ -1,0 +1,457 @@
+# Seed hardware table (ROADMAP Phase 3). Hand-written.
+#
+# score: rough relative performance, hand-estimated. GPUs: GeForce GTX 1060
+# 6GB = 100. CPUs: Core i5-4460 = 100. Compare only within CPUs or GPUs.
+# Phase 4 replaces these with Blender Open Data scores.
+#
+# Names are matched after normalizing (lowercase, brand words like "NVIDIA",
+# "GeForce", "Intel", "Core" dropped, punctuation removed), so "Intel I5 4690"
+# and "Core i5-4690" are the same key. `aliases` add extra spellings.
+# pci: "vendor:device" IDs, listed only where known for sure.
+
+# ── GPUs: NVIDIA ─────────────────────────────────────────────────────────
+[[gpu]]
+name = "GeForce GTX 660"
+vendor = "nvidia"
+score = 38
+vram_mb = 2048
+
+[[gpu]]
+name = "GeForce GTS 450"
+vendor = "nvidia"
+score = 18
+vram_mb = 1024
+
+[[gpu]]
+name = "GeForce GTX 750 Ti"
+vendor = "nvidia"
+score = 35
+vram_mb = 2048
+pci = ["10de:1380"]
+
+[[gpu]]
+name = "GeForce GTX 760"
+vendor = "nvidia"
+score = 48
+vram_mb = 2048
+
+[[gpu]]
+name = "GeForce GTX 780"
+vendor = "nvidia"
+score = 70
+vram_mb = 3072
+
+[[gpu]]
+name = "GeForce GTX 960"
+vendor = "nvidia"
+score = 58
+vram_mb = 2048
+
+[[gpu]]
+name = "GeForce GTX 970"
+vendor = "nvidia"
+score = 83
+vram_mb = 4096
+pci = ["10de:13c2"]
+
+[[gpu]]
+name = "GeForce GTX 1050"
+vendor = "nvidia"
+score = 45
+vram_mb = 2048
+pci = ["10de:1c81"]
+
+[[gpu]]
+name = "GeForce GTX 1050 Ti"
+vendor = "nvidia"
+score = 55
+vram_mb = 4096
+pci = ["10de:1c82"]
+
+[[gpu]]
+name = "GeForce GTX 1060 3GB"
+vendor = "nvidia"
+score = 92
+vram_mb = 3072
+pci = ["10de:1c02"]
+
+[[gpu]]
+name = "GeForce GTX 1060 6GB"
+vendor = "nvidia"
+score = 100
+vram_mb = 6144
+pci = ["10de:1c03"]
+aliases = ["GTX 1060"]
+
+[[gpu]]
+name = "GeForce GTX 1070"
+vendor = "nvidia"
+score = 130
+vram_mb = 8192
+pci = ["10de:1b81"]
+
+[[gpu]]
+name = "GeForce GTX 1070 Ti"
+vendor = "nvidia"
+score = 145
+vram_mb = 8192
+
+[[gpu]]
+name = "GeForce GTX 1080"
+vendor = "nvidia"
+score = 160
+vram_mb = 8192
+pci = ["10de:1b80"]
+
+[[gpu]]
+name = "GeForce GTX 1650"
+vendor = "nvidia"
+score = 70
+vram_mb = 4096
+pci = ["10de:1f82"]
+
+[[gpu]]
+name = "GeForce GTX 1650 Mobile"
+vendor = "nvidia"
+score = 62
+vram_mb = 4096
+pci = ["10de:1f91"]
+
+[[gpu]]
+name = "GeForce GTX 1660 Super"
+vendor = "nvidia"
+score = 115
+vram_mb = 6144
+pci = ["10de:21c4"]
+
+[[gpu]]
+name = "GeForce RTX 2060"
+vendor = "nvidia"
+score = 140
+vram_mb = 6144
+
+[[gpu]]
+name = "GeForce RTX 2060 Super"
+vendor = "nvidia"
+score = 160
+vram_mb = 8192
+aliases = ["2060 Super"]
+
+[[gpu]]
+name = "GeForce RTX 2070"
+vendor = "nvidia"
+score = 170
+vram_mb = 8192
+
+[[gpu]]
+name = "GeForce RTX 3060"
+vendor = "nvidia"
+score = 175
+vram_mb = 12288
+pci = ["10de:2503", "10de:2504"]
+
+[[gpu]]
+name = "GeForce RTX 3070"
+vendor = "nvidia"
+score = 260
+vram_mb = 8192
+pci = ["10de:2484"]
+
+[[gpu]]
+name = "GeForce RTX 3080"
+vendor = "nvidia"
+score = 330
+vram_mb = 10240
+
+[[gpu]]
+name = "GeForce RTX 4060"
+vendor = "nvidia"
+score = 210
+vram_mb = 8192
+
+[[gpu]]
+name = "GeForce RTX 4070"
+vendor = "nvidia"
+score = 300
+vram_mb = 12288
+
+# ── GPUs: AMD ────────────────────────────────────────────────────────────
+[[gpu]]
+name = "Radeon HD 6850"
+vendor = "amd"
+score = 30
+vram_mb = 1024
+
+[[gpu]]
+name = "Radeon HD 6950"
+vendor = "amd"
+score = 40
+vram_mb = 2048
+
+[[gpu]]
+name = "Radeon HD 7950"
+vendor = "amd"
+score = 50
+vram_mb = 3072
+
+[[gpu]]
+name = "Radeon R9 290"
+vendor = "amd"
+score = 85
+vram_mb = 4096
+
+[[gpu]]
+name = "Radeon RX 470"
+vendor = "amd"
+score = 80
+vram_mb = 4096
+
+[[gpu]]
+name = "Radeon RX 480"
+vendor = "amd"
+score = 95
+vram_mb = 4096
+
+[[gpu]]
+name = "Radeon RX 570"
+vendor = "amd"
+score = 85
+vram_mb = 4096
+
+[[gpu]]
+name = "Radeon RX 580"
+vendor = "amd"
+score = 100
+vram_mb = 4096
+
+[[gpu]]
+name = "Radeon RX 5700 XT"
+vendor = "amd"
+score = 210
+vram_mb = 8192
+
+[[gpu]]
+name = "Radeon RX 6600"
+vendor = "amd"
+score = 190
+vram_mb = 8192
+pci = ["1002:73ff"]
+
+[[gpu]]
+name = "Radeon RX 6700 XT"
+vendor = "amd"
+score = 260
+vram_mb = 12288
+
+[[gpu]]
+name = "Radeon Vega 7 (Ryzen 5000/7000U)"
+vendor = "amd"
+score = 32
+pci = ["1002:15e7"]
+
+[[gpu]]
+name = "Steam Deck GPU (Van Gogh)"
+vendor = "amd"
+score = 40
+pci = ["1002:163f"]
+
+# ── GPUs: Intel ──────────────────────────────────────────────────────────
+[[gpu]]
+name = "HD Graphics 4000"
+vendor = "intel"
+score = 8
+
+[[gpu]]
+name = "UHD Graphics 620"
+vendor = "intel"
+score = 14
+pci = ["8086:5917"]
+aliases = ["Intel HD 620"]
+
+[[gpu]]
+name = "UHD Graphics 630"
+vendor = "intel"
+score = 15
+pci = ["8086:3e9b", "8086:3e92"]
+aliases = ["Intel HD 630"]
+
+[[gpu]]
+name = "Arc A380"
+vendor = "intel"
+score = 60
+vram_mb = 6144
+
+[[gpu]]
+name = "Arc A580"
+vendor = "intel"
+score = 150
+vram_mb = 8192
+
+[[gpu]]
+name = "Arc A750"
+vendor = "intel"
+score = 175
+vram_mb = 8192
+
+# ── CPUs: Intel ──────────────────────────────────────────────────────────
+[[cpu]]
+name = "Core 2 Duo"
+vendor = "intel"
+score = 25
+
+[[cpu]]
+name = "Core i5-750"
+vendor = "intel"
+score = 60
+
+[[cpu]]
+name = "Core i7-860"
+vendor = "intel"
+score = 70
+
+[[cpu]]
+name = "Core i3-2100"
+vendor = "intel"
+score = 55
+
+[[cpu]]
+name = "Core i5-2500K"
+vendor = "intel"
+score = 85
+
+[[cpu]]
+name = "Core i5-3570K"
+vendor = "intel"
+score = 95
+
+[[cpu]]
+name = "Core i5-4460"
+vendor = "intel"
+score = 100
+
+[[cpu]]
+name = "Core i5-4690"
+vendor = "intel"
+score = 105
+
+[[cpu]]
+name = "Core i7-4770"
+vendor = "intel"
+score = 125
+
+[[cpu]]
+name = "Core i5-6400"
+vendor = "intel"
+score = 100
+
+[[cpu]]
+name = "Core i7-6700"
+vendor = "intel"
+score = 140
+
+[[cpu]]
+name = "Core i5-7400"
+vendor = "intel"
+score = 110
+
+[[cpu]]
+name = "Core i5-7600K"
+vendor = "intel"
+score = 130
+
+[[cpu]]
+name = "Core i5-8250U"
+vendor = "intel"
+score = 90
+
+[[cpu]]
+name = "Core i5-8400"
+vendor = "intel"
+score = 150
+
+[[cpu]]
+name = "Core i7-8700K"
+vendor = "intel"
+score = 190
+
+[[cpu]]
+name = "Core i7-9750H"
+vendor = "intel"
+score = 175
+
+[[cpu]]
+name = "Core i5-10400"
+vendor = "intel"
+score = 175
+
+[[cpu]]
+name = "Core i5-12400"
+vendor = "intel"
+score = 240
+
+# ── CPUs: AMD ────────────────────────────────────────────────────────────
+[[cpu]]
+name = "Phenom II X4 960T"
+vendor = "amd"
+score = 60
+
+[[cpu]]
+name = "FX-4100"
+vendor = "amd"
+score = 50
+
+[[cpu]]
+name = "FX-6300"
+vendor = "amd"
+score = 75
+
+[[cpu]]
+name = "FX-8350"
+vendor = "amd"
+score = 95
+
+[[cpu]]
+name = "Ryzen 3 1200"
+vendor = "amd"
+score = 95
+
+[[cpu]]
+name = "Ryzen 3 3300X"
+vendor = "amd"
+score = 160
+
+[[cpu]]
+name = "Ryzen 5 1600"
+vendor = "amd"
+score = 150
+
+[[cpu]]
+name = "Ryzen 5 2600"
+vendor = "amd"
+score = 165
+
+[[cpu]]
+name = "Ryzen 5 3600"
+vendor = "amd"
+score = 200
+aliases = ["r5 3600"]
+
+[[cpu]]
+name = "Ryzen 5 5600X"
+vendor = "amd"
+score = 250
+
+[[cpu]]
+name = "Ryzen 7 5800X3D"
+vendor = "amd"
+score = 280
+
+[[cpu]]
+name = "Ryzen 5 7530U"
+vendor = "amd"
+score = 190
+
+[[cpu]]
+name = "Custom APU 0405 (Steam Deck)"
+vendor = "amd"
+score = 110

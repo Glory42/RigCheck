@@ -149,8 +149,8 @@ rigcheck/
 ├── website/                   # Astro showcase site (Phase 9, after v1.0)
 ├── assets/brand/              # pixel-art icon and the scripts that draw it
 ├── data/                      # hand-maintained, version-controlled inputs
-│   ├── hardware_aliases.toml  # "GTX 1060 6GB" → canonical hardware ID
-│   ├── hardware_overrides.toml# manual scores for hardware missing from benchmarks
+│   ├── hardware.toml          # known CPUs/GPUs: scores, aliases ("GTX 1060" → GTX 1060 6GB), PCI IDs
+│   ├── seed/games.toml        # the seed games.db's games and Linux facts (until Phase 4)
 │   └── fixtures/              # real requirement strings + fake /proc, /sys trees for tests
 ├── .github/workflows/
 │   ├── ci.yml                 # lint + test on every PR
@@ -246,6 +246,7 @@ CREATE TABLE requirement_hardware (
   app_id      INTEGER NOT NULL,
   tier        TEXT NOT NULL,
   kind        TEXT NOT NULL CHECK (kind IN ('cpu', 'gpu')),
+  position    INTEGER NOT NULL,         -- order on the store page
   hardware_id INTEGER NOT NULL REFERENCES hardware(id)
 );
 
@@ -324,7 +325,7 @@ CREATE TABLE gpu_pci_id (
 2. Split alternatives on `/`, `or`, `,`, `|`.
 3. Normalize each token: lowercase, strip marketing words ("NVIDIA GeForce", "or better", "equivalent", "series"), and keep the VRAM hint ("2GB").
 4. Look up in `hardware_alias`. Exact match first, then fuzzy matching with a conservative threshold.
-5. Anything unmatched → record it as unknown and keep the raw text. In the pipeline, log unmatched tokens to a report so `data/hardware_aliases.toml` can grow over time.
+5. Anything unmatched → record it as unknown and keep the raw text. In the pipeline, log unmatched tokens to a report so the aliases in `data/hardware.toml` can grow over time.
 
 ### 8.3 Comparing
 - **CPU/GPU:** the requirement is met if `user.score >= required.score`. When several alternatives are listed ("i5-4460 or FX-6300"), compare against the **same-vendor** alternative if there is one, otherwise the lowest-scored one. *(This is a decision to revisit with real data.)*
@@ -389,9 +390,9 @@ Each phase ends with a usable, tested result. Check items off as you go.
 - [x] Parse `libraryfolders.vdf` → all library folders (including other drives)
 - [x] Parse `appmanifest_*.acf` → app ID, name, install size, folder
 - [x] Filter out non-games (Proton versions, Steam Linux Runtime, Steamworks redistributables)
-- [ ] Load installed games into the app with an iced `Task`, so the scan never blocks the UI
-- [ ] `images` module: download cover art from the Steam CDN, store it in the cache dir, show it with iced's `image` widget
-- [ ] Library page: virtualized grid with cover art, name and search box
+- [x] Load installed games into the app with an iced `Task`, so the scan never blocks the UI
+- [x] Cover art from Steam's own cache on disk (`steam::cover_art`), shown with iced's `image` widget. Nothing is downloaded; CDN downloads for uncached games move to Phase 5
+- [x] Library page: grid of cover tiles with name, verdict stamp and search box (a plain grid is fast enough for an installed library; the Catalog's 100k games get virtualization in Phase 5)
 - [x] Tests with fixture Steam directories
 
 **Done when:** the app shows your installed Steam games with cover art, including games on secondary drives.
@@ -401,7 +402,7 @@ Each phase ends with a usable, tested result. Check items off as you go.
 - [x] Handle hybrid GPUs, iGPU-only systems, `nouveau`, and a missing `vulkaninfo`
 - [x] Fixture tests: fake `/proc` + `/sys` trees for an AMD desktop, an NVIDIA desktop, an Intel laptop, a hybrid laptop and a Steam Deck
 - [x] My Hardware page with a "Copy as text" button (useful for asking for help; copying stays local)
-- [ ] Manual hardware override UI (`Hardware::with_overrides` is done; the picker needs the hardware list from Phase 3)
+- [x] Manual hardware override UI: type to pick a GPU/CPU from the hardware table on My Rig; saved, and verdicts use it
 
 **Done when:** the hardware page is correct on your machine and every fixture test passes.
 
@@ -409,11 +410,11 @@ Each phase ends with a usable, tested result. Check items off as you go.
 Build this test-first. It's pure logic with no I/O, so it's the easiest part to get right with tests.
 - [x] `core` types: `Requirement`, `HardwareRef`, `Verdict`, `Level`, `Confidence`
 - [x] Requirement parser (§8.2 step 1): fields, RAM/VRAM/storage/DirectX numbers, with a fixture corpus of **100+ real requirement strings** (145 games, 268 tiers, 92.9% fully parsed) and snapshot tests (`insta`)
-- [ ] Match CPU/GPU text to the hardware table (§8.2 steps 2–5): split alternatives, normalize, alias lookup
+- [x] Match CPU/GPU text to the hardware table (§8.2 steps 2–5): split alternatives, normalize, alias lookup (fuzzy matching later)
 - [x] Matcher (§8.3), with tests covering every verdict level and edge case
-- [ ] Hand-write a **seed `games.db`** with ~20 games covering the range: native Linux, Proton Platinum, anti-cheat denied, DX12-heavy, ancient, brand new, missing requirements
-- [ ] Seed hardware table with ~50 common CPUs/GPUs, using manual scores for now
-- [ ] Verdict badges on the Library page, and a first version of the game page
+- [x] Hand-write a **seed `games.db`** with ~20 games covering the range: native Linux, Proton Platinum, anti-cheat denied, DX12-heavy, ancient, brand new, missing requirements (`data/seed/games.toml`, 22 games)
+- [x] Seed hardware table with ~50 common CPUs/GPUs, using manual scores for now (`data/hardware.toml`, ~70 entries)
+- [x] Verdict badges on the Library page, and a first version of the game page
 
 **Done when:** your installed games that appear in the seed DB show correct verdicts, and the parser corpus is ≥ 90% parsed.
 
@@ -424,9 +425,9 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 - [ ] App list: fetch every app → keep games and drop DLC, soundtracks, tools and demos
 - [ ] Crawler: rate-limited (stay under the limit), retries with backoff, **resumable**. State lives in the previous `games.db` (`updated_at`, `requirements_status`), so each run continues where the last one stopped
 - [ ] Crawl priority: popular first (by ProtonDB report count / most-played), then new releases, then everything else
-- [ ] Enrich: ProtonDB dump, AreWeAntiCheatYet, Deck status, hardware scores (Blender Open Data + `hardware_overrides.toml`), PCI IDs
+- [ ] Enrich: ProtonDB dump, AreWeAntiCheatYet, Deck status, hardware scores (Blender Open Data, with `data/hardware.toml` for parts it lacks), PCI IDs
 - [ ] `validate`: schema check, size budget, sanity checks (e.g. top 100 games must have parsed requirements)
-- [ ] `report`: unmatched hardware tokens sorted by frequency, used to grow `hardware_aliases.toml`
+- [ ] `report`: unmatched hardware tokens sorted by frequency, used to grow the aliases in `data/hardware.toml`
 - [ ] `build-db.yml`: daily cron → download the previous release → run the pipeline (stop well under the 6-hour job limit) → publish `games.db.zst` + `manifest.json` to a rolling `db-latest` release
 - [ ] Keep scheduled workflows alive: the run commits an updated `data/db-version.json`, since GitHub disables cron in repos inactive for 60 days
 - [ ] Optional: run the first full crawl locally to get past the multi-day backlog faster
@@ -440,6 +441,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 - [ ] Full game page: per-component table, bottleneck, Linux status, raw requirement text and a link to the Steam store page
 - [ ] `fetch` module: live `appdetails` lookup for games missing from `games.db` or with `not_crawled` status → parse with `core` → store in `fetched.db`
 - [ ] Client-side rate limiting and a clear "couldn't reach Steam" state
+- [ ] Cover art from the Steam CDN (via `crates/net`, cached in `~/.cache/rigcheck/images/`) for games Steam hasn't cached locally
 
 **Done when:** you can search any Steam game, open it and get a verdict, including games the pipeline hasn't crawled yet.
 
@@ -507,7 +509,7 @@ A static showcase page. It describes the app and sends people to GitHub, Flathub
 |---|---|---|
 | Steam changes or blocks the unofficial `appdetails` endpoint | Pipeline and live lookups break | Cache aggressively, use PCGamingWiki as a backup, and keep the pipeline's sources modular |
 | Requirement parsing is inaccurate | Wrong verdicts erode trust | Show ❓ instead of guessing, use a large fixture corpus, track parse-rate metrics in `report`, show raw text on every game page |
-| Hardware scores missing for old or obscure parts | Unknown verdicts | Manual overrides in `hardware_overrides.toml`, fall back to a release-year/tier estimate marked "low confidence" |
+| Hardware scores missing for old or obscure parts | Unknown verdicts | Manual scores in `data/hardware.toml`, fall back to a release-year/tier estimate marked "low confidence" |
 | iced is pre-1.0 | Breaking changes between releases, weaker screen-reader support than GTK or the web | Pin the version, keep `app/` thin so upgrades touch little code, upgrade on purpose rather than automatically |
 | GPU driver problems (no Vulkan, old drivers) | Blank or crashing window for some users | iced falls back to software rendering (tiny-skia). Document `ICED_BACKEND=tiny-skia` and test on NVIDIA every release |
 | Scheduled workflow auto-disabled | Database goes stale | The pipeline commits a version file each run, and a "DB older than 7 days" warning appears in the app |

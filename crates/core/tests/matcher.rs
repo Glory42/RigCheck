@@ -387,3 +387,20 @@ fn the_nouveau_driver_adds_a_warning_without_changing_the_level() {
     assert_eq!(verdict.overall, Level::Recommended);
     assert_eq!(verdict.warnings, [Warning::Nouveau]);
 }
+
+/// ROADMAP §2: Minimum means "at least one falls short of recommended". With no
+/// recommended tier there's nothing to fall short of.
+#[test]
+fn meeting_the_only_tier_listed_is_recommended() {
+    let game = GameRequirements {
+        minimum: Some(Requirement {
+            ram_mb: Some(256),
+            ..Requirement::default()
+        }),
+        recommended: None,
+    };
+
+    let verdict = evaluate(&game, &with_ram(15377), &LinuxInfo::default());
+
+    assert_eq!(verdict.overall, Level::Recommended);
+}

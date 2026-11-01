@@ -15,6 +15,9 @@ pub struct Settings {
     /// `None` follows the system language. Files saved before languages
     /// existed lack this field, which serde reads as `None`.
     pub language: Option<Language>,
+    /// Hardware-table names the user picked instead of what was detected.
+    pub gpu_override: Option<String>,
+    pub cpu_override: Option<String>,
 }
 
 /// The app's color theme, picked under Settings > Appearance.

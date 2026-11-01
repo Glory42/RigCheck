@@ -1,7 +1,7 @@
 //! The My Rig page: what rigcheck detected about this machine, drawn as
 //! design D's "character sheet".
 
-use iced::widget::{Column, button, column, container, row, scrollable, space, text};
+use iced::widget::{Column, button, column, container, row, space, text};
 use iced::{Center, Element, Fill};
 use rigcheck_hardware::{Hardware, Vram, gib};
 
@@ -84,8 +84,7 @@ pub fn view<'a>(hardware: &'a Hardware, i18n: &I18n, colors: Colors) -> Element<
                 .style(move |_| colors.boxed(colors.panel2)),
         );
     }
-    // Room on the right and bottom so hard shadows aren't clipped.
-    scrollable(page.padding([0, 6])).into()
+    page.into()
 }
 
 /// One line of the sheet: a bold label cell and its value.

@@ -76,3 +76,24 @@ fn is_steam_tool(name: &str) -> bool {
         || name.starts_with("Steam Linux Runtime")
         || name == "Steamworks Common Redistributables"
 }
+
+/// Steam's cached cover art for an app (`appcache/librarycache/<id>/library_600x900.jpg`,
+/// sometimes one folder deeper), so covers show without any download.
+pub fn cover_art(home: &Path, app_id: u32) -> Option<PathBuf> {
+    const FILE: &str = "library_600x900.jpg";
+    INSTALL_DIRS.iter().find_map(|install| {
+        let dir = home
+            .join(install)
+            .join("appcache/librarycache")
+            .join(app_id.to_string());
+        let direct = dir.join(FILE);
+        if direct.is_file() {
+            return Some(direct);
+        }
+        std::fs::read_dir(&dir)
+            .ok()?
+            .flatten()
+            .map(|entry| entry.path().join(FILE))
+            .find(|path| path.is_file())
+    })
+}

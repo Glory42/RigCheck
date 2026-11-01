@@ -29,7 +29,8 @@ pub struct HardwareRef {
     pub score: u32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Vendor {
     Amd,
     Intel,
@@ -255,6 +256,8 @@ fn compare(have: Option<u32>, minimum: Option<u32>, recommended: Option<u32>) ->
         (None, None) => None,
         (_, Some(recommended)) if have >= recommended => Some(Level::Recommended),
         (Some(minimum), _) if have < minimum => Some(Level::Below),
+        // Meets the only tier listed: nothing to fall short of (ROADMAP §2).
+        (Some(_), None) => Some(Level::Recommended),
         // Meets minimum, or misses a recommended tier that's the only one listed.
         _ => Some(Level::Minimum),
     }
