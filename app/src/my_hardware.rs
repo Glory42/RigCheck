@@ -1,19 +1,20 @@
-//! The My Hardware page: what rigcheck detected about this machine.
+//! The My Rig page: what rigcheck detected about this machine, drawn as
+//! design D's "character sheet".
 
-use iced::Element;
-use iced::widget::{Column, button, column, row, scrollable, text};
+use iced::widget::{Column, button, column, container, row, scrollable, space, text};
+use iced::{Center, Element, Fill};
 use rigcheck_hardware::{Hardware, Vram, gib};
 
 use crate::Message;
+use crate::style::{BOLD, Colors};
 
-pub fn view(hardware: &Hardware) -> Element<'_, Message> {
+pub fn view(hardware: &Hardware, colors: Colors) -> Element<'_, Message> {
     let unknown = || "Unknown".to_owned();
-    let mut rows = Column::new().spacing(8);
-    rows = rows.push(field("CPU", hardware.cpu.clone().unwrap_or_else(unknown)));
-    rows = rows.push(field(
-        "RAM",
-        hardware.ram_bytes.map(gib).unwrap_or_else(unknown),
-    ));
+    let mut rows = vec![
+        ("CPU", hardware.cpu.clone().unwrap_or_else(unknown)),
+        ("RAM", hardware.ram_bytes.map(gib).unwrap_or_else(unknown)),
+    ];
+    let mut notes = Vec::new();
     for gpu in &hardware.gpus {
         let name = gpu.vulkan.as_ref().map_or_else(
             || format!("Unknown GPU [{:04x}:{:04x}]", gpu.vendor_id, gpu.device_id),
@@ -24,45 +25,63 @@ pub fn view(hardware: &Hardware) -> Element<'_, Message> {
             Vram::Dedicated(bytes) => format!("{} VRAM", gib(bytes)),
             Vram::Unknown => "VRAM unknown".to_owned(),
         };
-        rows = rows.push(field("GPU", name));
-        rows = rows.push(field("", memory));
+        rows.push(("GPU", name));
+        rows.push(("VIDEO MEMORY", memory));
         if let Some(vulkan) = &gpu.vulkan {
-            rows = rows.push(field(
-                "",
+            rows.push((
+                "VULKAN",
                 format!("Vulkan {}, {}", vulkan.api_version, vulkan.driver),
             ));
         }
         if gpu.kernel_driver.as_deref() == Some("nouveau") {
-            rows = rows.push(text(
-                "This GPU uses the open-source nouveau driver, which runs most 3D games poorly. Install NVIDIA's driver to play.",
-            ));
+            notes.push("This GPU uses the open-source nouveau driver, which runs most 3D games poorly. Install NVIDIA's driver to play.");
         }
     }
     if hardware.gpus.iter().any(|gpu| gpu.vulkan.is_none()) {
-        rows = rows.push(text(
-            "Vulkan wasn't detected. Install vulkan-tools (it provides vulkaninfo) and restart rigcheck.",
-        ));
+        notes.push("Vulkan wasn't detected. Install vulkan-tools (it provides vulkaninfo) and restart rigcheck.");
     }
-    rows = rows.push(field(
-        "Distro",
-        hardware.distro.clone().unwrap_or_else(unknown),
-    ));
-    rows = rows.push(field(
-        "Kernel",
-        hardware.kernel.clone().unwrap_or_else(unknown),
-    ));
+    rows.push(("DISTRO", hardware.distro.clone().unwrap_or_else(unknown)));
+    rows.push(("KERNEL", hardware.kernel.clone().unwrap_or_else(unknown)));
 
     let header = row![
-        text("My Hardware").size(24),
-        button("Copy as text").on_press(Message::CopyHardwareReport),
+        text("MY RIG").font(BOLD).size(20),
+        space::horizontal(),
+        button(text("COPY AS TEXT").font(BOLD).size(13))
+            .padding([7, 12])
+            .style(colors.button(true))
+            .on_press(Message::CopyHardwareReport),
     ]
-    .spacing(16);
-    scrollable(column![header, rows].spacing(16).padding(24)).into()
+    .align_y(Center);
+    let sheet = container(Column::with_children(
+        rows.into_iter()
+            .map(|(label, value)| sheet_row(label, value, colors)),
+    ))
+    .padding(3) // the outline's width, so cells don't paint over it
+    .style(move |_| colors.boxed(colors.panel));
+
+    let mut page = column![header, sheet].spacing(18);
+    for note in notes {
+        page = page.push(
+            container(text(note))
+                .padding(12)
+                .width(Fill)
+                .style(move |_| colors.boxed(colors.panel2)),
+        );
+    }
+    // Room on the right and bottom so hard shadows aren't clipped.
+    scrollable(page.padding([0, 6])).into()
 }
 
-/// A label and its value on one line.
-fn field(label: &'static str, value: String) -> Element<'static, Message> {
-    row![text(label).width(80), text(value)].spacing(12).into()
+/// One line of the sheet: a bold label cell and its value.
+fn sheet_row(label: &'static str, value: String, colors: Colors) -> Element<'static, Message> {
+    row![
+        container(text(label).font(BOLD))
+            .width(170)
+            .padding([10, 14])
+            .style(move |_| container::Style::default().background(colors.panel2)),
+        container(text(value)).padding([10, 14]).width(Fill),
+    ]
+    .into()
 }
 
 #[cfg(test)]
@@ -93,7 +112,10 @@ mod tests {
     #[test]
     fn shows_the_detected_hardware() {
         let hardware = laptop();
-        let mut ui = iced_test::simulator(super::view(&hardware));
+        let mut ui = iced_test::simulator(super::view(
+            &hardware,
+            crate::settings::Appearance::Paper.colors(),
+        ));
 
         for value in [
             "AMD Ryzen 5 7530U with Radeon Graphics",
@@ -111,7 +133,10 @@ mod tests {
         let mut hardware = laptop();
         hardware.gpus[0].vulkan = None;
         hardware.gpus[0].vram = Vram::Unknown;
-        let mut ui = iced_test::simulator(super::view(&hardware));
+        let mut ui = iced_test::simulator(super::view(
+            &hardware,
+            crate::settings::Appearance::Paper.colors(),
+        ));
 
         for value in [
             "Unknown GPU [1002:15e7]",
@@ -126,7 +151,10 @@ mod tests {
     fn warns_about_the_nouveau_driver() {
         let mut hardware = laptop();
         hardware.gpus[0].kernel_driver = Some("nouveau".to_owned());
-        let mut ui = iced_test::simulator(super::view(&hardware));
+        let mut ui = iced_test::simulator(super::view(
+            &hardware,
+            crate::settings::Appearance::Paper.colors(),
+        ));
 
         assert!(ui.find(NOUVEAU_WARNING).is_ok());
     }
@@ -134,7 +162,10 @@ mod tests {
     #[test]
     fn no_nouveau_warning_with_other_drivers() {
         let hardware = laptop();
-        let mut ui = iced_test::simulator(super::view(&hardware));
+        let mut ui = iced_test::simulator(super::view(
+            &hardware,
+            crate::settings::Appearance::Paper.colors(),
+        ));
 
         assert!(ui.find(NOUVEAU_WARNING).is_err());
     }

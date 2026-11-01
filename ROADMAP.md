@@ -54,6 +54,7 @@ These are the rules every decision below follows. If a feature breaks one of the
 | **Catalog** | Instant search across every game on Steam, owned or not |
 | **Game page** | Per-component verdict (CPU, GPU, RAM, VRAM, storage, graphics API), the bottleneck component, ProtonDB rating, anti-cheat status, Steam Deck status and a native Linux flag |
 | **My Hardware** | Shows detected CPU, GPU(s), RAM, VRAM, driver, Vulkan version, distro, kernel and free disk space |
+| **Appearance** | Five color themes for the pixel-art look (Paper, Ink, Midnight, Plum, Forest). Paper is the default; the choice is saved in `settings.json` |
 | **Storage settings** | Database size and update status, a clear button for the cache, an image cache limit |
 
 ### Verdict levels
