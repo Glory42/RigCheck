@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/library.jpg" alt="The Library: installed Steam games as cover tiles with READY, TOO WEAK and BLOCKED stamps" width="820">
+  <img src="assets/screenshots/library.webp" alt="The Library: installed Steam games as cover tiles with READY, TOO WEAK and BLOCKED stamps" width="820">
 </p>
 
 > [!NOTE]
@@ -35,16 +35,16 @@
 
 <table>
   <tr>
-    <td><img src="assets/screenshots/game.png" alt="Cyberpunk 2077's page: TOO WEAK, with the GPU row highlighted against the minimum and recommended GPUs"></td>
-    <td><img src="assets/screenshots/my-rig.png" alt="My Rig: detected CPU, RAM, GPU, Vulkan, distro and kernel, with the GPU and CPU override picker"></td>
+    <td><img src="assets/screenshots/game.webp" alt="Cyberpunk 2077's page: TOO WEAK, with the GPU row highlighted against the minimum and recommended GPUs"></td>
+    <td><img src="assets/screenshots/my-rig.webp" alt="My Rig: detected CPU, RAM, GPU, Vulkan, distro and kernel, with the GPU and CPU override picker"></td>
   </tr>
   <tr>
     <td align="center">Why a game won't run, part by part</td>
     <td align="center">Your hardware, with "what if I had…" overrides</td>
   </tr>
   <tr>
-    <td><img src="assets/screenshots/library-ink.jpg" alt="The Library in the dark Ink theme"></td>
-    <td><img src="assets/screenshots/settings.png" alt="Settings: five appearances and three languages"></td>
+    <td><img src="assets/screenshots/library-ink.webp" alt="The Library in the dark Ink theme"></td>
+    <td><img src="assets/screenshots/settings.webp" alt="Settings: five appearances and three languages"></td>
   </tr>
   <tr>
     <td align="center">Five themes: Paper, Ink, Midnight, Plum, Forest</td>
