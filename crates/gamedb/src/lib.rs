@@ -255,6 +255,62 @@ impl GameDb {
         Ok(())
     }
 
+    /// Writes ProtonDB's tier and report count for games already stored.
+    /// The report count is also the game's popularity.
+    pub fn set_protondb(&self, facts: &[(u32, Option<ProtonTier>, u32)]) -> Result<(), Error> {
+        let tx = self.conn.unchecked_transaction()?;
+        for (app_id, tier, reports) in facts {
+            tx.execute(
+                "UPDATE games SET protondb_tier = ?2, protondb_reports = ?3, popularity = ?3
+                 WHERE app_id = ?1",
+                params![app_id, tier.map(proton_tier_name), reports],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Writes anti-cheat status and name for games already stored.
+    pub fn set_anticheat(&self, facts: &[(u32, AntiCheat, String)]) -> Result<(), Error> {
+        let tx = self.conn.unchecked_transaction()?;
+        for (app_id, status, name) in facts {
+            tx.execute(
+                "UPDATE games SET anticheat_status = ?2, anticheat_name = ?3 WHERE app_id = ?1",
+                params![app_id, anticheat_status_name(*status), name],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Rebuilds the name index after games were written.
+    pub fn rebuild_search(&self) -> Result<(), Error> {
+        self.conn
+            .execute("INSERT INTO games_fts(games_fts) VALUES ('rebuild')", [])?;
+        Ok(())
+    }
+
+    /// Games whose name has words starting with each word of `query`, most
+    /// popular first: "witcher" → The Witcher 3, The Witcher…
+    pub fn search(&self, query: &str, limit: usize) -> Result<Vec<(u32, String)>, Error> {
+        // Each word quoted (so no FTS syntax leaks in) and matched as a prefix.
+        let terms: Vec<String> = query
+            .split_whitespace()
+            .map(|word| format!("\"{}\"*", word.replace('"', "")))
+            .collect();
+        if terms.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut statement = self.conn.prepare(
+            "SELECT g.app_id, g.name FROM games_fts f JOIN games g ON g.app_id = f.rowid
+             WHERE games_fts MATCH ?1 ORDER BY g.popularity DESC, g.name LIMIT ?2",
+        )?;
+        let rows = statement.query_map(params![terms.join(" "), limit as i64], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
     /// When each app was last fetched.
     pub fn fetched(&self) -> Result<std::collections::HashMap<u32, i64>, Error> {
         let mut statement = self
@@ -519,6 +575,26 @@ fn vendor_from(name: &str) -> Result<Vendor, Error> {
         "nvidia" => Vendor::Nvidia,
         other => return Err(format!("unknown vendor {other:?}").into()),
     })
+}
+
+fn proton_tier_name(tier: ProtonTier) -> &'static str {
+    match tier {
+        ProtonTier::Platinum => "platinum",
+        ProtonTier::Gold => "gold",
+        ProtonTier::Silver => "silver",
+        ProtonTier::Bronze => "bronze",
+        ProtonTier::Borked => "borked",
+    }
+}
+
+fn anticheat_status_name(status: AntiCheat) -> &'static str {
+    match status {
+        AntiCheat::Supported => "supported",
+        AntiCheat::Running => "running",
+        AntiCheat::Planned => "planned",
+        AntiCheat::Broken => "broken",
+        AntiCheat::Denied => "denied",
+    }
 }
 
 fn proton_tier(name: &str) -> Option<ProtonTier> {
