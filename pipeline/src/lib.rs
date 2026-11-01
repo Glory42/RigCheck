@@ -4,5 +4,6 @@
 pub mod applist;
 pub mod crawl;
 pub mod ingest;
+pub mod protondb;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;

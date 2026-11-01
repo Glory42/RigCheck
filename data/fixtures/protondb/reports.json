@@ -1,0 +1,830 @@
+[
+ {
+  "app": {
+   "steam": {
+    "appId": "2428980"
+   },
+   "title": "Bye Sweet Carole"
+  },
+  "responses": {
+   "answerToWhatGame": "2428980",
+   "audioFaults": "no",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "opens": "yes",
+   "performanceFaults": "no",
+   "saveGameFaults": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "triedOob": "no",
+   "variant": "experimental",
+   "verdict": "yes",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1760071815,
+  "systemInfo": {
+   "cpu": "AMD Ryzen 5 3600 6-Core",
+   "gpu": "AMD Radeon RX 5700 (NAVI10, DRM 3.44.0, 5.16.15-arch1-1, LLVM 13.0.1)",
+   "gpuDriver": "4.6 Mesa 21.3.7",
+   "kernel": "5.16.15-arch1-1",
+   "os": "EndeavourOS Linux",
+   "ram": "16 GB"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "2428980"
+   },
+   "title": "Bye Sweet Carole"
+  },
+  "responses": {
+   "answerToWhatGame": "2428980",
+   "audioFaults": "no",
+   "batteryPerformance": "no",
+   "concludingNotes": "The game crash everytime with the default steam proton (9.0-4), i had only one crash with protonGE since and everything seems to be working fine.",
+   "customProtonVersion": "GE-Proton10-26",
+   "didChangeControlLayout": "no",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "notes": {
+    "readability": "Subtitles are a bit small but you can change font size in the options.",
+    "verdict": "Works fine with proton GE"
+   },
+   "opens": "yes",
+   "performanceFaults": "no",
+   "readability": "yes",
+   "saveGameFaults": "no",
+   "secondaryLauncher": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "triedOob": "yes",
+   "variant": "ge",
+   "verdict": "yes",
+   "verdictOob": "no",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1766684936,
+  "systemInfo": {
+   "cpu": "AMD Custom APU 0405",
+   "gpu": "AMD Custom GPU 0405 (vangogh, LLVM 14.0.6, DRM 3.45, 5.13.0-valve36-1-neptune)",
+   "gpuDriver": "4.6 (Compatibility Profile) Mesa 22.2.0 (git-17e5312102)",
+   "kernel": "5.13.0-valve36-1-neptune",
+   "os": "SteamOS Holo",
+   "ram": "15 GB",
+   "steamRuntimeVersion": "steam-runtime_0.20230509.49499",
+   "xWindowManager": "KWin"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "2428980"
+   },
+   "title": "Bye Sweet Carole"
+  },
+  "responses": {
+   "answerToWhatGame": "2428980",
+   "audioFaults": "no",
+   "batteryPerformance": "no",
+   "didChangeControlLayout": "no",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "opens": "yes",
+   "performanceFaults": "no",
+   "readability": "no",
+   "saveGameFaults": "no",
+   "secondaryLauncher": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "tinkerOverride": "no",
+   "variant": "official",
+   "verdict": "yes",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1769209328,
+  "systemInfo": {
+   "cpu": "AMD Custom APU 0405",
+   "gpu": "AMD Custom GPU 0405 (vangogh, LLVM 14.0.6, DRM 3.45, 5.13.0-valve36-1-neptune)",
+   "gpuDriver": "4.6 (Compatibility Profile) Mesa 22.2.0 (git-17e5312102)",
+   "kernel": "5.13.0-valve36-1-neptune",
+   "os": "SteamOS Holo",
+   "ram": "15 GB",
+   "steamRuntimeVersion": "steam-runtime_0.20230509.49499",
+   "xWindowManager": "KWin"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "2428980"
+   },
+   "title": "Bye Sweet Carole"
+  },
+  "responses": {
+   "answerToWhatGame": "2428980",
+   "audioFaults": "no",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "opens": "yes",
+   "performanceFaults": "no",
+   "saveGameFaults": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "triedOob": "yes",
+   "variant": "experimental",
+   "verdict": "yes",
+   "verdictOob": "no",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1790224018,
+  "systemInfo": {
+   "cpu": "AMD Ryzen 9 9950X3D 16-Core",
+   "gpu": "AMD Radeon RX 9070 XT (radeonsi, gfx1201, ACO, DRM 3.64, 7.2.7-200.fc44.x86_64)",
+   "gpuDriver": "4.6 Mesa 26.2.3",
+   "kernel": "7.2.7-200.fc44.x86_64",
+   "os": "Fedora Linux 44 (Workstation Edition)",
+   "ram": "31 GB",
+   "steamRuntimeVersion": "steam-runtime_1.0.20260714.251828",
+   "xWindowManager": "GNOME Shell"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "292570"
+   },
+   "title": "Chompy Chomp Chomp"
+  },
+  "responses": {
+   "answerToWhatGame": "292570",
+   "audioFaults": "no",
+   "customizationsUsed": {
+    "protontricks": true,
+    "winetricks": true
+   },
+   "duration": "aboutAnHour",
+   "extra": "no",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "notes": {
+    "customizationsUsed": "- Install XNA 3.1 using the ProtonTricks (This will automatically install DotNet 2.0)\n- Install .Net 4.0 using the ProtonTricks",
+    "verdict": "Work like a charm."
+   },
+   "opens": "yes",
+   "performanceFaults": "no",
+   "protonVersion": "4.11-7",
+   "saveGameFaults": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "type": "tinker",
+   "verdict": "yes",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1572668867,
+  "systemInfo": {
+   "cpu": "Intel Core i7-6700K @ 4.00GHz",
+   "gpu": "NVIDIA GeForce GTX 980 Ti",
+   "gpuDriver": "NVIDIA 430.50",
+   "kernel": "5.0.0-32-generic",
+   "os": "Ubuntu 19.04",
+   "ram": "24 GB"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "292570"
+   },
+   "title": "Chompy Chomp Chomp"
+  },
+  "responses": {
+   "answerToWhatGame": "292570",
+   "audioFaults": "no",
+   "concludingNotes": "Standard Proton is not working (XNA dll issue). \n\nSo I've try to install xna with protontricks (protontricks 292570 xna31) but it was also not working... (error 67)\n\nBUT with the latest Proton Experimental it's working like a charm without doing anything. ",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "notes": {
+    "verdict": "Working OK with Proton Experimental"
+   },
+   "opens": "yes",
+   "performanceFaults": "no",
+   "saveGameFaults": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "triedOob": "yes",
+   "variant": "experimental",
+   "verdict": "yes",
+   "verdictOob": "no",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1769264210,
+  "systemInfo": {
+   "cpu": "13th Gen Intel Core i5-13400F",
+   "gpu": "NVIDIA GeForce RTX 4060 Ti",
+   "gpuDriver": "NVIDIA 590.48.01",
+   "kernel": "6.18.6-2-cachyos",
+   "os": "CachyOS",
+   "ram": "32 GB",
+   "steamRuntimeVersion": "steam-runtime_1.0.20251202.187498",
+   "xWindowManager": "KWin"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "292570"
+   },
+   "title": "Chompy Chomp Chomp"
+  },
+  "responses": {
+   "answerToWhatGame": "292570",
+   "audioFaults": "no",
+   "batteryPerformance": "no",
+   "concludingNotes": "No more issues with latest proton official on steamdeck. Game should be check as verified now.",
+   "didChangeControlLayout": "no",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "opens": "yes",
+   "performanceFaults": "no",
+   "readability": "no",
+   "saveGameFaults": "no",
+   "secondaryLauncher": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "tinkerOverride": "no",
+   "variant": "official",
+   "verdict": "yes",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1769673996,
+  "systemInfo": {
+   "cpu": "AMD Custom APU 0405",
+   "gpu": "AMD Custom GPU 0405 (vangogh, LLVM 14.0.6, DRM 3.45, 5.13.0-valve36-1-neptune)",
+   "gpuDriver": "4.6 (Compatibility Profile) Mesa 22.2.0 (git-17e5312102)",
+   "kernel": "5.13.0-valve36-1-neptune",
+   "os": "SteamOS Holo",
+   "ram": "15 GB",
+   "steamRuntimeVersion": "steam-runtime_0.20230509.49499",
+   "xWindowManager": "KWin"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "3493540"
+   },
+   "title": "Transport Fever 3"
+  },
+  "responses": {
+   "answerToWhatGame": "3493540",
+   "audioFaults": "no",
+   "concludingNotes": "Out of the box excellent experience. 120-140FPS on good hardware. Very High gfx and medium map, early game. Fedora 44, Plasma.",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "opens": "yes",
+   "performanceFaults": "no",
+   "saveGameFaults": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "tinkerOverride": "no",
+   "variant": "native",
+   "verdict": "yes",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1790865102,
+  "systemInfo": {
+   "cpu": "AMD Ryzen 9 9950X3D 16-Core",
+   "gpu": "NVIDIA GeForce RTX 5080",
+   "gpuDriver": "NVIDIA 595.80",
+   "kernel": "7.1.3-200.fc44.x86_64",
+   "os": "Fedora Linux 44 (KDE Plasma Desktop Edition)",
+   "ram": "62 GB",
+   "steamRuntimeVersion": "steam-runtime_1.0.20260525.238139",
+   "xWindowManager": "KWin"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "540840"
+   },
+   "title": "Lara Croft GO"
+  },
+  "responses": {
+   "answerToWhatGame": "540840",
+   "audioFaults": "no",
+   "concludingNotes": "The only advantage of using Proton (Windows build) is that it allows the player to choose the display resolution and refresh rate. Tha native doesn't have such option.",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "notes": {
+    "verdict": "Runs perfeclty with Proton. No difference in performance comparing with the native version."
+   },
+   "opens": "yes",
+   "performanceFaults": "no",
+   "saveGameFaults": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "tinkerOverride": "no",
+   "variant": "official",
+   "verdict": "yes",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1646743659,
+  "systemInfo": {
+   "cpu": "Intel Core i5-4690S @ 3.20GHz",
+   "gpu": "NVIDIA GeForce GTX 970",
+   "gpuDriver": "NVIDIA 510.54",
+   "kernel": "5.15.25-1-MANJARO",
+   "os": "Manjaro Linux",
+   "ram": "16 GB"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "540840"
+   },
+   "title": "Lara Croft GO"
+  },
+  "responses": {
+   "answerToWhatGame": "540840",
+   "audioFaults": "no",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "notes": {
+    "verdict": "Tudo ok"
+   },
+   "opens": "yes",
+   "performanceFaults": "no",
+   "saveGameFaults": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "tinkerOverride": "no",
+   "variant": "official",
+   "verdict": "yes",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1650333223,
+  "systemInfo": {
+   "cpu": "AMD Ryzen 3 3200G with Radeon Vega Graphics",
+   "gpu": "AMD Radeon Vega 8 (RAVEN, DRM 3.40.0, 5.11.0-44-generic, LLVM 12.0.0)",
+   "gpuDriver": "4.6 Mesa 21.0.3",
+   "kernel": "5.11.0-44-generic",
+   "os": "Ubuntu 20.04.3 LTS",
+   "ram": "6 GB"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "540840"
+   },
+   "title": "Lara Croft GO"
+  },
+  "responses": {
+   "answerToWhatGame": "540840",
+   "audioFaults": "no",
+   "batteryPerformance": "no",
+   "didChangeControlLayout": "no",
+   "followUp": {
+    "saveGameFaults": {
+     "errorSaving": true
+    }
+   },
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "notes": {
+    "saveGameFaults": "Game does not save when offline.",
+    "verdict": "Only playable with an internet connection, otherwise you'll have to play those parts again next time."
+   },
+   "opens": "yes",
+   "performanceFaults": "no",
+   "readability": "no",
+   "saveGameFaults": "yes",
+   "secondaryLauncher": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "tinkerOverride": "no",
+   "variant": "official",
+   "verdict": "no",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1762124894,
+  "systemInfo": {
+   "cpu": "AMD Custom APU 0405",
+   "gpu": "AMD Custom GPU 0405 (vangogh, LLVM 14.0.6, DRM 3.45, 5.13.0-valve36-1-neptune)",
+   "gpuDriver": "4.6 (Compatibility Profile) Mesa 22.2.0 (git-17e5312102)",
+   "kernel": "5.13.0-valve36-1-neptune",
+   "os": "SteamOS Holo",
+   "ram": "15 GB",
+   "steamRuntimeVersion": "steam-runtime_0.20230509.49499",
+   "xWindowManager": "KWin"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "540840"
+   },
+   "title": "Lara Croft GO"
+  },
+  "responses": {
+   "answerToWhatGame": "540840",
+   "audioFaults": "no",
+   "followUp": {
+    "inputFaults": {
+     "controllerNotDetected": true
+    }
+   },
+   "graphicalFaults": "no",
+   "inputFaults": "yes",
+   "installs": "yes",
+   "launcher": "steam",
+   "notes": {
+    "inputFaults": "My controller (Gamesir G7 SE) was not detected in the native Linux version, regardless of whether Steam Input is enabled or not. It worked fine after switching to Proton.",
+    "verdict": "Controller didn't work in native Linux version. Otherwise everything was fine."
+   },
+   "opens": "yes",
+   "performanceFaults": "no",
+   "saveGameFaults": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "triedOob": "yes",
+   "variant": "experimental",
+   "verdict": "yes",
+   "verdictOob": "no",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1766589519,
+  "systemInfo": {
+   "cpu": "Intel Core i7-4790S @ 3.20GHz",
+   "gpu": "NVIDIA T1000 8GB",
+   "gpuDriver": "NVIDIA 550.163.01",
+   "kernel": "6.12.57+deb13-amd64",
+   "os": "Devuan GNU/Linux 6 (excalibur)",
+   "ram": "32 GB",
+   "steamRuntimeVersion": "steam-runtime_1.0.20251202.187498",
+   "xWindowManager": "IceWM 3.7.4 (Linux/x86_64)"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "540840"
+   },
+   "title": "Lara Croft GO"
+  },
+  "responses": {
+   "answerToWhatGame": "540840",
+   "audioFaults": "no",
+   "batteryPerformance": "no",
+   "didChangeControlLayout": "no",
+   "followUp": {
+    "saveGameFaults": {
+     "errorSaving": true
+    }
+   },
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "notes": {
+    "saveGameFaults": "Game will not save when offline. Loads saves (including cloud saves) fine and works when connected to Internet. ",
+    "verdict": "Less useful with Steam Deck if you're travelling away from Wi-Fi"
+   },
+   "opens": "yes",
+   "performanceFaults": "no",
+   "readability": "no",
+   "saveGameFaults": "yes",
+   "secondaryLauncher": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "tinkerOverride": "no",
+   "variant": "official",
+   "verdict": "no",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1775319447,
+  "systemInfo": {
+   "cpu": "AMD Custom APU 0405",
+   "gpu": "AMD Custom GPU 0405 (vangogh, LLVM 14.0.6, DRM 3.45, 5.13.0-valve36-1-neptune)",
+   "gpuDriver": "4.6 (Compatibility Profile) Mesa 22.2.0 (git-17e5312102)",
+   "kernel": "5.13.0-valve36-1-neptune",
+   "os": "SteamOS Holo",
+   "ram": "15 GB",
+   "steamRuntimeVersion": "steam-runtime_0.20230509.49499",
+   "xWindowManager": "KWin"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "540840"
+   },
+   "title": "Lara Croft GO"
+  },
+  "responses": {
+   "answerToWhatGame": "540840",
+   "audioFaults": "no",
+   "concludingNotes": "Native gave me a blackscreen. Switching to proton worked",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "notes": {
+    "variant": "Proton-CachyOS",
+    "verdict": "native didn't work. Proton did"
+   },
+   "opens": "yes",
+   "performanceFaults": "no",
+   "saveGameFaults": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "triedOob": "yes",
+   "variant": "notListed",
+   "verdict": "yes",
+   "verdictOob": "yes",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1779432570,
+  "systemInfo": {
+   "cpu": "Intel Core i9-14900KF",
+   "gpu": "NVIDIA GeForce RTX 5090",
+   "gpuDriver": "NVIDIA 595.58.03",
+   "kernel": "6.19.10-1-cachyos",
+   "os": "CachyOS",
+   "ram": "64 GB",
+   "steamRuntimeVersion": "steam-runtime_1.0.20260316.216267",
+   "xWindowManager": "KWin"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "540840"
+   },
+   "title": "Lara Croft GO"
+  },
+  "responses": {
+   "answerToWhatGame": "540840",
+   "audioFaults": "no",
+   "concludingNotes": "Works out of the box",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "notes": {
+    "verdict": "Just a great puzzle game, great fun."
+   },
+   "opens": "yes",
+   "performanceFaults": "no",
+   "saveGameFaults": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "tinkerOverride": "no",
+   "variant": "official",
+   "verdict": "yes",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1782658133,
+  "systemInfo": {
+   "cpu": "AMD Ryzen 7 8845HS w/ Radeon 780M Graphics",
+   "gpu": "AMD Radeon (radeonsi, gfx1103_r1, LLVM 18.1.7, DRM 3.61, 6.11.0-118026-tuxedo)",
+   "gpuDriver": "4.6 Mesa 24.2.0-devel",
+   "kernel": "6.11.0-118026-tuxedo",
+   "os": "TUXEDO OS",
+   "ram": "56 GB",
+   "steamRuntimeVersion": "steam-runtime_1.0.20250408.124523",
+   "xWindowManager": "KWin"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "9760"
+   },
+   "title": "Act of War: High Treason"
+  },
+  "responses": {
+   "answerToWhatGame": "9760",
+   "audioFaults": "no",
+   "duration": "lessThanAnHour",
+   "extra": "yes",
+   "followUp": {
+    "performanceFaults": "slightSlowdown",
+    "stabilityFaults": "frequentCrashes"
+   },
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "isImpactedByAntiCheat": "no",
+   "isMultiplayerImportant": "no",
+   "localMultiplayerAttempted": "no",
+   "notes": {
+    "extra": "Videos don't work, as is already the case in Act of War : Direct Action.",
+    "performanceFaults": "In the first mission, the police helicopter's movement is choppy at first (later fluid), but other units move and react fine.",
+    "significantBugs": "Videos (either missions briefing/debriefing and in-game cutscenes) don't work : audio and on-screen text are fine, but the rest is black. Same as Act of War : Direct Action.",
+    "stabilityFaults": "One of the first in-game cutscene generates error windows, then the game either crashes, or control become almost totally unresponsive, preventing finishing the mission.",
+    "verdict": "Game starts and plays fine but becomes unresponsive during the first mission and prevents progressing further into the game."
+   },
+   "onlineMultiplayerAttempted": "no",
+   "opens": "yes",
+   "performanceFaults": "yes",
+   "protonVersion": "Default",
+   "saveGameFaults": "no",
+   "significantBugs": "yes",
+   "stabilityFaults": "yes",
+   "startsPlay": "yes",
+   "type": "steamPlay",
+   "verdict": "no",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1572615681,
+  "systemInfo": {
+   "cpu": "Intel Core i7-5775C @ 3.30GHz",
+   "gpu": "NVIDIA GeForce GTX 980 Ti",
+   "gpuDriver": "NVIDIA 430.50",
+   "kernel": "5.3.0-19-generic",
+   "os": "Linux Mint 19.2 Tina",
+   "ram": "32 GB"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "9760"
+   },
+   "title": "Act of War: High Treason"
+  },
+  "responses": {
+   "answerToWhatGame": "9760",
+   "audioFaults": "no",
+   "batteryPerformance": "no",
+   "concludingNotes": "the game cutscenes bugs out on normal proton version but run great on proton GE, so installing protonGE IS ESSENTIAL\n",
+   "customProtonVersion": "GE-Proton7-41",
+   "didChangeControlLayout": "no",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "localMultiplayerAttempted": "no",
+   "notes": {
+    "verdict": "works perfectly on proton GE "
+   },
+   "onlineMultiplayerAttempted": "no",
+   "opens": "yes",
+   "performanceFaults": "no",
+   "readability": "no",
+   "saveGameFaults": "no",
+   "secondaryLauncher": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "triedOob": "no",
+   "variant": "ge",
+   "verdict": "yes",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1669894058,
+  "systemInfo": {
+   "cpu": "AMD Custom APU 0405",
+   "gpu": "AMD Custom GPU 0405 (vangogh, LLVM 13.0.0, DRM 3.45, 5.13.0-valve10.1-1-neptune-02144-g7fffaf925dfb)",
+   "gpuDriver": "4.6 Mesa 22.0.0-devel (git-676ccacebc)",
+   "kernel": "5.13.0-valve10.1-1-neptune-02144-g7fffaf925dfb",
+   "os": "SteamOS Holo",
+   "ram": "15 GB"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "9760"
+   },
+   "title": "Act of War: High Treason"
+  },
+  "responses": {
+   "answerToWhatGame": "9760",
+   "appSelectionMethod": "manual",
+   "audioFaults": "no",
+   "customProtonVersion": "GE-Proton7-27",
+   "followUp": {
+    "stabilityFaults": "notListed"
+   },
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "notListed",
+   "localMultiplayerAttempted": "no",
+   "notes": {
+    "launcher": "Heroic Game Launcher",
+    "stabilityFaults": "Sometimes, the game does not launch.",
+    "verdict": "The game itself is fine, once it is running. The higher resolution works really well and the gameplay is enjoyable."
+   },
+   "onlineMultiplayerAttempted": "no",
+   "opens": "yes",
+   "performanceFaults": "no",
+   "saveGameFaults": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "yes",
+   "startsPlay": "yes",
+   "triedOob": "no",
+   "variant": "ge",
+   "verdict": "yes",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1753653100,
+  "systemInfo": {
+   "cpu": "AMD Ryzen 5 3600 6-Core",
+   "gpu": "AMD Radeon RX 6650 XT (radeonsi, navi23, LLVM 19.1.1, DRM 3.57, 6.8.0-60-generic)",
+   "gpuDriver": "4.6 Mesa 25.0~git2505290929.35721f~oibaf~n (git-35721f1 2025-05-29 noble-oi",
+   "kernel": "6.8.0-60-generic",
+   "os": "Linux Mint 22.1",
+   "ram": "16 GB",
+   "steamRuntimeVersion": "steam-runtime_1.0.20250408.124523",
+   "xWindowManager": "Mutter (Muffin)"
+  }
+ },
+ {
+  "app": {
+   "steam": {
+    "appId": "9760"
+   },
+   "title": "Act of War: High Treason"
+  },
+  "responses": {
+   "answerToWhatGame": "9760",
+   "audioFaults": "no",
+   "concludingNotes": "Crashes on newer proton versions",
+   "graphicalFaults": "no",
+   "inputFaults": "no",
+   "installs": "yes",
+   "launcher": "steam",
+   "localMultiplayerAttempted": "no",
+   "notes": {
+    "verdict": "Works using proton 5"
+   },
+   "onlineMultiplayerAttempted": "no",
+   "opens": "yes",
+   "performanceFaults": "no",
+   "protonVersion": "5.13-6",
+   "saveGameFaults": "no",
+   "significantBugs": "no",
+   "stabilityFaults": "no",
+   "startsPlay": "yes",
+   "triedOob": "yes",
+   "variant": "older",
+   "verdict": "yes",
+   "verdictOob": "no",
+   "windowingFaults": "no"
+  },
+  "timestamp": 1773524907,
+  "systemInfo": {
+   "cpu": "AMD Ryzen 9 5900X 12-Core",
+   "gpu": "AMD Radeon RX 9070 XT (radeonsi, gfx1201, LLVM 21.1.6, DRM 3.64, 6.18.7-2-cachyos)",
+   "gpuDriver": "4.6 Mesa 25.3.4-arch1.2",
+   "kernel": "6.18.7-2-cachyos",
+   "os": "CachyOS",
+   "ram": "32 GB",
+   "steamRuntimeVersion": "steam-runtime_1.0.20251202.187498",
+   "xWindowManager": "KWin"
+  }
+ }
+]
