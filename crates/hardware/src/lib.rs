@@ -233,3 +233,10 @@ fn field<'a>(text: &'a str, key: &str) -> Option<&'a str> {
         (k.trim() == key).then(|| v.trim())
     })
 }
+
+/// Free space for unprivileged users on the disk holding `path`, e.g. a Steam
+/// library folder. `None` if the path doesn't exist.
+pub fn free_space(path: &Path) -> Option<u64> {
+    let stats = rustix::fs::statvfs(path).ok()?;
+    Some(stats.f_bavail * stats.f_frsize)
+}
