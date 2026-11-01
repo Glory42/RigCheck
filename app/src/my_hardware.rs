@@ -6,47 +6,63 @@ use iced::{Center, Element, Fill};
 use rigcheck_hardware::{Hardware, Vram, gib};
 
 use crate::Message;
+use crate::i18n::I18n;
 use crate::style::{BOLD, Colors};
 
-pub fn view(hardware: &Hardware, colors: Colors) -> Element<'_, Message> {
-    let unknown = || "Unknown".to_owned();
+pub fn view<'a>(hardware: &'a Hardware, i18n: &I18n, colors: Colors) -> Element<'a, Message> {
+    let unknown = || i18n.t("unknown");
     let mut rows = vec![
-        ("CPU", hardware.cpu.clone().unwrap_or_else(unknown)),
-        ("RAM", hardware.ram_bytes.map(gib).unwrap_or_else(unknown)),
+        (
+            "CPU".to_owned(),
+            hardware.cpu.clone().unwrap_or_else(unknown),
+        ),
+        (
+            "RAM".to_owned(),
+            hardware.ram_bytes.map(gib).unwrap_or_else(unknown),
+        ),
     ];
     let mut notes = Vec::new();
     for gpu in &hardware.gpus {
         let name = gpu.vulkan.as_ref().map_or_else(
-            || format!("Unknown GPU [{:04x}:{:04x}]", gpu.vendor_id, gpu.device_id),
+            || {
+                let name = i18n.t("unknown-gpu");
+                format!("{name} [{:04x}:{:04x}]", gpu.vendor_id, gpu.device_id)
+            },
             |vulkan| vulkan.name.clone(),
         );
         let memory = match gpu.vram {
-            Vram::Shared => "Shares system RAM".to_owned(),
-            Vram::Dedicated(bytes) => format!("{} VRAM", gib(bytes)),
-            Vram::Unknown => "VRAM unknown".to_owned(),
+            Vram::Shared => i18n.t("vram-shared"),
+            Vram::Dedicated(bytes) => i18n.t_with("vram-dedicated", &[("size", &gib(bytes))]),
+            Vram::Unknown => i18n.t("vram-unknown"),
         };
-        rows.push(("GPU", name));
-        rows.push(("VIDEO MEMORY", memory));
+        rows.push(("GPU".to_owned(), name));
+        rows.push((i18n.t("label-video-memory"), memory));
         if let Some(vulkan) = &gpu.vulkan {
             rows.push((
-                "VULKAN",
+                i18n.t("label-vulkan"),
                 format!("Vulkan {}, {}", vulkan.api_version, vulkan.driver),
             ));
         }
         if gpu.kernel_driver.as_deref() == Some("nouveau") {
-            notes.push("This GPU uses the open-source nouveau driver, which runs most 3D games poorly. Install NVIDIA's driver to play.");
+            notes.push(i18n.t("note-nouveau"));
         }
     }
     if hardware.gpus.iter().any(|gpu| gpu.vulkan.is_none()) {
-        notes.push("Vulkan wasn't detected. Install vulkan-tools (it provides vulkaninfo) and restart rigcheck.");
+        notes.push(i18n.t("note-no-vulkan"));
     }
-    rows.push(("DISTRO", hardware.distro.clone().unwrap_or_else(unknown)));
-    rows.push(("KERNEL", hardware.kernel.clone().unwrap_or_else(unknown)));
+    rows.push((
+        i18n.t("label-distro"),
+        hardware.distro.clone().unwrap_or_else(unknown),
+    ));
+    rows.push((
+        i18n.t("label-kernel"),
+        hardware.kernel.clone().unwrap_or_else(unknown),
+    ));
 
     let header = row![
-        text("MY RIG").font(BOLD).size(20),
+        text(i18n.t("my-rig-title")).font(BOLD).size(20),
         space::horizontal(),
-        button(text("COPY AS TEXT").font(BOLD).size(13))
+        button(text(i18n.t("copy-as-text")).font(BOLD).size(13))
             .padding([7, 12])
             .style(colors.button(true))
             .on_press(Message::CopyHardwareReport),
@@ -73,7 +89,7 @@ pub fn view(hardware: &Hardware, colors: Colors) -> Element<'_, Message> {
 }
 
 /// One line of the sheet: a bold label cell and its value.
-fn sheet_row(label: &'static str, value: String, colors: Colors) -> Element<'static, Message> {
+fn sheet_row(label: String, value: String, colors: Colors) -> Element<'static, Message> {
     row![
         container(text(label).font(BOLD))
             .width(170)
@@ -114,6 +130,7 @@ mod tests {
         let hardware = laptop();
         let mut ui = iced_test::simulator(super::view(
             &hardware,
+            &crate::i18n::I18n::new(crate::i18n::Language::English),
             crate::settings::Appearance::Paper.colors(),
         ));
 
@@ -135,6 +152,7 @@ mod tests {
         hardware.gpus[0].vram = Vram::Unknown;
         let mut ui = iced_test::simulator(super::view(
             &hardware,
+            &crate::i18n::I18n::new(crate::i18n::Language::English),
             crate::settings::Appearance::Paper.colors(),
         ));
 
@@ -153,6 +171,7 @@ mod tests {
         hardware.gpus[0].kernel_driver = Some("nouveau".to_owned());
         let mut ui = iced_test::simulator(super::view(
             &hardware,
+            &crate::i18n::I18n::new(crate::i18n::Language::English),
             crate::settings::Appearance::Paper.colors(),
         ));
 
@@ -164,6 +183,7 @@ mod tests {
         let hardware = laptop();
         let mut ui = iced_test::simulator(super::view(
             &hardware,
+            &crate::i18n::I18n::new(crate::i18n::Language::English),
             crate::settings::Appearance::Paper.colors(),
         ));
 

@@ -5,11 +5,16 @@ use std::{fs, io};
 
 use serde::{Deserialize, Serialize};
 
+use crate::i18n::Language;
+
 const FILE: &str = "settings.json";
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Settings {
     pub appearance: Appearance,
+    /// `None` follows the system language. Files saved before languages
+    /// existed lack this field, which serde reads as `None`.
+    pub language: Option<Language>,
 }
 
 /// The app's color theme, picked under Settings > Appearance.
@@ -71,6 +76,7 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let settings = Settings {
             appearance: Appearance::Ink,
+            ..Settings::default()
         };
 
         settings.save(dir.path()).unwrap();
