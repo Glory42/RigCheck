@@ -136,9 +136,10 @@ fn tiles<'a>(games: Vec<Entry<'a>>, i18n: &I18n, colors: Colors) -> Element<'a, 
 /// "38 of 42 installed games meet the recommended specs.", once every
 /// game has a verdict or is known to have none.
 fn summary(games: &[Entry], i18n: &I18n) -> Option<String> {
-    if games
-        .iter()
-        .any(|entry| matches!(entry.status, Status::Checking))
+    if games.is_empty()
+        || games
+            .iter()
+            .any(|entry| matches!(entry.status, Status::Checking))
     {
         return None;
     }
