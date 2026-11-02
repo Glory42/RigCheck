@@ -41,12 +41,20 @@ fn screenshots() {
     let _ = app.update(Message::CatalogScrolled {
         offset: 0.0,
         height: rows,
+        width: SIZE.0 - 40.0,
     });
+    // The tiles in view with their covers, as the app downloads them.
+    for app_id in app.catalog_list.visible_ids() {
+        if let Some(path) = app.art.download_now(app_id) {
+            app.covers.insert(app_id, path);
+        }
+    }
     shoot(&mut app, &out, "catalog");
     let _ = app.update(Message::CatalogFilter(catalog::Chip::CanRun));
     let _ = app.update(Message::CatalogScrolled {
         offset: 0.0,
         height: rows,
+        width: SIZE.0 - 40.0,
     });
     shoot(&mut app, &out, "catalog-can-run");
     let _ = app.update(Message::Open(Page::Game(1086940))); // Baldur's Gate 3
@@ -67,9 +75,9 @@ fn shoot(app: &mut App, out: &std::path::Path, name: &str) {
         iced_test::Simulator::with_size(iced_test::core::Settings::default(), SIZE, app.view());
     // Images load in the background over the first frames this renderer
     // draws: draw a few, then the one to keep.
-    for _ in 0..4 {
+    for _ in 0..12 {
         let _ = ui.snapshot(&app.theme());
-        std::thread::sleep(std::time::Duration::from_millis(100));
+        std::thread::sleep(std::time::Duration::from_millis(200));
     }
     let snapshot = ui.snapshot(&app.theme()).unwrap();
     assert!(snapshot.matches_image(&path).unwrap());

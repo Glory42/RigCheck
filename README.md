@@ -37,8 +37,8 @@
 
 <table>
   <tr>
-    <td><img src="assets/screenshots/game.webp" alt="Baldur's Gate 3's page: TOO WEAK, the GPU row in red as the bottleneck, each row's result, ProtonDB Platinum and Deck Verified"></td>
-    <td><img src="assets/screenshots/catalog.webp" alt="The Catalog: the most popular Steam games with verdict stamps, a search box and filter chips"></td>
+    <td><img src="assets/screenshots/game.webp" alt="Baldur's Gate 3's page: its cover, TOO WEAK, the GPU row in red as the bottleneck, each row's result, ProtonDB Platinum and Deck Verified"></td>
+    <td><img src="assets/screenshots/catalog.webp" alt="The Catalog: the most popular Steam games as cover tiles with verdict stamps, a search box and filter chips"></td>
   </tr>
   <tr>
     <td align="center">Why a game won't run, part by part</td>

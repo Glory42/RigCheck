@@ -223,6 +223,7 @@ enum Message {
     CatalogScrolled {
         offset: f32,
         height: f32,
+        width: f32,
     },
     RetryDownload,
     /// Opens a web page in the user's browser.
@@ -495,19 +496,29 @@ impl App {
             (Shortcut::Search, Page::Catalog) => iced::widget::operation::focus(catalog::SEARCH),
             (Shortcut::Back, Page::Game(_)) => self.update(Message::Open(self.opened_from)),
             (Shortcut::Back, Page::Compare(_, b)) => self.update(Message::Open(Page::Game(b))),
-            (Shortcut::Move(by), Page::Catalog) => match &self.db {
-                Some(db) => {
-                    let offset = self.catalog_list.move_selection(by, db);
-                    iced::widget::operation::scroll_to(
-                        catalog::LIST,
-                        iced::widget::operation::AbsoluteOffset {
-                            x: None,
-                            y: Some(offset),
-                        },
-                    )
+            (Shortcut::Move(_) | Shortcut::Step(_) | Shortcut::Page(_), Page::Catalog) => {
+                match &self.db {
+                    Some(db) => {
+                        let list = &self.catalog_list;
+                        let (columns, rows) = (list.columns() as i64, list.rows_in_view() as i64);
+                        let tiles = match shortcut {
+                            Shortcut::Move(by) => i64::from(by) * columns,
+                            Shortcut::Page(by) => i64::from(by) * rows * columns,
+                            Shortcut::Step(by) => i64::from(by),
+                            _ => 0,
+                        };
+                        let offset = self.catalog_list.move_selection(tiles, db);
+                        iced::widget::operation::scroll_to(
+                            catalog::LIST,
+                            iced::widget::operation::AbsoluteOffset {
+                                x: None,
+                                y: Some(offset),
+                            },
+                        )
+                    }
+                    None => Task::none(),
                 }
-                None => Task::none(),
-            },
+            }
             (Shortcut::Open, Page::Catalog) => {
                 match self
                     .db
@@ -585,6 +596,10 @@ impl App {
                     return self.open_game(app_id);
                 }
                 self.page = page;
+                // The tiles in view need their covers.
+                if page == Page::Catalog {
+                    return self.catalog_covers();
+                }
                 Task::none()
             }
             Message::LatestRelease(answer) => {
@@ -712,29 +727,33 @@ impl App {
             Message::CatalogSearch(query) => match &self.db {
                 Some(db) => {
                     self.catalog_list.search(query, db);
-                    catalog_to_top()
+                    Task::batch([catalog_to_top(), self.catalog_covers()])
                 }
                 None => Task::none(),
             },
             Message::CatalogProtonDb(lowest) => match &self.db {
                 Some(db) => {
                     self.catalog_list.protondb(lowest, db);
-                    catalog_to_top()
+                    Task::batch([catalog_to_top(), self.catalog_covers()])
                 }
                 None => Task::none(),
             },
             Message::CatalogFilter(chip) => match &self.db {
                 Some(db) => {
                     self.catalog_list.toggle(chip, self.specs(), db);
-                    catalog_to_top()
+                    Task::batch([catalog_to_top(), self.catalog_covers()])
                 }
                 None => Task::none(),
             },
-            Message::CatalogScrolled { offset, height } => {
+            Message::CatalogScrolled {
+                offset,
+                height,
+                width,
+            } => {
                 if let Some(db) = &self.db {
-                    self.catalog_list.scrolled(offset, height, db);
+                    self.catalog_list.scrolled(offset, height, width, db);
                 }
-                Task::none()
+                self.catalog_covers()
             }
             Message::OpenUrl(url) => {
                 // The desktop's own "open this link": the app sends nothing.
@@ -772,6 +791,12 @@ impl App {
     fn open_game(&mut self, app_id: u32) -> Task<Message> {
         let cover = self.cover(app_id);
         Task::batch([cover, self.look_up(app_id)])
+    }
+
+    /// Covers for the Catalog tiles in view: on disk, or downloaded now.
+    fn catalog_covers(&mut self) -> Task<Message> {
+        let ids = self.catalog_list.visible_ids();
+        Task::batch(ids.into_iter().map(|app_id| self.cover(app_id)))
     }
 
     /// Shows `app_id`'s cover if one is on disk, else downloads it.
@@ -932,7 +957,13 @@ impl App {
                     None => coming_soon(i18n.t("tab-library"), i18n, colors),
                 }
             }
-            Page::Catalog => catalog::view(&self.catalog_list, self.specs().as_ref(), i18n, colors),
+            Page::Catalog => catalog::view(
+                &self.catalog_list,
+                self.specs().as_ref(),
+                &self.covers,
+                i18n,
+                colors,
+            ),
             Page::MyRig => match &self.hardware {
                 Some(hardware) => {
                     let rig = self.rig();
@@ -1333,9 +1364,12 @@ mod tests {
         assert!(!shows(&app, "RETRY"));
     }
 
+    /// A Catalog one tile wide: one game per row, so rows read like a list.
+    const ONE_COLUMN: f32 = library::TILE_WIDTH;
+
     /// The seed with popularities (Cyberpunk 2077 most popular, then OMORI),
     /// plus a game the pipeline only knows the name of.
-    fn catalog_app(dir: &TempDir) -> App {
+    fn catalog_db_app(dir: &TempDir) -> App {
         let paths = Paths::under(dir.path());
         std::fs::create_dir_all(&paths.data).unwrap();
         let db = GameDb::create_seed(&paths.data.join("games.db")).unwrap();
@@ -1349,6 +1383,12 @@ mod tests {
         db.rebuild_search().unwrap();
         let (mut app, _) = App::new(paths, Language::English);
         let _ = app.update(Message::HardwareDetected(test_support::amd_laptop()));
+        app
+    }
+
+    /// [`catalog_db_app`] on the Catalog page.
+    fn catalog_app(dir: &TempDir) -> App {
+        let mut app = catalog_db_app(dir);
         click(&mut app, "CATALOG");
         app
     }
@@ -1362,6 +1402,7 @@ mod tests {
         let _ = app.update(Message::CatalogScrolled {
             offset: 0.0,
             height: row,
+            width: ONE_COLUMN,
         });
         assert!(shows(&app, "Cyberpunk 2077"));
         assert!(shows(&app, "TOO WEAK"));
@@ -1370,6 +1411,7 @@ mod tests {
         let _ = app.update(Message::CatalogScrolled {
             offset: row,
             height: row,
+            width: ONE_COLUMN,
         });
         assert!(shows(&app, "OMORI"));
         assert!(shows(&app, "READY"));
@@ -1385,6 +1427,7 @@ mod tests {
         let _ = app.update(Message::CatalogScrolled {
             offset: 2.0 * row,
             height: row,
+            width: ONE_COLUMN,
         });
 
         assert!(shows(&app, "Day of Defeat"));
@@ -1399,6 +1442,7 @@ mod tests {
         let _ = app.update(Message::CatalogScrolled {
             offset: row,
             height: row,
+            width: ONE_COLUMN,
         });
 
         let mut ui = iced_test::simulator(app.view());
@@ -1416,10 +1460,11 @@ mod tests {
     fn a_catalog_game_opens_its_page_and_leads_back_to_the_catalog() {
         let dir = TempDir::new().unwrap();
         let mut app = catalog_app(&dir);
-        let row = catalog::ROW_HEIGHT;
+        // Day of Defeat is the third tile of the first row.
         let _ = app.update(Message::CatalogScrolled {
-            offset: 2.0 * row,
-            height: row,
+            offset: 0.0,
+            height: catalog::ROW_HEIGHT,
+            width: THREE_COLUMNS,
         });
 
         click(&mut app, "Day of Defeat");
@@ -1440,6 +1485,7 @@ mod tests {
         let _ = app.update(Message::CatalogScrolled {
             offset: row,
             height: row,
+            width: ONE_COLUMN,
         });
 
         click(&mut app, "NATIVE LINUX");
@@ -1459,6 +1505,7 @@ mod tests {
         let _ = app.update(Message::CatalogScrolled {
             offset: 0.0,
             height: row,
+            width: ONE_COLUMN,
         });
         // Cyberpunk is the most popular, but too much for the iGPU.
         assert!(shows(&app, "OMORI"));
@@ -1479,6 +1526,7 @@ mod tests {
         let _ = app.update(Message::CatalogScrolled {
             offset: 0.0,
             height: row,
+            width: ONE_COLUMN,
         });
 
         // catalog_app's popularity rows have no tier, so the seed's Gold and
@@ -2051,6 +2099,12 @@ mod tests {
     fn the_catalog_can_be_walked_with_the_keyboard() {
         let dir = TempDir::new().unwrap();
         let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+        let _ = app.update(Message::CatalogScrolled {
+            offset: 0.0,
+            height: row,
+            width: ONE_COLUMN,
+        });
 
         // Cyberpunk 2077, OMORI, then Day of Defeat (catalog_app's popularity).
         let _ = app.update(Message::Shortcut(keys::Shortcut::Move(1)));
@@ -2077,6 +2131,53 @@ mod tests {
         }
 
         assert!(shows(&app, "Meets the recommended specs."));
+    }
+
+    /// Exactly three tiles wide.
+    const THREE_COLUMNS: f32 = 3.0 * library::TILE_WIDTH + 2.0 * catalog::GAP;
+
+    #[test]
+    fn the_catalog_is_a_grid_of_covers_downloaded_as_they_come_into_view() {
+        let dir = TempDir::new().unwrap();
+        // Not on the Catalog yet, so no tile has asked for its cover.
+        let mut app = catalog_db_app(&dir);
+        let scroll_to_top = Message::CatalogScrolled {
+            offset: 0.0,
+            height: catalog::ROW_HEIGHT,
+            width: THREE_COLUMNS,
+        };
+
+        let downloads = app.update(scroll_to_top.clone());
+
+        // No art on disk for the three games in view (the test's home has no
+        // Steam): one cover download each, and only once.
+        assert_eq!(downloads.units(), 3);
+        assert_eq!(app.update(scroll_to_top).units(), 0);
+        // One row of three tiles, most popular first.
+        let _ = app.update(Message::Open(Page::Catalog));
+        for name in ["Cyberpunk 2077", "OMORI", "Day of Defeat"] {
+            assert!(shows(&app, name), "{name} not shown");
+        }
+    }
+
+    #[test]
+    fn the_catalog_grid_is_walked_across_and_down() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let _ = app.update(Message::CatalogScrolled {
+            offset: 0.0,
+            height: 2.0 * catalog::ROW_HEIGHT,
+            width: THREE_COLUMNS,
+        });
+
+        // Right twice: the third tile of the first row, Day of Defeat.
+        let _ = app.update(Message::Shortcut(keys::Shortcut::Step(1)));
+        let _ = app.update(Message::Shortcut(keys::Shortcut::Step(1)));
+        let _ = app.update(Message::Shortcut(keys::Shortcut::Open));
+        assert!(shows(
+            &app,
+            "rigcheck hasn't read this game's store page yet."
+        ));
     }
 
     #[test]

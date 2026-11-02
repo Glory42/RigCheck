@@ -13,8 +13,12 @@ pub enum Shortcut {
     Search,
     /// Escape: back from a game page or a comparison.
     Back,
-    /// Arrows and Page Up/Down: move the Catalog's highlighted row.
+    /// Up/Down: move the Catalog's highlight a row of tiles.
     Move(i32),
+    /// Left/Right: move it one tile.
+    Step(i32),
+    /// Page Up/Down: move it a screenful of rows.
+    Page(i32),
     /// Enter: open the highlighted row.
     Open,
 }
@@ -25,8 +29,10 @@ pub fn shortcut(key: &Key, modifiers: Modifiers) -> Option<Shortcut> {
         Key::Named(Named::Escape) => Some(Shortcut::Back),
         Key::Named(Named::ArrowDown) => Some(Shortcut::Move(1)),
         Key::Named(Named::ArrowUp) => Some(Shortcut::Move(-1)),
-        Key::Named(Named::PageDown) => Some(Shortcut::Move(PAGE)),
-        Key::Named(Named::PageUp) => Some(Shortcut::Move(-PAGE)),
+        Key::Named(Named::ArrowRight) => Some(Shortcut::Step(1)),
+        Key::Named(Named::ArrowLeft) => Some(Shortcut::Step(-1)),
+        Key::Named(Named::PageDown) => Some(Shortcut::Page(1)),
+        Key::Named(Named::PageUp) => Some(Shortcut::Page(-1)),
         Key::Named(Named::Enter) => Some(Shortcut::Open),
         Key::Character(c) if modifiers.command() => match c.as_str() {
             "f" => Some(Shortcut::Search),
@@ -36,9 +42,6 @@ pub fn shortcut(key: &Key, modifiers: Modifiers) -> Option<Shortcut> {
         _ => None,
     }
 }
-
-/// Rows Page Up/Down move.
-const PAGE: i32 = 10;
 
 #[cfg(test)]
 mod tests {
@@ -81,8 +84,10 @@ mod tests {
         let named = |key| shortcut(&Key::Named(key), Modifiers::empty());
         assert_eq!(named(Named::ArrowDown), Some(Shortcut::Move(1)));
         assert_eq!(named(Named::ArrowUp), Some(Shortcut::Move(-1)));
-        assert_eq!(named(Named::PageDown), Some(Shortcut::Move(10)));
-        assert_eq!(named(Named::PageUp), Some(Shortcut::Move(-10)));
+        assert_eq!(named(Named::ArrowRight), Some(Shortcut::Step(1)));
+        assert_eq!(named(Named::ArrowLeft), Some(Shortcut::Step(-1)));
+        assert_eq!(named(Named::PageDown), Some(Shortcut::Page(1)));
+        assert_eq!(named(Named::PageUp), Some(Shortcut::Page(-1)));
         assert_eq!(named(Named::Enter), Some(Shortcut::Open));
     }
 }

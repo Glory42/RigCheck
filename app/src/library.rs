@@ -20,6 +20,11 @@ use crate::{Message, Page};
 const COVER_WIDTH: f32 = 164.0;
 const COVER_HEIGHT: f32 = 246.0;
 
+/// A game tile's size: the cover, the stamp (24) and the name (50), inside
+/// a 3 px padding. Fixed, so the Catalog's grid maps scroll to rows.
+pub const TILE_WIDTH: f32 = COVER_WIDTH + 6.0;
+pub const TILE_HEIGHT: f32 = COVER_HEIGHT + 24.0 + 50.0 + 6.0;
+
 /// The search box's widget ID.
 pub const SEARCH: &str = "library-search";
 
@@ -177,7 +182,34 @@ fn rank(status: &Status) -> u8 {
 }
 
 fn tile<'a>(entry: Entry<'a>, i18n: &I18n, colors: Colors) -> Element<'a, Message> {
-    let cover: Element<'a, Message> = match entry.cover {
+    let game = entry.game;
+    // The grid stretches cells to its column width; the container takes that,
+    // so the tile keeps the cover's width.
+    container(game_tile(
+        game.app_id,
+        &game.name,
+        &entry.status,
+        entry.cover,
+        false,
+        i18n,
+        colors,
+    ))
+    .width(Fill)
+    .into()
+}
+
+/// A game as a tile: cover, verdict stamp and name, opening its page.
+/// [`TILE_WIDTH`] × [`TILE_HEIGHT`]; `selected` outlines it for the keyboard.
+pub fn game_tile(
+    app_id: u32,
+    name: &str,
+    status: &Status,
+    cover: Option<&PathBuf>,
+    selected: bool,
+    i18n: &I18n,
+    colors: Colors,
+) -> Element<'static, Message> {
+    let cover: Element<'static, Message> = match cover {
         // Exactly the art's 2:3 shape, so filling the box never spills over.
         Some(path) => image(Handle::from_path(path))
             .width(COVER_WIDTH)
@@ -190,7 +222,7 @@ fn tile<'a>(entry: Entry<'a>, i18n: &I18n, colors: Colors) -> Element<'a, Messag
             .style(move |_| container::Style::default().background(colors.panel2))
             .into(),
     };
-    let (label, color) = stamp(&entry.status, i18n);
+    let (label, color) = stamp(status, i18n);
     // Fixed heights: the grid sizes cells to fit, and would squash the stamp.
     let stamp = container(text(label).font(BOLD).size(12))
         .padding([3, 6])
@@ -200,15 +232,20 @@ fn tile<'a>(entry: Entry<'a>, i18n: &I18n, colors: Colors) -> Element<'a, Messag
             text_color: Some(colors.line),
             ..container::Style::default().background(color)
         });
-    let name = container(text(entry.game.name.clone()).font(BOLD).size(12))
+    let name = container(text(name.to_owned()).font(BOLD).size(12))
         .padding([6, 6])
         .height(50);
 
-    let tile = button(column![cover, stamp, name].width(COVER_WIDTH))
-        .width(COVER_WIDTH + 6.0) // + the padding inside the outline
+    button(column![cover, stamp, name].width(COVER_WIDTH))
+        .width(TILE_WIDTH)
+        .height(TILE_HEIGHT)
         .padding(3)
         .style(move |_, _| {
-            let boxed = colors.boxed(colors.panel);
+            let boxed = colors.boxed(if selected {
+                colors.accent
+            } else {
+                colors.panel
+            });
             button::Style {
                 background: boxed.background,
                 text_color: colors.text,
@@ -217,10 +254,8 @@ fn tile<'a>(entry: Entry<'a>, i18n: &I18n, colors: Colors) -> Element<'a, Messag
                 snap: true,
             }
         })
-        .on_press(Message::Open(Page::Game(entry.game.app_id)));
-    // The grid stretches cells to its column width; the container takes that,
-    // so the tile keeps the cover's width.
-    container(tile).width(Fill).into()
+        .on_press(Message::Open(Page::Game(app_id)))
+        .into()
 }
 
 /// The stamp's text and color.

@@ -1,25 +1,30 @@
 //! The Catalog page: every game in games.db, most popular first, searchable.
-//! The list is virtual: only the rows in view are fetched and drawn.
+//! A grid of game tiles like the Library's, but virtual: only the rows in
+//! view are fetched and drawn, and only their covers downloaded.
 
 use std::collections::HashMap;
 use std::ops::Range;
+use std::path::PathBuf;
 
 use iced::widget::{button, column, container, row, scrollable, space, text, text_input};
 use iced::{Element, Fill};
 use rigcheck_core::{ProtonTier, Specs};
 use rigcheck_gamedb::{Filters, Game, GameDb};
 
+use crate::Message;
 use crate::i18n::I18n;
-use crate::library::{Status, stamp, status};
+use crate::library::{TILE_HEIGHT, TILE_WIDTH, game_tile, status};
 use crate::style::{BOLD, Colors};
-use crate::{Message, Page};
 
 /// The search box's and the list's widget IDs.
 pub const SEARCH: &str = "catalog-search";
 pub const LIST: &str = "catalog-list";
 
-/// Every row is this tall, so a scroll position maps straight to rows.
-pub const ROW_HEIGHT: f32 = 48.0;
+/// Space between tiles, across and down.
+pub const GAP: f32 = 18.0;
+/// A row of tiles and the gap under it, so a scroll position maps straight
+/// to rows.
+pub const ROW_HEIGHT: f32 = TILE_HEIGHT + GAP;
 
 /// A filter that's on or off.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -68,11 +73,15 @@ pub struct List {
     can_run: bool,
     scroll: f32,
     viewport: f32,
+    /// The grid's width, for how many tiles fit in a row.
+    width: f32,
     total: usize,
     /// The index of `rows[0]` in the whole list.
     first: usize,
-    /// The row the keyboard has highlighted.
+    /// The tile the keyboard has highlighted…
     selected: usize,
+    /// …shown once the keyboard has moved it, not before.
+    keyboard: bool,
     rows: Vec<Game>,
 }
 
@@ -85,9 +94,11 @@ impl Default for List {
             scroll: 0.0,
             // Until the list reports its size: enough for a tall window.
             viewport: 1200.0,
+            width: 1060.0,
             total: 0,
             first: 0,
             selected: 0,
+            keyboard: false,
             rows: Vec::new(),
         }
     }
@@ -96,9 +107,10 @@ impl Default for List {
 impl List {
     /// Fetches the rows that scrolled into view. The count stays: it
     /// only changes with the search (and costs ~30 ms on a broad one).
-    pub fn scrolled(&mut self, offset: f32, height: f32, db: &GameDb) {
+    pub fn scrolled(&mut self, offset: f32, height: f32, width: f32, db: &GameDb) {
         self.scroll = offset;
         self.viewport = height;
+        self.width = width;
         self.fetch_rows(db);
     }
 
@@ -143,6 +155,7 @@ impl List {
     fn restart(&mut self, db: &GameDb) {
         self.scroll = 0.0;
         self.selected = 0;
+        self.keyboard = false;
         self.refresh(db);
     }
 
@@ -153,15 +166,31 @@ impl List {
         self.fetch_rows(db);
     }
 
-    /// Moves the highlight `by` rows and scrolls it into view. Returns the
-    /// new scroll offset, for the caller to move the list widget too.
-    pub fn move_selection(&mut self, by: i32, db: &GameDb) -> f32 {
+    /// Tiles in a row.
+    pub fn columns(&self) -> usize {
+        columns(self.width)
+    }
+
+    /// Whole rows of tiles the window shows; at least one.
+    pub fn rows_in_view(&self) -> usize {
+        ((self.viewport / ROW_HEIGHT).floor() as usize).max(1)
+    }
+
+    /// The games in view, for their covers.
+    pub fn visible_ids(&self) -> Vec<u32> {
+        self.rows.iter().map(|game| game.app_id).collect()
+    }
+
+    /// Moves the highlight `by` tiles and scrolls its row into view.
+    /// Returns the new scroll offset, for the caller to move the grid too.
+    pub fn move_selection(&mut self, by: i64, db: &GameDb) -> f32 {
         if self.total == 0 {
             return self.scroll;
         }
         let last = self.total - 1;
-        self.selected = (self.selected as i64 + i64::from(by)).clamp(0, last as i64) as usize;
-        let top = self.selected as f32 * ROW_HEIGHT;
+        self.selected = (self.selected as i64 + by).clamp(0, last as i64) as usize;
+        self.keyboard = true;
+        let top = (self.selected / self.columns()) as f32 * ROW_HEIGHT;
         if top < self.scroll {
             self.scroll = top;
         } else if top + ROW_HEIGHT > self.scroll + self.viewport {
@@ -184,7 +213,7 @@ impl List {
     }
 
     fn fetch_rows(&mut self, db: &GameDb) {
-        let range = visible_rows(self.scroll, self.viewport, ROW_HEIGHT, self.total);
+        let range = visible_tiles(self.scroll, self.viewport, self.width, self.total);
         if range.start == self.first && range.len() == self.rows.len() && !self.rows.is_empty() {
             return; // Same rows as before.
         }
@@ -214,15 +243,38 @@ impl List {
 pub fn view<'a>(
     list: &'a List,
     specs: Option<&Specs>,
+    covers: &HashMap<u32, PathBuf>,
     i18n: &I18n,
     colors: Colors,
 ) -> Element<'a, Message> {
-    let above = list.first as f32 * ROW_HEIGHT;
-    let below = list.total.saturating_sub(list.first + list.rows.len()) as f32 * ROW_HEIGHT;
-    let rows = list.rows.iter().enumerate().map(|(index, game)| {
-        let selected = list.first + index == list.selected;
-        game_row(game, &status(Some(game), specs), selected, i18n, colors)
-    });
+    // Whole rows of tiles, with spacers standing in for the rows above and
+    // below the window.
+    let columns = list.columns();
+    let first_row = list.first / columns;
+    let shown_rows = list.rows.len().div_ceil(columns);
+    let rows_after = list
+        .total
+        .div_ceil(columns)
+        .saturating_sub(first_row + shown_rows);
+    let tiles = list
+        .rows
+        .chunks(columns)
+        .enumerate()
+        .map(|(row_index, games)| {
+            let tiles = games.iter().enumerate().map(|(index, game)| {
+                let position = list.first + row_index * columns + index;
+                game_tile(
+                    game.app_id,
+                    &game.name,
+                    &status(Some(game), specs),
+                    covers.get(&game.app_id),
+                    list.keyboard && position == list.selected,
+                    i18n,
+                    colors,
+                )
+            });
+            container(row(tiles).spacing(GAP)).height(ROW_HEIGHT).into()
+        });
     let search_box = text_input(&i18n.t("catalog-search"), &list.query)
         .id(SEARCH)
         .on_input(Message::CatalogSearch)
@@ -231,14 +283,15 @@ pub fn view<'a>(
         .padding(10)
         .font(BOLD);
     let list_view = scrollable(
-        column![space().height(above)]
-            .extend(rows)
-            .push(space().height(below))
+        column![space().height(first_row as f32 * ROW_HEIGHT)]
+            .extend(tiles)
+            .push(space().height(rows_after as f32 * ROW_HEIGHT))
             .width(Fill),
     )
     .on_scroll(|viewport| Message::CatalogScrolled {
         offset: viewport.absolute_offset().y,
         height: viewport.bounds().height,
+        width: viewport.bounds().width,
     })
     .id(LIST)
     .height(Fill);
@@ -283,40 +336,22 @@ pub fn view<'a>(
         .into()
 }
 
-fn game_row<'a>(
-    game: &'a Game,
-    status: &Status,
-    // Highlighted for the keyboard.
-    selected: bool,
-    i18n: &I18n,
-    colors: Colors,
-) -> Element<'a, Message> {
-    let (label, color) = stamp(status, i18n);
-    let stamp = container(text(label).font(BOLD).size(12))
-        .padding([3, 8])
-        .style(move |_| container::Style {
-            text_color: Some(colors.line),
-            ..container::Style::default().background(color)
-        });
-    button(
-        row![
-            text(game.name.as_str()).font(BOLD).size(14),
-            space::horizontal(),
-            stamp
-        ]
-        .height(Fill)
-        .align_y(iced::Center),
-    )
-    .height(ROW_HEIGHT)
-    .width(Fill)
-    .padding([0, 12])
-    .style(colors.button(selected))
-    .on_press(Message::Open(Page::Game(game.app_id)))
-    .into()
-}
-
 /// The rows at least partly visible when the list is scrolled `scroll`
 /// pixels down a `viewport` that tall, with `total` rows of `row_height`.
+/// How many tiles fit side by side in `width` pixels; at least one.
+pub fn columns(width: f32) -> usize {
+    (((width + GAP) / (TILE_WIDTH + GAP)).floor() as usize).max(1)
+}
+
+/// The tiles (by index in the whole list) in rows at least partly visible
+/// when the grid is scrolled `scroll` pixels down a `viewport` that tall and
+/// `width` wide, with `total` tiles.
+pub fn visible_tiles(scroll: f32, viewport: f32, width: f32, total: usize) -> Range<usize> {
+    let columns = columns(width);
+    let rows = visible_rows(scroll, viewport, ROW_HEIGHT, total.div_ceil(columns));
+    (rows.start * columns).min(total)..(rows.end * columns).min(total)
+}
+
 pub fn visible_rows(scroll: f32, viewport: f32, row_height: f32, total: usize) -> Range<usize> {
     let first = (scroll.max(0.0) / row_height).floor() as usize;
     let end = ((scroll.max(0.0) + viewport) / row_height).ceil() as usize;
@@ -326,6 +361,29 @@ pub fn visible_rows(scroll: f32, viewport: f32, row_height: f32, total: usize) -
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::library::TILE_WIDTH;
+
+    /// Exactly `n` tiles and the gaps between them.
+    fn width_for(n: usize) -> f32 {
+        n as f32 * TILE_WIDTH + (n - 1) as f32 * GAP
+    }
+
+    #[test]
+    fn as_many_columns_as_whole_tiles_fit() {
+        assert_eq!(columns(width_for(3)), 3);
+        assert_eq!(columns(width_for(3) - 1.0), 2);
+        assert_eq!(columns(10.0), 1, "a tiny window still shows a column");
+    }
+
+    #[test]
+    fn the_tiles_in_view_are_whole_rows_of_them() {
+        let width = width_for(3);
+        assert_eq!(visible_tiles(0.0, ROW_HEIGHT, width, 100), 0..3);
+        assert_eq!(visible_tiles(ROW_HEIGHT, ROW_HEIGHT, width, 100), 3..6);
+        // Five games: the second row has two.
+        assert_eq!(visible_tiles(ROW_HEIGHT, ROW_HEIGHT, width, 5), 3..5);
+    }
 
     #[test]
     fn at_the_top_the_first_rows_that_fit_are_drawn() {
