@@ -4,14 +4,16 @@
 //! builds a small one from `data/seed/`, the hardware table and the corpus,
 //! for tests.
 
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::path::Path;
 
 use rigcheck_core::{
-    AntiCheat, Catalog, CatalogEntry, GameRequirements, LinuxInfo, ParsedTier, ProtonTier,
+    AntiCheat, Catalog, CatalogEntry, GameRequirements, Level, LinuxInfo, ParsedTier, ProtonTier,
     Requirement, Specs, Vendor, Verdict, evaluate, parse,
 };
 use rigcheck_hardware::{Hardware, Vram};
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{Connection, OptionalExtension, params, params_from_iter};
 use serde::Deserialize;
 
 mod update;
@@ -27,6 +29,9 @@ const CORPUS: &str = include_str!("../../../data/fixtures/requirements/corpus.js
 
 pub struct GameDb {
     conn: Connection,
+    /// The specs `temp.runnable` was filled for, if it has been (see
+    /// [`Filters::runs_on`]).
+    runnable_for: RefCell<Option<Specs>>,
 }
 
 /// A game and what it needs.
@@ -101,6 +106,68 @@ impl Game {
     }
 }
 
+/// What the Catalog lists besides a search. The default lists everything.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Filters {
+    /// Only games with a Linux build.
+    pub native_linux: bool,
+    /// Only games Valve verified for the Steam Deck.
+    pub deck_verified: bool,
+    /// Only games ProtonDB rates this or better: Gold keeps Gold and Platinum.
+    pub protondb_at_least: Option<ProtonTier>,
+    /// Hides games whose anti-cheat doesn't work on Linux today: denied,
+    /// broken, or support only planned.
+    pub no_anticheat_issues: bool,
+    /// Only games that reach at least their minimum on these specs.
+    pub runs_on: Option<Specs>,
+}
+
+/// A game's Linux facts from its games.db columns.
+fn linux_info(native: bool, protondb: Option<&str>, anticheat: Option<&str>) -> LinuxInfo {
+    LinuxInfo {
+        anticheat: anticheat.and_then(anticheat_status),
+        protondb: protondb.and_then(proton_tier),
+        native,
+    }
+}
+
+/// The SQL conditions for `filters`' plain columns. Their values are ours,
+/// not the user's, so they're written inline.
+fn filter_conditions(filters: &Filters) -> Vec<String> {
+    let mut conditions = Vec::new();
+    if filters.native_linux {
+        conditions.push("g.linux_native = 1".to_owned());
+    }
+    if filters.deck_verified {
+        conditions.push("g.deck_status = 'verified'".to_owned());
+    }
+    if let Some(lowest) = filters.protondb_at_least {
+        let best_first = [
+            ProtonTier::Platinum,
+            ProtonTier::Gold,
+            ProtonTier::Silver,
+            ProtonTier::Bronze,
+            ProtonTier::Borked,
+        ];
+        let end = best_first
+            .iter()
+            .position(|&tier| tier == lowest)
+            .unwrap_or(4);
+        let names: Vec<String> = best_first[..=end]
+            .iter()
+            .map(|&tier| format!("'{}'", proton_tier_name(tier)))
+            .collect();
+        conditions.push(format!("g.protondb_tier IN ({})", names.join(", ")));
+    }
+    if filters.no_anticheat_issues {
+        conditions.push(
+            "(g.anticheat_status IS NULL OR g.anticheat_status NOT IN ('denied', 'broken', 'planned'))"
+                .to_owned(),
+        );
+    }
+    conditions
+}
+
 /// `query` as an FTS5 match: each word quoted (so no FTS syntax leaks in)
 /// and matched as a prefix. `None` for a blank query.
 fn fts_query(query: &str) -> Option<String> {
@@ -159,9 +226,7 @@ impl Tier {
 
 impl GameDb {
     pub fn open(path: &Path) -> Result<GameDb, Error> {
-        Ok(GameDb {
-            conn: Connection::open(path)?,
-        })
+        Ok(GameDb::with(Connection::open(path)?))
     }
 
     /// An empty games.db at `path` with the schema, replacing any file there.
@@ -175,7 +240,14 @@ impl GameDb {
             "INSERT INTO meta (key, value) VALUES ('schema_version', ?1)",
             [SCHEMA_VERSION],
         )?;
-        Ok(GameDb { conn })
+        Ok(GameDb::with(conn))
+    }
+
+    fn with(conn: Connection) -> GameDb {
+        GameDb {
+            conn,
+            runnable_for: RefCell::new(None),
+        }
     }
 
     /// Builds the seed database at `path`, replacing any file there.
@@ -419,45 +491,167 @@ impl GameDb {
     pub fn games_page(
         &self,
         query: &str,
+        filters: &Filters,
         offset: usize,
         limit: usize,
     ) -> Result<Vec<(u32, String)>, Error> {
-        let game = |row: &rusqlite::Row| Ok((row.get(0)?, row.get(1)?));
-        let page = match fts_query(query) {
-            None => self
-                .conn
-                .prepare(
-                    "SELECT app_id, name FROM games
-                     ORDER BY popularity DESC, name LIMIT ?1 OFFSET ?2",
-                )?
-                .query_map(params![limit as i64, offset as i64], game)?
-                .collect::<Result<_, _>>()?,
-            Some(terms) => self
-                .conn
-                .prepare(
-                    "SELECT g.app_id, g.name FROM games_fts f JOIN games g ON g.app_id = f.rowid
-                     WHERE games_fts MATCH ?3
-                     ORDER BY g.popularity DESC, g.name LIMIT ?1 OFFSET ?2",
-                )?
-                .query_map(params![limit as i64, offset as i64, terms], game)?
-                .collect::<Result<_, _>>()?,
-        };
+        let (from, values) = self.catalog_from(query, filters)?;
+        let sql = format!(
+            "SELECT g.app_id, g.name {from} ORDER BY g.popularity DESC, g.name LIMIT {limit} OFFSET {offset}"
+        );
+        let page = self
+            .conn
+            .prepare(&sql)?
+            .query_map(params_from_iter(values), |row| {
+                Ok((row.get(0)?, row.get(1)?))
+            })?
+            .collect::<Result<_, _>>()?;
         Ok(page)
     }
 
-    /// How many games the Catalog lists for `query`.
-    pub fn games_count(&self, query: &str) -> Result<usize, Error> {
-        let count: i64 = match fts_query(query) {
-            None => self
-                .conn
-                .query_row("SELECT count(*) FROM games", [], |row| row.get(0))?,
-            Some(terms) => self.conn.query_row(
-                "SELECT count(*) FROM games_fts WHERE games_fts MATCH ?1",
-                [terms],
-                |row| row.get(0),
-            )?,
-        };
+    /// How many games the Catalog lists for `query` and `filters`.
+    pub fn games_count(&self, query: &str, filters: &Filters) -> Result<usize, Error> {
+        let (from, values) = self.catalog_from(query, filters)?;
+        let count: i64 = self.conn.query_row(
+            &format!("SELECT count(*) {from}"),
+            params_from_iter(values),
+            |row| row.get(0),
+        )?;
         Ok(count as usize)
+    }
+
+    /// The `FROM … WHERE …` of a Catalog query, and the values for its `?`s.
+    fn catalog_from(&self, query: &str, filters: &Filters) -> Result<(String, Vec<String>), Error> {
+        let mut from = "FROM games g".to_owned();
+        if let Some(specs) = &filters.runs_on {
+            self.fill_runnable(specs)?;
+            from.push_str(" JOIN temp.runnable USING (app_id)");
+        }
+        let mut conditions = Vec::new();
+        let mut values = Vec::new();
+        if let Some(terms) = fts_query(query) {
+            from.push_str(" JOIN games_fts ON games_fts.rowid = g.app_id");
+            conditions.push("games_fts MATCH ?".to_owned());
+            values.push(terms);
+        }
+        conditions.extend(filter_conditions(filters));
+        if !conditions.is_empty() {
+            from = format!("{from} WHERE {}", conditions.join(" AND "));
+        }
+        Ok((from, values))
+    }
+
+    /// Fills `temp.runnable` (on this connection only) with the games that
+    /// reach at least their minimum on `specs`, unless it already holds them.
+    fn fill_runnable(&self, specs: &Specs) -> Result<(), Error> {
+        if self.runnable_for.borrow().as_ref() == Some(specs) {
+            return Ok(());
+        }
+        let checked = self.checked_games()?;
+        let tx = self.conn.unchecked_transaction()?;
+        tx.execute_batch(
+            "CREATE TEMP TABLE IF NOT EXISTS runnable (app_id INTEGER PRIMARY KEY);
+             DELETE FROM temp.runnable;",
+        )?;
+        {
+            let mut insert = tx.prepare("INSERT INTO temp.runnable (app_id) VALUES (?1)")?;
+            for game in checked {
+                if matches!(
+                    game.verdict(specs).overall,
+                    Level::Minimum | Level::Recommended
+                ) {
+                    insert.execute([game.app_id])?;
+                }
+            }
+        }
+        tx.commit()?;
+        *self.runnable_for.borrow_mut() = Some(specs.clone());
+        Ok(())
+    }
+
+    /// Every game whose store page has been read, as [`GameDb::game`] loads
+    /// it, but in three queries instead of seven per game (~70k games after
+    /// a month of crawling).
+    fn checked_games(&self) -> Result<Vec<Game>, Error> {
+        let mut games: HashMap<u32, Game> = HashMap::new();
+        let mut statement = self.conn.prepare(
+            "SELECT app_id, name, linux_native, protondb_tier, deck_status, anticheat_status,
+                    anticheat_name
+             FROM games WHERE requirements_status != 'not_crawled'",
+        )?;
+        let mut rows = statement.query([])?;
+        while let Some(row) = rows.next()? {
+            let app_id: u32 = row.get(0)?;
+            let protondb: Option<String> = row.get(3)?;
+            let anticheat: Option<String> = row.get(5)?;
+            let game = Game {
+                app_id,
+                name: row.get(1)?,
+                minimum: None,
+                recommended: None,
+                linux: linux_info(row.get(2)?, protondb.as_deref(), anticheat.as_deref()),
+                deck: row.get(4)?,
+                anticheat_name: row.get(6)?,
+                crawled: true,
+            };
+            games.insert(app_id, game);
+        }
+
+        let mut statement = self.conn.prepare(
+            "SELECT app_id, tier, cpu_raw, gpu_raw, ram_mb, vram_mb, storage_mb, directx
+             FROM requirements",
+        )?;
+        let mut rows = statement.query([])?;
+        while let Some(row) = rows.next()? {
+            let Some(game) = games.get_mut(&row.get(0)?) else {
+                continue;
+            };
+            let tier = Tier {
+                cpu_text: row.get(2)?,
+                gpu_text: row.get(3)?,
+                ram_mb: row.get(4)?,
+                vram_mb: row.get(5)?,
+                storage_mb: row.get(6)?,
+                directx: row.get(7)?,
+                ..Tier::default()
+            };
+            match row.get_ref(1)?.as_str()? {
+                "minimum" => game.minimum = Some(tier),
+                _ => game.recommended = Some(tier),
+            }
+        }
+
+        let mut statement = self.conn.prepare(
+            "SELECT r.app_id, r.tier, r.kind, h.name, h.vendor, h.score, h.vram_mb
+             FROM requirement_hardware r JOIN hardware h ON h.id = r.hardware_id
+             ORDER BY r.app_id, r.tier, r.kind, r.position",
+        )?;
+        let mut rows = statement.query([])?;
+        while let Some(row) = rows.next()? {
+            let Some(game) = games.get_mut(&row.get(0)?) else {
+                continue;
+            };
+            let tier = match row.get_ref(1)?.as_str()? {
+                "minimum" => game.minimum.as_mut(),
+                _ => game.recommended.as_mut(),
+            };
+            let Some(tier) = tier else {
+                continue;
+            };
+            let entry = CatalogEntry {
+                name: row.get(3)?,
+                vendor: vendor_from(&row.get::<_, String>(4)?)?,
+                score: row.get(5)?,
+                vram_mb: row.get(6)?,
+                aliases: Vec::new(),
+                pci: Vec::new(),
+            };
+            match row.get_ref(2)?.as_str()? {
+                "cpu" => tier.cpus.push(entry),
+                _ => tier.gpus.push(entry),
+            }
+        }
+        Ok(games.into_values().collect())
     }
 
     /// When each app was last fetched.
@@ -499,11 +693,7 @@ impl GameDb {
             name,
             minimum: self.tier(app_id, "minimum")?,
             recommended: self.tier(app_id, "recommended")?,
-            linux: LinuxInfo {
-                anticheat: anticheat.as_deref().and_then(anticheat_status),
-                protondb: protondb.as_deref().and_then(proton_tier),
-                native,
-            },
+            linux: linux_info(native, protondb.as_deref(), anticheat.as_deref()),
             deck,
             anticheat_name,
             crawled,

@@ -6,8 +6,8 @@ use std::ops::Range;
 
 use iced::widget::{button, column, container, row, scrollable, space, text, text_input};
 use iced::{Element, Fill};
-use rigcheck_core::Specs;
-use rigcheck_gamedb::{Game, GameDb};
+use rigcheck_core::{ProtonTier, Specs};
+use rigcheck_gamedb::{Filters, Game, GameDb};
 
 use crate::i18n::I18n;
 use crate::library::{Status, stamp, status};
@@ -21,10 +21,51 @@ pub const LIST: &str = "catalog-list";
 /// Every row is this tall, so a scroll position maps straight to rows.
 pub const ROW_HEIGHT: f32 = 48.0;
 
+/// A filter that's on or off.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Chip {
+    /// Only games this PC (with any override) reaches the minimum for.
+    CanRun,
+    NativeLinux,
+    DeckVerified,
+    NoAntiCheatIssues,
+}
+
+impl Chip {
+    const ALL: [Chip; 4] = [
+        Chip::CanRun,
+        Chip::NativeLinux,
+        Chip::DeckVerified,
+        Chip::NoAntiCheatIssues,
+    ];
+
+    fn label_id(self) -> &'static str {
+        match self {
+            Chip::CanRun => "filter-can-run",
+            Chip::NativeLinux => "filter-native-linux",
+            Chip::DeckVerified => "filter-deck-verified",
+            Chip::NoAntiCheatIssues => "filter-no-anticheat-issues",
+        }
+    }
+
+    fn is_on(self, list: &List) -> bool {
+        match self {
+            Chip::CanRun => list.can_run,
+            Chip::NativeLinux => list.filters.native_linux,
+            Chip::DeckVerified => list.filters.deck_verified,
+            Chip::NoAntiCheatIssues => list.filters.no_anticheat_issues,
+        }
+    }
+}
+
 /// The list's state: what's searched, where it's scrolled, and the rows in
 /// view (fetched from games.db as they come into view).
 pub struct List {
     query: String,
+    filters: Filters,
+    /// Whether CAN RUN is on. `filters.runs_on` holds the specs it uses
+    /// once hardware detection has finished.
+    can_run: bool,
     scroll: f32,
     viewport: f32,
     total: usize,
@@ -37,6 +78,8 @@ impl Default for List {
     fn default() -> List {
         List {
             query: String::new(),
+            filters: Filters::default(),
+            can_run: false,
             scroll: 0.0,
             // Until the list reports its size: enough for a tall window.
             viewport: 1200.0,
@@ -57,16 +100,51 @@ impl List {
     }
 
     /// Lists `query`'s matches from the top. The caller scrolls the list
-    /// widget back up too ([`LIST`]).
+    /// widget back up too ([`LIST`]), as for every change of what's listed.
     pub fn search(&mut self, query: String, db: &GameDb) {
         self.query = query;
+        self.restart(db);
+    }
+
+    /// Turns `chip` on or off. `specs` are this PC's, for CAN RUN.
+    pub fn toggle(&mut self, chip: Chip, specs: Option<Specs>, db: &GameDb) {
+        let on = !chip.is_on(self);
+        match chip {
+            Chip::CanRun => {
+                self.can_run = on;
+                self.filters.runs_on = specs.filter(|_| on);
+            }
+            Chip::NativeLinux => self.filters.native_linux = on,
+            Chip::DeckVerified => self.filters.deck_verified = on,
+            Chip::NoAntiCheatIssues => self.filters.no_anticheat_issues = on,
+        }
+        self.restart(db);
+    }
+
+    /// Keeps games ProtonDB rates `lowest` or better; `None` keeps all.
+    pub fn protondb(&mut self, lowest: Option<ProtonTier>, db: &GameDb) {
+        self.filters.protondb_at_least = lowest;
+        self.restart(db);
+    }
+
+    /// Uses new specs (detection finished, or an override changed) for
+    /// CAN RUN, if it's on.
+    pub fn use_specs(&mut self, specs: Option<Specs>, db: &GameDb) {
+        if self.can_run && self.filters.runs_on != specs {
+            self.filters.runs_on = specs;
+            self.restart(db);
+        }
+    }
+
+    /// Lists from the first row again, after what's listed changed.
+    fn restart(&mut self, db: &GameDb) {
         self.scroll = 0.0;
         self.refresh(db);
     }
 
     /// Counts the matches and fetches the rows in view, e.g. for a new games.db.
     pub fn refresh(&mut self, db: &GameDb) {
-        self.total = db.games_count(&self.query).unwrap_or(0);
+        self.total = db.games_count(&self.query, &self.filters).unwrap_or(0);
         self.rows.clear();
         self.fetch_rows(db);
     }
@@ -77,7 +155,7 @@ impl List {
             return; // Same rows as before.
         }
         let page = db
-            .games_page(&self.query, range.start, range.len())
+            .games_page(&self.query, &self.filters, range.start, range.len())
             .unwrap_or_default();
         self.first = range.start;
         // Scrolling a little keeps most rows: reuse them and only load the
@@ -128,7 +206,45 @@ pub fn view<'a>(
     })
     .id(LIST)
     .height(Fill);
-    column![search_box, list_view].spacing(16).into()
+    let chips = Chip::ALL.map(|chip| {
+        button(text(i18n.t(chip.label_id())).font(BOLD).size(12))
+            .padding([6, 10])
+            .style(colors.button(chip.is_on(list)))
+            // CAN RUN needs the hardware first.
+            .on_press_maybe(
+                (chip != Chip::CanRun || specs.is_some()).then_some(Message::CatalogFilter(chip)),
+            )
+            .into()
+    });
+    let tier_button = |lowest: Option<ProtonTier>| {
+        let label = match lowest {
+            None => i18n.t("filter-protondb-any"),
+            // ProtonDB's own tier names, as on the game page.
+            Some(ProtonTier::Platinum) => "PLATINUM".to_owned(),
+            Some(tier) => format!("{}+", format!("{tier:?}").to_uppercase()),
+        };
+        button(text(label).font(BOLD).size(12))
+            .padding([6, 10])
+            .style(colors.button(list.filters.protondb_at_least == lowest))
+            .on_press(Message::CatalogProtonDb(lowest))
+            .into()
+    };
+    let tiers = row![text(i18n.t("game-protondb")).font(BOLD).size(12)]
+        .extend(
+            [
+                None,
+                Some(ProtonTier::Platinum),
+                Some(ProtonTier::Gold),
+                Some(ProtonTier::Silver),
+                Some(ProtonTier::Bronze),
+            ]
+            .map(tier_button),
+        )
+        .spacing(8)
+        .align_y(iced::Center);
+    column![search_box, row(chips).spacing(8).wrap(), tiers, list_view]
+        .spacing(16)
+        .into()
 }
 
 fn game_row<'a>(
