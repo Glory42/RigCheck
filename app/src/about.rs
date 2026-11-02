@@ -54,6 +54,17 @@ pub fn view(i18n: &I18n, colors: Colors) -> Element<'static, Message> {
             .into()
         ),
         boxed(
+            column![
+                text(i18n.t("about-keyboard")).font(BOLD).size(11),
+                text(i18n.t("about-keys-tabs")),
+                text(i18n.t("about-keys-search")),
+                text(i18n.t("about-keys-move")),
+                text(i18n.t("about-keys-back")),
+            ]
+            .spacing(6)
+            .into()
+        ),
+        boxed(
             column![text(i18n.t("about-credits")).font(BOLD).size(11)]
                 .extend(credits)
                 .spacing(6)

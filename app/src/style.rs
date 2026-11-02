@@ -195,3 +195,54 @@ pub fn level_color(level: rigcheck_core::Level) -> Color {
         Level::Unknown => rgb(0x8b949e),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::settings::Appearance;
+    use rigcheck_core::Level;
+
+    /// WCAG 2's contrast ratio: (lighter + 0.05) / (darker + 0.05), from
+    /// each color's relative luminance.
+    fn contrast(a: Color, b: Color) -> f32 {
+        let channel = |c: f32| {
+            if c <= 0.03928 {
+                c / 12.92
+            } else {
+                ((c + 0.055) / 1.055).powf(2.4)
+            }
+        };
+        let luminance =
+            |c: Color| 0.2126 * channel(c.r) + 0.7152 * channel(c.g) + 0.0722 * channel(c.b);
+        let (l1, l2) = (luminance(a), luminance(b));
+        (l1.max(l2) + 0.05) / (l1.min(l2) + 0.05)
+    }
+
+    /// WCAG AA for normal text: 4.5:1, in every appearance.
+    #[test]
+    fn every_appearance_has_readable_text() {
+        for appearance in Appearance::ALL {
+            let c = appearance.colors();
+            let pairs = [
+                ("text on background", c.text, c.bg),
+                ("text on panels", c.text, c.panel),
+                ("top bar text", c.text, c.hud),
+                ("muted text on background", c.muted, c.bg),
+                ("muted text on panels", c.muted, c.panel),
+                ("selected buttons", c.on_accent, c.accent),
+            ];
+            let stamps = [
+                Level::Recommended,
+                Level::Minimum,
+                Level::Below,
+                Level::Blocked,
+                Level::Unknown,
+            ]
+            .map(|level| ("a stamp", c.line, level_color(level)));
+            for (what, fg, bg) in pairs.into_iter().chain(stamps) {
+                let ratio = contrast(fg, bg);
+                assert!(ratio >= 4.5, "{appearance:?}: {what} is {ratio:.1}:1");
+            }
+        }
+    }
+}

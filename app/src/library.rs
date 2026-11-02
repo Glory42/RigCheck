@@ -77,6 +77,8 @@ pub fn view<'a>(
     let search_box = text_input(&i18n.t("library-search"), search)
         .id(SEARCH)
         .on_input(Message::Search)
+        // Enter opens the first game listed.
+        .on_submit(Message::LibraryOpenFirst)
         .padding(10)
         .font(BOLD);
     let order_button = |id: &str, this: Order| {
