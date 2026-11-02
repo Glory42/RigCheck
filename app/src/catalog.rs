@@ -71,6 +71,8 @@ pub struct List {
     total: usize,
     /// The index of `rows[0]` in the whole list.
     first: usize,
+    /// The row the keyboard has highlighted.
+    selected: usize,
     rows: Vec<Game>,
 }
 
@@ -85,6 +87,7 @@ impl Default for List {
             viewport: 1200.0,
             total: 0,
             first: 0,
+            selected: 0,
             rows: Vec::new(),
         }
     }
@@ -139,6 +142,7 @@ impl List {
     /// Lists from the first row again, after what's listed changed.
     fn restart(&mut self, db: &GameDb) {
         self.scroll = 0.0;
+        self.selected = 0;
         self.refresh(db);
     }
 
@@ -147,6 +151,36 @@ impl List {
         self.total = db.games_count(&self.query, &self.filters).unwrap_or(0);
         self.rows.clear();
         self.fetch_rows(db);
+    }
+
+    /// Moves the highlight `by` rows and scrolls it into view. Returns the
+    /// new scroll offset, for the caller to move the list widget too.
+    pub fn move_selection(&mut self, by: i32, db: &GameDb) -> f32 {
+        if self.total == 0 {
+            return self.scroll;
+        }
+        let last = self.total - 1;
+        self.selected = (self.selected as i64 + i64::from(by)).clamp(0, last as i64) as usize;
+        let top = self.selected as f32 * ROW_HEIGHT;
+        if top < self.scroll {
+            self.scroll = top;
+        } else if top + ROW_HEIGHT > self.scroll + self.viewport {
+            self.scroll = top + ROW_HEIGHT - self.viewport;
+        }
+        self.fetch_rows(db);
+        self.scroll
+    }
+
+    /// The highlighted game's app ID.
+    pub fn selected_game(&self, db: &GameDb) -> Option<u32> {
+        match self.selected.checked_sub(self.first) {
+            Some(index) if index < self.rows.len() => Some(self.rows[index].app_id),
+            _ => db
+                .games_page(&self.query, &self.filters, self.selected, 1)
+                .ok()?
+                .first()
+                .map(|(app_id, _)| *app_id),
+        }
     }
 
     fn fetch_rows(&mut self, db: &GameDb) {
@@ -185,13 +219,15 @@ pub fn view<'a>(
 ) -> Element<'a, Message> {
     let above = list.first as f32 * ROW_HEIGHT;
     let below = list.total.saturating_sub(list.first + list.rows.len()) as f32 * ROW_HEIGHT;
-    let rows = list
-        .rows
-        .iter()
-        .map(|game| game_row(game, &status(Some(game), specs), i18n, colors));
+    let rows = list.rows.iter().enumerate().map(|(index, game)| {
+        let selected = list.first + index == list.selected;
+        game_row(game, &status(Some(game), specs), selected, i18n, colors)
+    });
     let search_box = text_input(&i18n.t("catalog-search"), &list.query)
         .id(SEARCH)
         .on_input(Message::CatalogSearch)
+        // Enter opens the highlighted row (the first, after a new search).
+        .on_submit(Message::Shortcut(crate::keys::Shortcut::Open))
         .padding(10)
         .font(BOLD);
     let list_view = scrollable(
@@ -250,6 +286,8 @@ pub fn view<'a>(
 fn game_row<'a>(
     game: &'a Game,
     status: &Status,
+    // Highlighted for the keyboard.
+    selected: bool,
     i18n: &I18n,
     colors: Colors,
 ) -> Element<'a, Message> {
@@ -272,7 +310,7 @@ fn game_row<'a>(
     .height(ROW_HEIGHT)
     .width(Fill)
     .padding([0, 12])
-    .style(colors.button(false))
+    .style(colors.button(selected))
     .on_press(Message::Open(Page::Game(game.app_id)))
     .into()
 }

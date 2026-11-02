@@ -477,7 +477,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 - [x] Library summary: "38 of 42 installed games meet recommended specs"
 - [x] Sort and group the library by verdict (A–Z, or grouped READY → LOW → TOO WEAK → BLOCKED → ??? → NOT CHECKED YET → NO DATA)
 - [x] Compare two games side by side (COMPARE on one game page, COMPARE WITH … on another: verdicts, each part's minimum and result, Linux facts)
-- [ ] Keyboard navigation and accessibility pass
+- [x] Keyboard navigation and accessibility pass: Ctrl+1…5 tabs, Ctrl+F search, Enter opens, ↑/↓/Page keys walk the Catalog, Esc goes back (listed on About); every appearance passes WCAG AA contrast (tested). Not possible yet: screen readers, since iced 0.14 has no accessibility tree (AccessKit)
 - [x] Light/dark theme following the system (SYSTEM, the default: Paper when light, Ink when dark, switching live)
 - [ ] Performance pass: cold start under 1 s, search under 50 ms on 100k games
 - [ ] Tune the parser against the `report` output until ≥ 95% of the top 5k games parse fully

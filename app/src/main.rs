@@ -7,6 +7,7 @@ mod covers;
 mod download;
 mod game_page;
 mod i18n;
+mod keys;
 mod library;
 mod lookup;
 mod my_hardware;
@@ -187,6 +188,9 @@ enum Message {
     GamesFound(Vec<InstalledGame>),
     Search(String),
     LibraryOrder(library::Order),
+    /// Enter in the Library's search: open the first game listed.
+    LibraryOpenFirst,
+    Shortcut(keys::Shortcut),
     /// A hardware-table name, or `None` to go back to what was detected.
     OverrideGpu(Option<String>),
     OverrideCpu(Option<String>),
@@ -460,9 +464,60 @@ impl App {
         self.settings.appearance.resolve(self.system_mode)
     }
 
-    /// Follows the system switching between light and dark.
+    /// Follows the system switching between light and dark, and listens for
+    /// shortcuts (keys no widget used).
     fn subscription(&self) -> iced::Subscription<Message> {
-        iced::system::theme_changes().map(Message::SystemTheme)
+        iced::Subscription::batch([
+            iced::system::theme_changes().map(Message::SystemTheme),
+            iced::keyboard::listen().filter_map(key_shortcut),
+        ])
+    }
+
+    fn shortcut(&mut self, shortcut: keys::Shortcut) -> Task<Message> {
+        use keys::Shortcut;
+        match (shortcut, self.page) {
+            (Shortcut::Tab(n), _) => {
+                let tabs = [
+                    Page::Library,
+                    Page::Catalog,
+                    Page::MyRig,
+                    Page::Settings,
+                    Page::About,
+                ];
+                match tabs.get(usize::from(n).saturating_sub(1)) {
+                    Some(&page) => self.update(Message::Open(page)),
+                    None => Task::none(),
+                }
+            }
+            (Shortcut::Search, Page::Library) => iced::widget::operation::focus(library::SEARCH),
+            (Shortcut::Search, Page::Catalog) => iced::widget::operation::focus(catalog::SEARCH),
+            (Shortcut::Back, Page::Game(_)) => self.update(Message::Open(self.opened_from)),
+            (Shortcut::Back, Page::Compare(_, b)) => self.update(Message::Open(Page::Game(b))),
+            (Shortcut::Move(by), Page::Catalog) => match &self.db {
+                Some(db) => {
+                    let offset = self.catalog_list.move_selection(by, db);
+                    iced::widget::operation::scroll_to(
+                        catalog::LIST,
+                        iced::widget::operation::AbsoluteOffset {
+                            x: None,
+                            y: Some(offset),
+                        },
+                    )
+                }
+                None => Task::none(),
+            },
+            (Shortcut::Open, Page::Catalog) => {
+                match self
+                    .db
+                    .as_ref()
+                    .and_then(|db| self.catalog_list.selected_game(db))
+                {
+                    Some(app_id) => self.update(Message::Open(Page::Game(app_id))),
+                    None => Task::none(),
+                }
+            }
+            _ => Task::none(),
+        }
     }
 
     fn theme(&self) -> Theme {
@@ -589,6 +644,20 @@ impl App {
                 self.load_records();
                 Task::batch(downloads)
             }
+            Message::LibraryOpenFirst => {
+                let query = self.search.to_lowercase();
+                let first = self
+                    .games
+                    .iter()
+                    .flatten()
+                    .filter(|game| game.name.to_lowercase().contains(&query))
+                    .min_by_key(|game| game.name.to_lowercase());
+                match first {
+                    Some(game) => self.update(Message::Open(Page::Game(game.app_id))),
+                    None => Task::none(),
+                }
+            }
+            Message::Shortcut(shortcut) => self.shortcut(shortcut),
             Message::LibraryOrder(order) => {
                 self.library_order = order;
                 Task::none()
@@ -990,6 +1059,16 @@ fn now() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |elapsed| elapsed.as_secs() as i64)
+}
+
+/// A key press no widget used, as a shortcut message.
+fn key_shortcut(event: iced::keyboard::Event) -> Option<Message> {
+    match event {
+        iced::keyboard::Event::KeyPressed { key, modifiers, .. } => {
+            keys::shortcut(&key, modifiers).map(Message::Shortcut)
+        }
+        _ => None,
+    }
 }
 
 /// Scrolls the Catalog list back to its first row.
@@ -1950,6 +2029,52 @@ mod tests {
             Settings::load(&Paths::under(dir.path()).config).appearance,
             Appearance::System
         );
+    }
+
+    #[test]
+    fn keys_switch_tabs_and_escape_goes_back() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        let _ = app.update(Message::Shortcut(keys::Shortcut::Tab(2)));
+        assert!(shows(&app, "Search every Steam game"));
+
+        let _ = app.update(Message::Shortcut(keys::Shortcut::Tab(1)));
+        click(&mut app, "OMORI");
+        let _ = app.update(Message::Shortcut(keys::Shortcut::Back));
+        assert!(shows(&app, "Search your games"));
+    }
+
+    #[test]
+    fn the_catalog_can_be_walked_with_the_keyboard() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+
+        // Cyberpunk 2077, OMORI, then Day of Defeat (catalog_app's popularity).
+        let _ = app.update(Message::Shortcut(keys::Shortcut::Move(1)));
+        let _ = app.update(Message::Shortcut(keys::Shortcut::Move(1)));
+        let _ = app.update(Message::Shortcut(keys::Shortcut::Open));
+
+        assert!(shows(
+            &app,
+            "rigcheck hasn't read this game's store page yet."
+        ));
+    }
+
+    #[test]
+    fn enter_in_the_library_search_opens_the_first_match() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        let mut ui = iced_test::simulator(app.view());
+        ui.click(iced::widget::Id::new(library::SEARCH)).unwrap();
+        ui.typewrite("omo");
+        ui.tap_key(iced::keyboard::key::Named::Enter);
+        for message in ui.into_messages() {
+            let _ = app.update(message);
+        }
+
+        assert!(shows(&app, "Meets the recommended specs."));
     }
 
     #[test]
