@@ -18,7 +18,7 @@
 
 ## What it does
 
-- **Reads your Steam library.** It finds native, `~/.steam` and Flatpak installs and every library folder, including other drives, and skips Proton and the Steam runtimes.
+- **Reads your Steam library.** It finds native, `~/.steam` and Flatpak installs and every library folder, including other drives, and skips Proton and the Steam runtimes. Add your own Steam Web API key in Settings and the Library can show every game you own, installed or not.
 - **Detects your hardware.** It reads CPU, RAM, every GPU by its PCI ID, video memory, the Vulkan version and the driver straight from `/proc`, `/sys` and `vulkaninfo`. Hybrid laptops use the discrete GPU, and it warns if your NVIDIA card runs on `nouveau`.
 - **Gives every game a verdict.** It compares your PC with the game's minimum and recommended specs, names the part holding you back, and takes Linux into account: ProtonDB ratings, anti-cheat that blocks Linux, and the Vulkan version Proton needs.
 - **Searches all of Steam.** The Catalog lists every game, most popular first, and filters it: only games your PC can run, ProtonDB tier, native Linux, Deck Verified, no anti-cheat problems. A game the database hasn't checked yet is looked up on Steam when you open it.
@@ -68,13 +68,14 @@
 
 Local-first: no accounts, no telemetry, no servers of our own. Nothing about you or your PC leaves your machine.
 
-The app sends plain, read-only requests to three places, and nowhere else ([ROADMAP §6](ROADMAP.md#6-privacy--network)):
+The app sends plain, read-only requests to three places (four if you add a Steam key), and nowhere else ([ROADMAP §6](ROADMAP.md#6-privacy--network)):
 
 | Where | When | What's sent |
 |---|---|---|
 | `github.com` (Releases) | At start: is there a newer game database, or a newer rigcheck? Downloads the database when there is | Nothing but the file request |
 | `store.steampowered.com` | When you open a game the database hasn't checked yet | That game's app ID |
 | `shared.akamai.steamstatic.com` | Cover art Steam hasn't cached on your disk | The game's app ID |
+| `api.steampowered.com` | Only if you add your own Steam Web API key: at start and on Refresh, to list the games you own | Your key and SteamID |
 
 Settings → Privacy turns the start-up checks off (then they run only when you ask), and lists the same three places. A build rule (`deny.toml`) keeps HTTP clients out of every crate except `crates/net`, which refuses any other host.
 

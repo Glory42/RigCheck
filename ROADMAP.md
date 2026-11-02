@@ -475,6 +475,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 
 ### Phase 8: Polish → v1.0
 - [x] "What if I upgrade?": pick a hypothetical GPU/CPU/RAM and see which games change verdict (My Rig; installed games, nothing saved)
+- [x] Library: ALL MY GAMES with the user's own Steam Web API key (`IPlayerService/GetOwnedGames`; the SteamID comes from Steam's `loginusers.vdf`; the key is kept in `~/.config/rigcheck/steam-api-key`, mode 600, and the last answer cached for offline starts), next to INSTALLED. Opt-in: without a key the app never calls the Web API
 - [x] Library summary: "38 of 42 installed games meet recommended specs"
 - [x] Sort and group the library by verdict (A–Z, or grouped READY → LOW → TOO WEAK → BLOCKED → ??? → NOT CHECKED YET → NO DATA)
 - [x] Compare two games side by side (COMPARE on one game page, COMPARE WITH … on another: verdicts, each part's minimum and result, Linux facts)

@@ -64,6 +64,15 @@ fn screenshots() {
     shoot(&mut app, &out, "compare");
     let _ = app.update(Message::Open(Page::Settings));
     shoot(&mut app, &out, "settings");
+    // The Library's ALL MY GAMES, from a saved Steam answer (no key needed).
+    let owned = std::fs::read_to_string(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../data/fixtures/steam/owned_games.json"),
+    )
+    .unwrap();
+    let _ = app.update(Message::OwnedGames(Ok(owned)));
+    let _ = app.update(Message::Open(Page::Library));
+    let _ = app.update(Message::LibraryScope(crate::library::Scope::Owned));
+    shoot(&mut app, &out, "library-owned");
     let _ = app.update(Message::Open(Page::About));
     shoot(&mut app, &out, "about");
 }
