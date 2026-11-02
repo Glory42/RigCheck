@@ -478,7 +478,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 - [x] Sort and group the library by verdict (A–Z, or grouped READY → LOW → TOO WEAK → BLOCKED → ??? → NOT CHECKED YET → NO DATA)
 - [x] Compare two games side by side (COMPARE on one game page, COMPARE WITH … on another: verdicts, each part's minimum and result, Linux facts)
 - [ ] Keyboard navigation and accessibility pass
-- [ ] Light/dark theme following the system
+- [x] Light/dark theme following the system (SYSTEM, the default: Paper when light, Ink when dark, switching live)
 - [ ] Performance pass: cold start under 1 s, search under 50 ms on 100k games
 - [ ] Tune the parser against the `report` output until ≥ 95% of the top 5k games parse fully
 

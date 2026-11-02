@@ -53,6 +53,7 @@ fn main() -> iced::Result {
     )
     .title("rigcheck")
     .theme(App::theme)
+    .subscription(App::subscription)
     .window(window_settings())
     .run()
 }
@@ -126,6 +127,8 @@ struct App {
     settings: Settings,
     /// Used when the user leaves Language on "System default".
     system_language: Language,
+    /// Light or dark, for the System appearance.
+    system_mode: iced::theme::Mode,
     i18n: I18n,
     page: Page,
     /// `None` until detection finishes.
@@ -203,6 +206,8 @@ enum Message {
     AppearanceSelected(Appearance),
     /// `None` picks "System default".
     LanguageSelected(Option<Language>),
+    /// The system switched between light and dark (or said which it is).
+    SystemTheme(iced::theme::Mode),
     Download(download::Event),
     CatalogSearch(String),
     CatalogFilter(catalog::Chip),
@@ -272,6 +277,7 @@ impl App {
             i18n: I18n::new(settings.language.unwrap_or(system_language)),
             settings,
             system_language,
+            system_mode: iced::theme::Mode::None,
             paths,
             page: Page::Library,
             hardware: None,
@@ -296,7 +302,11 @@ impl App {
         if let Some(db) = db {
             app.use_db(db);
         }
-        (app, Task::batch([detect, scan, fetch, release_check]))
+        let system_mode = iced::system::theme().map(Message::SystemTheme);
+        (
+            app,
+            Task::batch([detect, scan, fetch, release_check, system_mode]),
+        )
     }
 
     /// Switches to `db`: its hardware table, and its records for the
@@ -445,8 +455,18 @@ impl App {
         library::status(self.records.get(&app_id), self.specs().as_ref())
     }
 
+    /// The appearance to draw with: the picked one, or the system's.
+    fn appearance(&self) -> Appearance {
+        self.settings.appearance.resolve(self.system_mode)
+    }
+
+    /// Follows the system switching between light and dark.
+    fn subscription(&self) -> iced::Subscription<Message> {
+        iced::system::theme_changes().map(Message::SystemTheme)
+    }
+
     fn theme(&self) -> Theme {
-        self.settings.appearance.theme()
+        self.appearance().theme()
     }
 
     fn update(&mut self, message: Message) -> Task<Message> {
@@ -542,6 +562,10 @@ impl App {
             Message::RetryLookup(app_id) => {
                 self.lookup = lookup::State::Checking(app_id);
                 self.steam.ask(app_id)
+            }
+            Message::SystemTheme(mode) => {
+                self.system_mode = mode;
+                Task::none()
             }
             Message::AppearanceSelected(appearance) => {
                 self.settings.appearance = appearance;
@@ -791,7 +815,7 @@ impl App {
     }
 
     fn view(&self) -> Element<'_, Message> {
-        let colors = self.settings.appearance.colors();
+        let colors = self.appearance().colors();
         let i18n = &self.i18n;
         let page = match self.page {
             Page::Library => {
@@ -1888,6 +1912,44 @@ mod tests {
         click(&mut app, "COMPARE");
 
         assert!(!shows(&app, "COMPARE WITH OMORI"));
+    }
+
+    #[test]
+    fn a_fresh_install_follows_the_systems_light_or_dark_mode() {
+        let dir = TempDir::new().unwrap();
+        let (mut app, _) = App::new(Paths::under(dir.path()), Language::English);
+
+        let _ = app.update(Message::SystemTheme(iced::theme::Mode::Dark));
+        assert_eq!(app.theme().to_string(), "Ink");
+
+        let _ = app.update(Message::SystemTheme(iced::theme::Mode::Light));
+        assert_eq!(app.theme().to_string(), "Paper");
+    }
+
+    #[test]
+    fn a_picked_appearance_ignores_the_system() {
+        let dir = TempDir::new().unwrap();
+        let (mut app, _) = App::new(Paths::under(dir.path()), Language::English);
+        click(&mut app, "SETTINGS");
+        click(&mut app, "PAPER");
+
+        let _ = app.update(Message::SystemTheme(iced::theme::Mode::Dark));
+
+        assert_eq!(app.theme().to_string(), "Paper");
+    }
+
+    #[test]
+    fn settings_offer_following_the_system_and_start_with_it() {
+        let dir = TempDir::new().unwrap();
+        let (mut app, _) = App::new(Paths::under(dir.path()), Language::English);
+
+        click(&mut app, "SETTINGS");
+
+        assert!(shows(&app, "SYSTEM"));
+        assert_eq!(
+            Settings::load(&Paths::under(dir.path()).config).appearance,
+            Appearance::System
+        );
     }
 
     #[test]
