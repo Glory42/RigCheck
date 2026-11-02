@@ -14,14 +14,16 @@
 </p>
 
 > [!NOTE]
-> **Early development.** The Library, game page and hardware detection work today. On first launch the app downloads the game database, rebuilt daily from Steam (a few thousand games so far, growing each day). The Catalog tab searches all of Steam's ~200k games, most popular first, and filters them: only games your PC can run, ProtonDB tier, native Linux, Deck Verified, no anti-cheat problems. See the [roadmap](ROADMAP.md).
+> **Pre-1.0 (v0.7).** Everything below works today. The game database is rebuilt daily from Steam; its store pages are read a few thousand a day, so most of Steam's ~200k games are known by name only for now, and get looked up live when you open them. See the [roadmap](ROADMAP.md).
 
 ## What it does
 
 - **Reads your Steam library.** It finds native, `~/.steam` and Flatpak installs and every library folder, including other drives, and skips Proton and the Steam runtimes.
 - **Detects your hardware.** It reads CPU, RAM, every GPU by its PCI ID, video memory, the Vulkan version and the driver straight from `/proc`, `/sys` and `vulkaninfo`. Hybrid laptops use the discrete GPU, and it warns if your NVIDIA card runs on `nouveau`.
 - **Gives every game a verdict.** It compares your PC with the game's minimum and recommended specs, names the part holding you back, and takes Linux into account: ProtonDB ratings, anti-cheat that blocks Linux, and the Vulkan version Proton needs.
+- **Searches all of Steam.** The Catalog lists every game, most popular first, and filters it: only games your PC can run, ProtonDB tier, native Linux, Deck Verified, no anti-cheat problems. A game the database hasn't checked yet is looked up on Steam when you open it.
 - **Lets you ask "what if?"** Pick a different GPU or CPU on My Rig and every verdict updates.
+- **Keeps itself current.** The game database updates in the background, and the app tells you when a new version is out.
 
 | Stamp | Meaning |
 |---|---|
@@ -35,30 +37,52 @@
 
 <table>
   <tr>
-    <td><img src="assets/screenshots/game.webp" alt="Cyberpunk 2077's page: TOO WEAK, with the GPU row highlighted against the minimum and recommended GPUs"></td>
-    <td><img src="assets/screenshots/my-rig.webp" alt="My Rig: detected CPU, RAM, GPU, Vulkan, distro and kernel, with the GPU and CPU override picker"></td>
+    <td><img src="assets/screenshots/game.webp" alt="Baldur's Gate 3's page: TOO WEAK, the GPU row in red as the bottleneck, each row's result, ProtonDB Platinum and Deck Verified"></td>
+    <td><img src="assets/screenshots/catalog.webp" alt="The Catalog: the most popular Steam games with verdict stamps, a search box and filter chips"></td>
   </tr>
   <tr>
     <td align="center">Why a game won't run, part by part</td>
-    <td align="center">Your hardware, with "what if I had…" overrides</td>
+    <td align="center">Every Steam game, searchable and filterable</td>
   </tr>
   <tr>
+    <td><img src="assets/screenshots/my-rig.webp" alt="My Rig: detected CPU, RAM, GPU, Vulkan, distro and kernel, with the GPU and CPU override picker"></td>
     <td><img src="assets/screenshots/library-ink.webp" alt="The Library in the dark Ink theme"></td>
-    <td><img src="assets/screenshots/settings.webp" alt="Settings: five appearances and three languages"></td>
   </tr>
   <tr>
+    <td align="center">Your hardware, with "what if I had…" overrides</td>
     <td align="center">Five themes: Paper, Ink, Midnight, Plum, Forest</td>
-    <td align="center">English, Türkçe and Deutsch</td>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshots/settings.webp" alt="Settings: appearances, languages and storage"></td>
+    <td><img src="assets/screenshots/about.webp" alt="About: version, licenses and every data source"></td>
+  </tr>
+  <tr>
+    <td align="center">English, Türkçe, Deutsch; what's stored and how to clear it</td>
+    <td align="center">Licenses and data sources</td>
   </tr>
 </table>
 
-<sub>Screenshots from the real app, rendered offscreen with its test renderer on a Ryzen 5 7530U laptop with Radeon integrated graphics.</sub>
+<sub>Screenshots from the real app on the real game database, rendered offscreen with its test renderer on a Ryzen 5 7530U laptop with Radeon integrated graphics (`app/src/screenshots.rs`).</sub>
 
 ## Privacy
 
-Local-first: no accounts, no telemetry, no servers. Everything stays on your machine.
+Local-first: no accounts, no telemetry, no servers of our own. Nothing about you or your PC leaves your machine.
 
-Today the app makes two kinds of request: on first launch it downloads the game database from this repo's GitHub Releases, and when you open a game the database hasn't checked yet, it asks Steam's store for that one game. Cover art comes from Steam's own cache on disk. In all, it will only ever talk to three read-only places, listed in [ROADMAP §6](ROADMAP.md#6-privacy--network): GitHub Releases for the game database, Steam's store API for games missing from it, and Steam's image CDN. A build rule (`deny.toml`) keeps HTTP clients out of every crate except one.
+The app sends plain, read-only requests to three places, and nowhere else ([ROADMAP §6](ROADMAP.md#6-privacy--network)):
+
+| Where | When | What's sent |
+|---|---|---|
+| `github.com` (Releases) | At start: is there a newer game database, or a newer rigcheck? Downloads the database when there is | Nothing but the file request |
+| `store.steampowered.com` | When you open a game the database hasn't checked yet | That game's app ID |
+| `shared.akamai.steamstatic.com` | Cover art Steam hasn't cached on your disk | The game's app ID |
+
+Settings → Privacy turns the start-up checks off (then they run only when you ask), and lists the same three places. A build rule (`deny.toml`) keeps HTTP clients out of every crate except `crates/net`, which refuses any other host.
+
+## Install
+
+Each [release](https://github.com/Glory42/rigcheck/releases) has an **AppImage** (any distro), a **.deb** (Debian, Ubuntu, Mint), an **.rpm** (Fedora, openSUSE) and a tarball. An AUR package (`rigcheck-bin`) and a Flathub listing are on the way; their recipes are in [`packaging/`](packaging/).
+
+Install `vulkan-tools` as well, so rigcheck can read your GPU's Vulkan version and video memory.
 
 ## Build from source
 
@@ -71,22 +95,21 @@ git clone https://github.com/Glory42/rigcheck && cd rigcheck
 cargo run -p rigcheck --release
 ```
 
-Install `vulkan-tools` too, so rigcheck can read your GPU's Vulkan details.
-
 ## Development
 
 All Rust: a Cargo workspace with the desktop app (built with [iced](https://iced.rs)), the data pipeline and shared crates. The code is built test-first.
 
 ```
-app/          desktop app: Library, game page, My Rig, Settings (binary: rigcheck)
+app/          desktop app: Library, Catalog, game page, My Rig, Settings, About (binary: rigcheck)
   i18n/       translations (Fluent): en, tr, de
 crates/
   core/       requirement parser, hardware table matching, matcher (no I/O)
   hardware/   Linux hardware detection
   steam/      Steam installs, libraries and cover art
-  gamedb/     games.db (SQLite): schema, seed, queries, verdicts
-  net/        the only crate allowed an HTTP client (used by the pipeline)
-pipeline/     data pipeline that builds games.db (Phase 4)
+  gamedb/     games.db and fetched.db (SQLite): schema, queries, verdicts, safe install
+  net/        the only crate allowed an HTTP client; refuses hosts off its allowlist
+pipeline/     data pipeline that builds games.db daily (GitHub Actions)
+packaging/    desktop file, AppStream metainfo, AppImage/deb/rpm, AUR and Flatpak recipes
 data/         hardware table, seed games, test fixtures
 ```
 
@@ -99,7 +122,7 @@ cargo deny check bans            # only crates/net may use an HTTP client
 INSTA_UPDATE=always cargo test -p rigcheck-core --test parser   # accept parser snapshot changes, then review the diff
 ```
 
-CI runs fmt, clippy, tests and `cargo deny` on pushes to `master` and on pull requests.
+CI runs fmt, clippy, tests and `cargo deny` on pushes to `master` and on pull requests. Screenshots are rendered by an ignored test: `RIGCHECK_SCREENSHOT_DB=<a games.db> cargo test -p rigcheck screenshots -- --ignored`.
 
 ## Contributing
 

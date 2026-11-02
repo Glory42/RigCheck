@@ -2,7 +2,7 @@
 
 use iced::border::Border;
 use iced::widget::{Space, button, column, container, row, scrollable, space, text};
-use iced::{Color, Element};
+use iced::{Color, Element, Fill};
 
 use crate::Message;
 use crate::i18n::{I18n, Language};
@@ -62,7 +62,7 @@ pub fn view(
     ]
     .spacing(12);
     // Room on the right and bottom so hard shadows aren't clipped.
-    scrollable(page.padding([0, 6])).into()
+    scrollable(page.padding([0, 6])).width(Fill).into()
 }
 
 /// Sizes and what can be done about them.

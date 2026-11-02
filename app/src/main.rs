@@ -11,6 +11,8 @@ mod lookup;
 mod my_hardware;
 mod overrides;
 mod release;
+#[cfg(test)]
+mod screenshots;
 mod settings;
 mod settings_page;
 mod style;
@@ -776,7 +778,11 @@ impl App {
                 ))
                 .on_press(Message::Open(page))
         };
-        let logo = image(Handle::from_bytes(ICON_PNG))
+        // One handle for the app's life: `from_bytes` gives every handle a
+        // new ID, so a fresh one each redraw is a new image to decode.
+        static LOGO: std::sync::LazyLock<Handle> =
+            std::sync::LazyLock::new(|| Handle::from_bytes(ICON_PNG));
+        let logo = image(LOGO.clone())
             .width(36)
             .height(36)
             .filter_method(FilterMethod::Nearest); // keep the pixel art crisp
