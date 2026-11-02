@@ -1184,6 +1184,34 @@ mod tests {
     }
 
     #[test]
+    fn a_looked_up_game_is_remembered_across_restarts() {
+        let dir = TempDir::new().unwrap();
+        let mut app = lookup_app(&dir);
+        let _ = app.update(Message::Open(Page::Game(BG3)));
+        let _ = app.update(steam_says(BG3));
+
+        let (mut reopened, _) = App::new(Paths::under(dir.path()), Language::English);
+        let _ = reopened.update(Message::HardwareDetected(test_support::amd_laptop()));
+        let _ = reopened.update(Message::Open(Page::Game(BG3)));
+
+        assert!(shows(&reopened, "TOO WEAK"));
+        assert!(!shows(&reopened, "Checking Steam…"));
+    }
+
+    #[test]
+    fn a_failed_lookup_says_so_and_can_be_retried() {
+        let dir = TempDir::new().unwrap();
+        let mut app = lookup_app(&dir);
+        let _ = app.update(Message::Open(Page::Game(BG3)));
+
+        let _ = app.update(Message::SteamLookup(BG3, Err("offline".to_owned())));
+        assert!(shows(&app, "Couldn't reach Steam."));
+
+        click(&mut app, "RETRY");
+        assert!(shows(&app, "Checking Steam…"));
+    }
+
+    #[test]
     fn window_has_the_brand_icon() {
         assert!(window_settings().icon.is_some());
     }

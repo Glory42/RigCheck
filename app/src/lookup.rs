@@ -32,15 +32,16 @@ pub struct Steam(Arc<Mutex<Option<Client>>>);
 
 impl Steam {
     /// Asks Steam about `app_id` on a background thread; the answer comes
-    /// back as [`Message::SteamLookup`].
+    /// back as [`Message::SteamLookup`]. Nothing is sent until iced runs
+    /// the task (tests drop it unrun, so they never reach the network).
     pub fn ask(&self, app_id: u32) -> Task<Message> {
         let steam = self.clone();
-        let (sender, receiver) = oneshot::channel();
-        std::thread::spawn(move || {
-            let _ = sender.send(steam.get(app_id));
-        });
         Task::perform(
             async move {
+                let (sender, receiver) = oneshot::channel();
+                std::thread::spawn(move || {
+                    let _ = sender.send(steam.get(app_id));
+                });
                 receiver
                     .await
                     .unwrap_or_else(|_| Err("the lookup stopped".to_owned()))
