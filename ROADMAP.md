@@ -177,6 +177,7 @@ The app makes **only** these requests. This list goes in the README and on an in
 | `github.com` (Releases, files served from `release-assets.githubusercontent.com`) | On startup (configurable), to fetch `manifest.json` and, if newer, `games.db.zst`; and the latest app release's `version.txt` for the update notice | A plain file download. No identifiers |
 | `store.steampowered.com/api/appdetails` | When the user opens a game missing from `games.db` | The app ID being looked up |
 | Steam CDN | When showing cover art | The app ID of the image |
+| `api.steampowered.com` (`IPlayerService/GetOwnedGames`) | Only if the user adds their own Steam Web API key: at start and on Refresh, to list every game the account owns | The user's key and SteamID |
 
 As with any download, GitHub and Valve see the user's IP address. The project itself receives **nothing**.
 
