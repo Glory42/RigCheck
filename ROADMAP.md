@@ -174,7 +174,7 @@ The app makes **only** these requests. This list goes in the README and on an in
 
 | Destination | When | What is sent |
 |---|---|---|
-| `github.com` (Releases) | On startup (configurable), to fetch `manifest.json` and, if newer, `games.db.zst` | A plain file download. No identifiers |
+| `github.com` (Releases, files served from `release-assets.githubusercontent.com`) | On startup (configurable), to fetch `manifest.json` and, if newer, `games.db.zst` | A plain file download. No identifiers |
 | `store.steampowered.com/api/appdetails` | When the user opens a game missing from `games.db` | The app ID being looked up |
 | Steam CDN | When showing cover art | The app ID of the image |
 
