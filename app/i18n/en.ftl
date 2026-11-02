@@ -171,3 +171,6 @@ account-refresh = REFRESH
 account-remove = REMOVE KEY
 account-signed-in = Steam account: { $id }
 account-no-sign-in = No Steam sign-in found on this computer.
+account-key-is-steam-id = That's a SteamID, not an API key. A Steam Web API key is 32 letters and digits, from GET A KEY. Your SteamID is found automatically.
+account-key-shape = That doesn't look like a Steam Web API key: it's 32 letters and digits (A–F, 0–9), from GET A KEY.
+library-owned-key-rejected = Steam didn't accept the key. Check it in Settings, or get a new one.

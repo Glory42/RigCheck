@@ -169,3 +169,6 @@ account-refresh = AKTUALISIEREN
 account-remove = SCHLÜSSEL ENTFERNEN
 account-signed-in = Steam-Konto: { $id }
 account-no-sign-in = Keine Steam-Anmeldung auf diesem Computer gefunden.
+account-key-is-steam-id = Das ist eine SteamID, kein API-Schlüssel. Ein Steam-Web-API-Schlüssel hat 32 Buchstaben und Ziffern, über SCHLÜSSEL HOLEN. Deine SteamID wird automatisch gefunden.
+account-key-shape = Das sieht nicht wie ein Steam-Web-API-Schlüssel aus: er hat 32 Buchstaben und Ziffern (A–F, 0–9), über SCHLÜSSEL HOLEN.
+library-owned-key-rejected = Steam hat den Schlüssel nicht akzeptiert. Prüfe ihn in den Einstellungen oder hol dir einen neuen.

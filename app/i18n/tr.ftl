@@ -169,3 +169,6 @@ account-refresh = YENİLE
 account-remove = ANAHTARI KALDIR
 account-signed-in = Steam hesabı: { $id }
 account-no-sign-in = Bu bilgisayarda Steam oturumu bulunamadı.
+account-key-is-steam-id = Bu bir SteamID, API anahtarı değil. Steam Web API anahtarı 32 harf ve rakamdan oluşur, ANAHTAR AL'dan alınır. SteamID'in otomatik bulunur.
+account-key-shape = Bu bir Steam Web API anahtarına benzemiyor: anahtar 32 harf ve rakamdır (A–F, 0–9), ANAHTAR AL'dan alınır.
+library-owned-key-rejected = Steam anahtarı kabul etmedi. Ayarlar'da kontrol et ya da yeni bir tane al.

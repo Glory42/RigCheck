@@ -165,6 +165,10 @@ struct App {
     owned: Option<rigcheck_steam::Owned>,
     /// The last GetOwnedGames request failed.
     owned_failed: bool,
+    /// Steam answered 401/403: it doesn't accept the saved key.
+    key_rejected: bool,
+    /// Why the typed key wasn't saved, if it wasn't.
+    bad_key: Option<account::BadKey>,
     catalog_list: catalog::List,
     /// Live lookups of games games.db hasn't checked; `None` if the cache
     /// directory can't be written.
@@ -334,6 +338,8 @@ impl App {
             steam_id,
             owned,
             owned_failed: false,
+            key_rejected: false,
+            bad_key: None,
             catalog_list: catalog::List::default(),
             fetched,
             steam: lookup::Steam::default(),
@@ -417,8 +423,10 @@ impl App {
             return None;
         }
         let id = match (&self.owned, self.has_steam_key) {
-            (Some(rigcheck_steam::Owned::Hidden), _) => "library-owned-private",
+            // A saved list still shows, even if a later refresh failed.
             (Some(rigcheck_steam::Owned::Games(_)), _) => return None,
+            (_, _) if self.key_rejected => "library-owned-key-rejected",
+            (Some(rigcheck_steam::Owned::Hidden), _) => "library-owned-private",
             (None, false) => "library-owned-no-key",
             (None, true) if self.steam_id.is_none() => "library-owned-no-account",
             (None, true) if self.owned_failed => "library-owned-failed",
@@ -766,10 +774,14 @@ impl App {
                 Task::none()
             }
             Message::SaveSteamKey => {
-                let key = std::mem::take(&mut self.steam_key_input).trim().to_owned();
-                if key.is_empty() {
+                let key = self.steam_key_input.trim().to_owned();
+                if let Err(bad) = account::check_key(&key) {
+                    self.bad_key = Some(bad);
                     return Task::none();
                 }
+                self.steam_key_input.clear();
+                self.bad_key = None;
+                self.key_rejected = false;
                 if let Err(error) = account::save_key(&self.paths.config, &key) {
                     eprintln!("couldn't save the Steam key: {error}");
                     return Task::none();
@@ -800,12 +812,15 @@ impl App {
                     Ok(owned) => {
                         self.owned = Some(owned);
                         self.owned_failed = false;
+                        self.key_rejected = false;
                         self.load_records();
                     }
                     Err(error) => {
                         // Never the URL (it holds the key): the net client keeps it out.
                         eprintln!("couldn't list the owned games: {error}");
                         self.owned_failed = true;
+                        self.key_rejected =
+                            error.contains("HTTP 401") || error.contains("HTTP 403");
                     }
                 }
                 Task::none()
@@ -1158,6 +1173,7 @@ impl App {
                     &self.steam_key_input,
                     self.has_steam_key,
                     self.steam_id,
+                    self.bad_key,
                     i18n,
                     colors,
                 ),
@@ -2440,6 +2456,41 @@ mod tests {
         assert!(shows(
             &app,
             "Add your Steam Web API key in Settings to see every game you own."
+        ));
+    }
+
+    #[test]
+    fn a_steam_id_pasted_as_the_key_is_refused_with_a_hint() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        click(&mut app, "SETTINGS");
+
+        let _ = app.update(Message::SteamKeyInput("76561198388197563".to_owned()));
+        let _ = app.update(Message::SaveSteamKey);
+
+        assert!(
+            !Paths::under(dir.path())
+                .config
+                .join("steam-api-key")
+                .exists()
+        );
+        assert!(shows(
+            &app,
+            "That's a SteamID, not an API key. A Steam Web API key is 32 letters and digits, from GET A KEY. Your SteamID is found automatically."
+        ));
+    }
+
+    #[test]
+    fn a_rejected_key_is_named_as_the_problem() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        let _ = app.update(Message::OwnedGames(Err("HTTP 401 Unauthorized".to_owned())));
+
+        click(&mut app, "ALL MY GAMES");
+
+        assert!(shows(
+            &app,
+            "Steam didn't accept the key. Check it in Settings, or get a new one."
         ));
     }
 

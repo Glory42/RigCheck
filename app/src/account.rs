@@ -28,6 +28,27 @@ const OWNED_FILE: &str = "owned-games.json";
 /// Where keys come from.
 const KEY_PAGE: &str = "https://steamcommunity.com/dev/apikey";
 
+/// Why a typed key wasn't saved.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BadKey {
+    /// 17 digits: the account's SteamID, which is found automatically.
+    SteamId,
+    /// Not 32 letters and digits (A–F, 0–9).
+    Shape,
+}
+
+/// Checks that `key` looks like a Steam Web API key: 32 hexadecimal
+/// characters.
+pub fn check_key(key: &str) -> Result<(), BadKey> {
+    if key.len() == 17 && key.bytes().all(|b| b.is_ascii_digit()) {
+        Err(BadKey::SteamId)
+    } else if key.len() == 32 && key.bytes().all(|b| b.is_ascii_hexdigit()) {
+        Ok(())
+    } else {
+        Err(BadKey::Shape)
+    }
+}
+
 pub fn load_key(config: &Path) -> Option<String> {
     let key = fs::read_to_string(config.join(KEY_FILE)).ok()?;
     let key = key.trim();
@@ -104,6 +125,7 @@ pub fn view(
     input: &str,
     has_key: bool,
     steam_id: Option<u64>,
+    bad_key: Option<BadKey>,
     i18n: &I18n,
     colors: Colors,
 ) -> Element<'static, Message> {
@@ -135,6 +157,13 @@ pub fn view(
         text(account).color(colors.muted),
     ]
     .spacing(10);
+    if let Some(bad) = bad_key {
+        let id = match bad {
+            BadKey::SteamId => "account-key-is-steam-id",
+            BadKey::Shape => "account-key-shape",
+        };
+        section = section.push(text(i18n.t(id)).font(BOLD));
+    }
     if has_key {
         section = section.push(
             row![
