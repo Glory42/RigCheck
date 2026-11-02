@@ -141,6 +141,9 @@ pub struct Verdict {
     pub overall: Level,
     /// The component holding the verdict down, if any.
     pub bottleneck: Option<Component>,
+    /// Each component that could be compared, with its level, in the order
+    /// the game page lists them.
+    pub components: Vec<(Component, Level)>,
     pub confidence: Confidence,
     pub blocker: Option<Blocker>,
     pub warnings: Vec<Warning>,
@@ -197,7 +200,7 @@ pub fn evaluate(game: &GameRequirements, specs: &Specs, linux: &LinuxInfo) -> Ve
         3 => Confidence::High,
         _ => Confidence::Partial,
     };
-    let worst = known.into_iter().max_by_key(|(_, level)| *level);
+    let worst = known.iter().copied().max_by_key(|(_, level)| *level);
     let blocker = if matches!(linux.anticheat, Some(AntiCheat::Denied | AntiCheat::Broken)) {
         Some(Blocker::AntiCheat)
     } else if !linux.native && linux.protondb == Some(ProtonTier::Borked) {
@@ -213,6 +216,7 @@ pub fn evaluate(game: &GameRequirements, specs: &Specs, linux: &LinuxInfo) -> Ve
         bottleneck: worst
             .filter(|(_, level)| *level != Level::Recommended)
             .map(|(component, _)| component),
+        components: known,
         confidence,
         blocker,
         warnings: specs
