@@ -59,7 +59,7 @@ pub fn install(zst: &Path, manifest: &Manifest, dest: &Path) -> Result<GameDb, E
     let unpacked = zstd::stream::copy_decode(bytes.as_slice(), File::create(&new)?)
         .map_err(Error::from)
         .and_then(|()| check(&new, manifest))
-        .and_then(|()| index_for_browsing(&new));
+        .and_then(|()| add_indexes(&new));
     if let Err(error) = unpacked {
         let _ = fs::remove_file(&new);
         return Err(error);
@@ -77,13 +77,18 @@ fn check(path: &Path, manifest: &Manifest) -> Result<(), Error> {
     Ok(())
 }
 
-/// Lets the Catalog page through all games by popularity quickly (about
-/// 5 ms a page instead of up to a second on 200k games). Built here rather
-/// than shipped, since it would add ~5 MB to every download.
-fn index_for_browsing(path: &Path) -> Result<(), Error> {
-    GameDb::open(path)?.conn.execute(
-        "CREATE INDEX IF NOT EXISTS games_by_popularity ON games (popularity DESC, name)",
-        [],
+/// Indexes the app needs but the pipeline doesn't. Built here rather than
+/// shipped, since they'd add ~5 MB to every download.
+/// - Paging through all games by popularity: ~5 ms a page instead of up to
+///   a second on 200k games.
+/// - A game's required CPUs and GPUs, read for every game page and Catalog
+///   row: without it each lookup scans the whole table (~200k rows after a
+///   month of crawling).
+fn add_indexes(path: &Path) -> Result<(), Error> {
+    GameDb::open(path)?.conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS games_by_popularity ON games (popularity DESC, name);
+         CREATE INDEX IF NOT EXISTS requirement_hardware_by_game
+             ON requirement_hardware (app_id, tier, kind, position);",
     )?;
     Ok(())
 }

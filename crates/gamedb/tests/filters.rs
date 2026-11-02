@@ -2,8 +2,11 @@
 //! the facts in data/seed/games.toml. The seed has no popularity, so ties
 //! list by name.
 
+use std::path::{Path, PathBuf};
+
 use rigcheck_core::{AntiCheat, ProtonTier};
-use rigcheck_gamedb::{Filters, GameDb};
+use rigcheck_gamedb::{Filters, GameDb, specs};
+use rigcheck_hardware::{Commands, Hardware, detect};
 use tempfile::TempDir;
 
 fn seed() -> (TempDir, GameDb) {
@@ -115,5 +118,41 @@ fn no_anticheat_issues_hides_denied_broken_and_planned_games() {
     }
     for kept in ["ELDEN RING", "Halo: The Master Chief Collection"] {
         assert!(names.iter().any(|name| name == kept), "{kept} missing");
+    }
+}
+
+/// Replays a hardware fixture's captured command output.
+struct Captured(PathBuf);
+
+impl Commands for Captured {
+    fn run(&self, program: &str, _args: &[&str]) -> Option<String> {
+        std::fs::read_to_string(self.0.join("commands").join(format!("{program}.txt"))).ok()
+    }
+}
+
+fn amd_laptop() -> Hardware {
+    let root =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/fixtures/hardware/amd-laptop");
+    detect(&root, &Captured(root.clone()))
+}
+
+#[test]
+fn can_run_keeps_games_that_meet_at_least_the_minimum() {
+    let (_dir, db) = seed();
+    db.store_names(&[(30, "Day of Defeat")]).unwrap();
+    let filters = Filters {
+        runs_on: Some(specs(&db.catalog().unwrap(), &amd_laptop())),
+        ..Filters::default()
+    };
+
+    let names = listed(&db, "", &filters);
+
+    // Worked out by hand in tests/verdict.rs.
+    for kept in ["OMORI", "LEGO® Batman™: The Videogame"] {
+        assert!(names.iter().any(|name| name == kept), "{kept} missing");
+    }
+    // Below the minimum, blocked by anti-cheat, or never checked.
+    for hidden in ["Cyberpunk 2077", "ELDEN RING", "Destiny 2", "Day of Defeat"] {
+        assert!(!names.iter().any(|name| name == hidden), "{hidden} listed");
     }
 }
