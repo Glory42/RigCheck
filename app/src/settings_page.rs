@@ -20,9 +20,11 @@ pub struct Storage {
 /// The image cache limits to pick from, in MB.
 const IMAGE_LIMITS: [u32; 4] = [100, 250, 500, 1000];
 
+/// `account` is the Steam account section ([`crate::account::view`]).
 pub fn view(
     settings: &Settings,
     storage: Storage,
+    account: Element<'static, Message>,
     i18n: &I18n,
     colors: Colors,
 ) -> Element<'static, Message> {
@@ -48,6 +50,12 @@ pub fn view(
             colors
         ),
         row(languages).spacing(18).wrap(),
+        section(
+            i18n.t("account-title"),
+            i18n.t("account-description"),
+            colors
+        ),
+        account,
         section(
             i18n.t("storage-title"),
             i18n.t("storage-description"),

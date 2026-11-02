@@ -10,7 +10,6 @@ use iced::widget::{
 use iced::{ContentFit, Element, Fill};
 use rigcheck_core::{Level, Specs, Verdict};
 use rigcheck_gamedb::Game;
-use rigcheck_steam::InstalledGame;
 
 use crate::i18n::I18n;
 use crate::style::{BOLD, Colors, level_color};
@@ -51,11 +50,22 @@ pub fn status(game: Option<&Game>, specs: Option<&Specs>) -> Status {
     }
 }
 
+/// A game in the Library: installed, or (with a Steam key) just owned.
 #[derive(Clone)]
 pub struct Entry<'a> {
-    pub game: &'a InstalledGame,
+    pub app_id: u32,
+    pub name: &'a str,
     pub status: Status,
     pub cover: Option<&'a PathBuf>,
+}
+
+/// Which games the Library lists.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum Scope {
+    #[default]
+    Installed,
+    /// Every game the account owns, from Steam's Web API.
+    Owned,
 }
 
 /// `games` is `None` while Steam is being scanned.
@@ -69,15 +79,39 @@ pub enum Order {
 }
 
 /// `games` is `None` while Steam is being scanned.
+/// `games` is `None` while Steam is being scanned. `note` replaces the
+/// tiles when there's nothing to list and a reason to say (no Steam key, a
+/// private profile…).
+#[allow(clippy::too_many_arguments)]
 pub fn view<'a>(
     games: Option<Vec<Entry<'a>>>,
     search: &str,
     order: Order,
+    scope: Scope,
+    note: Option<String>,
     i18n: &I18n,
     colors: Colors,
 ) -> Element<'a, Message> {
+    let scope_button = |id: &str, this: Scope| {
+        button(text(i18n.t(id)).font(BOLD).size(12))
+            .padding([6, 10])
+            .style(colors.button(scope == this))
+            .on_press(Message::LibraryScope(this))
+    };
+    let scopes = row![
+        scope_button("library-installed", Scope::Installed),
+        scope_button("library-owned", Scope::Owned),
+    ]
+    .spacing(8);
+    if let Some(note) = note {
+        return column![scopes, center(text(note).font(BOLD))]
+            .spacing(16)
+            .into();
+    }
     let Some(mut games) = games else {
-        return center(text(i18n.t("library-scanning"))).into();
+        return column![scopes, center(text(i18n.t("library-scanning")))]
+            .spacing(16)
+            .into();
     };
     let search_box = text_input(&i18n.t("library-search"), search)
         .id(SEARCH)
@@ -93,20 +127,22 @@ pub fn view<'a>(
             .on_press(Message::LibraryOrder(this))
     };
     let mut header = row![
+        scopes,
+        space::horizontal().width(12),
         order_button("library-by-name", Order::Name),
         order_button("library-by-verdict", Order::Verdict),
     ]
     .spacing(8)
     .align_y(iced::Center);
-    if let Some(summary) = summary(&games, i18n) {
+    if let Some(summary) = summary(&games, scope, i18n) {
         header = header
             .push(space::horizontal())
             .push(text(summary).font(BOLD));
     }
 
     let query = search.to_lowercase();
-    games.retain(|entry| entry.game.name.to_lowercase().contains(&query));
-    games.sort_by_key(|entry| entry.game.name.to_lowercase());
+    games.retain(|entry| entry.name.to_lowercase().contains(&query));
+    games.sort_by_key(|entry| entry.name.to_lowercase());
     let content: Element<'a, Message> = match order {
         Order::Name => tiles(games, i18n, colors),
         Order::Verdict => {
@@ -142,7 +178,7 @@ fn tiles<'a>(games: Vec<Entry<'a>>, i18n: &I18n, colors: Colors) -> Element<'a, 
 
 /// "38 of 42 installed games meet the recommended specs.", once every
 /// game has a verdict or is known to have none.
-fn summary(games: &[Entry], i18n: &I18n) -> Option<String> {
+fn summary(games: &[Entry], scope: Scope, i18n: &I18n) -> Option<String> {
     if games.is_empty()
         || games
             .iter()
@@ -156,8 +192,12 @@ fn summary(games: &[Entry], i18n: &I18n) -> Option<String> {
             |entry| matches!(&entry.status, Status::Verdict(v) if v.overall == Level::Recommended),
         )
         .count();
+    let id = match scope {
+        Scope::Installed => "library-summary",
+        Scope::Owned => "library-summary-owned",
+    };
     Some(i18n.t_with(
-        "library-summary",
+        id,
         &[
             ("ready", &ready.to_string()),
             ("total", &games.len().to_string()),
@@ -182,12 +222,11 @@ fn rank(status: &Status) -> u8 {
 }
 
 fn tile<'a>(entry: Entry<'a>, i18n: &I18n, colors: Colors) -> Element<'a, Message> {
-    let game = entry.game;
     // The grid stretches cells to its column width; the container takes that,
     // so the tile keeps the cover's width.
     container(game_tile(
-        game.app_id,
-        &game.name,
+        entry.app_id,
+        entry.name,
         &entry.status,
         entry.cover,
         false,

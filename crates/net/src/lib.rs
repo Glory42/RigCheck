@@ -18,8 +18,9 @@ pub struct Allowlist {
 
 impl Allowlist {
     /// The desktop app: GitHub Releases (games.db, served from GitHub's
-    /// asset host after a redirect), Steam's store API (live lookups) and
-    /// Steam's image CDN. Nothing else, ever (ROADMAP §6).
+    /// asset host after a redirect), Steam's store API (live lookups),
+    /// Steam's image CDN, and the Steam Web API only for someone who added
+    /// their own key (their owned games). Nothing else, ever (ROADMAP §6).
     pub fn app() -> Allowlist {
         Allowlist {
             hosts: &[
@@ -27,6 +28,7 @@ impl Allowlist {
                 "release-assets.githubusercontent.com",
                 "store.steampowered.com",
                 "shared.akamai.steamstatic.com",
+                "api.steampowered.com",
             ],
         }
     }

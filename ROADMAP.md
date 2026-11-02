@@ -177,6 +177,7 @@ The app makes **only** these requests. This list goes in the README and on an in
 | `github.com` (Releases, files served from `release-assets.githubusercontent.com`) | On startup (configurable), to fetch `manifest.json` and, if newer, `games.db.zst`; and the latest app release's `version.txt` for the update notice | A plain file download. No identifiers |
 | `store.steampowered.com/api/appdetails` | When the user opens a game missing from `games.db` | The app ID being looked up |
 | Steam CDN | When showing cover art | The app ID of the image |
+| `api.steampowered.com` (`IPlayerService/GetOwnedGames`) | Only if the user adds their own Steam Web API key: at start and on Refresh, to list every game the account owns | The user's key and SteamID |
 
 As with any download, GitHub and Valve see the user's IP address. The project itself receives **nothing**.
 
@@ -474,6 +475,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 
 ### Phase 8: Polish → v1.0
 - [x] "What if I upgrade?": pick a hypothetical GPU/CPU/RAM and see which games change verdict (My Rig; installed games, nothing saved)
+- [x] Library: ALL MY GAMES with the user's own Steam Web API key (`IPlayerService/GetOwnedGames`; the SteamID comes from Steam's `loginusers.vdf`; the key is kept in `~/.config/rigcheck/steam-api-key`, mode 600, and the last answer cached for offline starts), next to INSTALLED. Opt-in: without a key the app never calls the Web API
 - [x] Library summary: "38 of 42 installed games meet recommended specs"
 - [x] Sort and group the library by verdict (A–Z, or grouped READY → LOW → TOO WEAK → BLOCKED → ??? → NOT CHECKED YET → NO DATA)
 - [x] Compare two games side by side (COMPARE on one game page, COMPARE WITH … on another: verdicts, each part's minimum and result, Linux facts)

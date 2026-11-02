@@ -13,11 +13,12 @@ fn the_app_may_only_reach_the_three_privacy_destinations() {
         "https://release-assets.githubusercontent.com/github-production-release-asset/1441615821/eec53fcc-5b7c-4082-aa08-4b61f6291d26",
         "https://store.steampowered.com/api/appdetails?appids=1086940",
         "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1086940/library_600x900.jpg",
+        // Only with the user's own key: every game the account owns.
+        "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/",
     ] {
         assert!(app.allows(url), "{url} should be allowed");
     }
     for url in [
-        "https://api.steampowered.com/IStoreService/GetAppList/v1/",
         "https://example.com/",
         "http://store.steampowered.com/api/appdetails",
         "https://store.steampowered.com.example.com/api/appdetails",

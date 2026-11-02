@@ -1,6 +1,7 @@
 //! The rigcheck desktop app: an iced UI on top of the workspace crates.
 
 mod about;
+mod account;
 mod catalog;
 mod compare;
 mod covers;
@@ -153,6 +154,21 @@ struct App {
     storage: settings_page::Storage,
     search: String,
     library_order: library::Order,
+    library_scope: library::Scope,
+    /// What's typed in the Steam key box; never shown (a secure input) and
+    /// only written to disk by SAVE KEY.
+    steam_key_input: String,
+    has_steam_key: bool,
+    /// The signed-in Steam account, from Steam's own files.
+    steam_id: Option<u64>,
+    /// Every game the account owns, once Steam has said (or from the cache).
+    owned: Option<rigcheck_steam::Owned>,
+    /// The last GetOwnedGames request failed.
+    owned_failed: bool,
+    /// Steam answered 401/403: it doesn't accept the saved key.
+    key_rejected: bool,
+    /// Why the typed key wasn't saved, if it wasn't.
+    bad_key: Option<account::BadKey>,
     catalog_list: catalog::List,
     /// Live lookups of games games.db hasn't checked; `None` if the cache
     /// directory can't be written.
@@ -190,6 +206,14 @@ enum Message {
     GamesFound(Vec<InstalledGame>),
     Search(String),
     LibraryOrder(library::Order),
+    LibraryScope(library::Scope),
+    /// Settings > Steam account: the key box, saving, removing, refreshing.
+    SteamKeyInput(String),
+    SaveSteamKey,
+    RemoveSteamKey,
+    RefreshOwned,
+    /// Steam's `GetOwnedGames` answer, or why there's none.
+    OwnedGames(Result<String, String>),
     /// Enter in the Library's search: open the first game listed.
     LibraryOpenFirst,
     Shortcut(keys::Shortcut),
@@ -274,6 +298,15 @@ impl App {
             release::check()
         };
         let fetched = open_fetched(&paths.cache);
+        let steam_key = account::load_key(&paths.config);
+        let has_steam_key = steam_key.is_some();
+        let steam_id = rigcheck_steam::account_id(&paths.home);
+        let owned = account::load_owned(&paths.cache);
+        // Same setting as the other start-up checks.
+        let owned_check = match (steam_key, steam_id) {
+            (Some(key), Some(id)) if !settings.manual_updates => account::fetch(key, id),
+            _ => Task::none(),
+        };
         let art = covers::Covers::new(paths.home.clone(), paths.cache.join("images"));
         art.evict(settings.image_cache_bytes());
         let mut app = App {
@@ -299,6 +332,14 @@ impl App {
             newer_release: None,
             search: String::new(),
             library_order: library::Order::default(),
+            library_scope: library::Scope::default(),
+            steam_key_input: String::new(),
+            has_steam_key,
+            steam_id,
+            owned,
+            owned_failed: false,
+            key_rejected: false,
+            bad_key: None,
             catalog_list: catalog::List::default(),
             fetched,
             steam: lookup::Steam::default(),
@@ -312,7 +353,7 @@ impl App {
         let system_mode = iced::system::theme().map(Message::SystemTheme);
         (
             app,
-            Task::batch([detect, scan, fetch, release_check, system_mode]),
+            Task::batch([detect, scan, fetch, release_check, system_mode, owned_check]),
         )
     }
 
@@ -339,13 +380,59 @@ impl App {
 
     /// Looks up each installed game in games.db.
     fn load_records(&mut self) {
-        let (Some(db), Some(games)) = (&self.db, &self.games) else {
+        let Some(db) = &self.db else {
             return;
         };
-        self.records = games
-            .iter()
-            .filter_map(|game| Some((game.app_id, db.game(game.app_id).ok()??)))
+        let installed = self.games.iter().flatten().map(|game| game.app_id);
+        let owned = self.owned_games().iter().map(|game| game.app_id);
+        self.records = installed
+            .chain(owned)
+            .filter_map(|app_id| Some((app_id, db.game(app_id).ok()??)))
             .collect();
+    }
+
+    /// Every game the account owns, if Steam has listed them.
+    fn owned_games(&self) -> &[rigcheck_steam::OwnedGame] {
+        match &self.owned {
+            Some(rigcheck_steam::Owned::Games(games)) => games,
+            _ => &[],
+        }
+    }
+
+    /// The Library's games for the current scope, as (app ID, name).
+    fn library_games(&self) -> Option<Vec<(u32, &str)>> {
+        match self.library_scope {
+            library::Scope::Installed => self.games.as_ref().map(|games| {
+                games
+                    .iter()
+                    .map(|game| (game.app_id, game.name.as_str()))
+                    .collect()
+            }),
+            library::Scope::Owned => Some(
+                self.owned_games()
+                    .iter()
+                    .map(|game| (game.app_id, game.name.as_str()))
+                    .collect(),
+            ),
+        }
+    }
+
+    /// Why ALL MY GAMES has nothing to list, if it hasn't.
+    fn library_note(&self) -> Option<String> {
+        if self.library_scope != library::Scope::Owned {
+            return None;
+        }
+        let id = match (&self.owned, self.has_steam_key) {
+            // A saved list still shows, even if a later refresh failed.
+            (Some(rigcheck_steam::Owned::Games(_)), _) => return None,
+            (_, _) if self.key_rejected => "library-owned-key-rejected",
+            (Some(rigcheck_steam::Owned::Hidden), _) => "library-owned-private",
+            (None, false) => "library-owned-no-key",
+            (None, true) if self.steam_id.is_none() => "library-owned-no-account",
+            (None, true) if self.owned_failed => "library-owned-failed",
+            (None, true) => "library-owned-loading",
+        };
+        Some(self.i18n.t(id))
     }
 
     /// What verdicts compare against: detected hardware scored with the
@@ -664,17 +751,80 @@ impl App {
             Message::LibraryOpenFirst => {
                 let query = self.search.to_lowercase();
                 let first = self
-                    .games
-                    .iter()
-                    .flatten()
-                    .filter(|game| game.name.to_lowercase().contains(&query))
-                    .min_by_key(|game| game.name.to_lowercase());
+                    .library_games()
+                    .unwrap_or_default()
+                    .into_iter()
+                    .filter(|(_, name)| name.to_lowercase().contains(&query))
+                    .min_by_key(|(_, name)| name.to_lowercase())
+                    .map(|(app_id, _)| app_id);
                 match first {
-                    Some(game) => self.update(Message::Open(Page::Game(game.app_id))),
+                    Some(app_id) => self.update(Message::Open(Page::Game(app_id))),
                     None => Task::none(),
                 }
             }
             Message::Shortcut(shortcut) => self.shortcut(shortcut),
+            Message::LibraryScope(scope) => {
+                self.library_scope = scope;
+                // The owned games' covers: Steam's cache, else downloaded.
+                let ids: Vec<u32> = self.owned_games().iter().map(|game| game.app_id).collect();
+                Task::batch(ids.into_iter().map(|app_id| self.cover(app_id)))
+            }
+            Message::SteamKeyInput(key) => {
+                self.steam_key_input = key;
+                Task::none()
+            }
+            Message::SaveSteamKey => {
+                let key = self.steam_key_input.trim().to_owned();
+                if let Err(bad) = account::check_key(&key) {
+                    self.bad_key = Some(bad);
+                    return Task::none();
+                }
+                self.steam_key_input.clear();
+                self.bad_key = None;
+                self.key_rejected = false;
+                if let Err(error) = account::save_key(&self.paths.config, &key) {
+                    eprintln!("couldn't save the Steam key: {error}");
+                    return Task::none();
+                }
+                self.has_steam_key = true;
+                match self.steam_id {
+                    Some(id) => account::fetch(key, id),
+                    None => Task::none(),
+                }
+            }
+            Message::RemoveSteamKey => {
+                account::remove_key(&self.paths.config, &self.paths.cache);
+                self.has_steam_key = false;
+                self.owned = None;
+                self.owned_failed = false;
+                Task::none()
+            }
+            Message::RefreshOwned => match (account::load_key(&self.paths.config), self.steam_id) {
+                (Some(key), Some(id)) => account::fetch(key, id),
+                _ => Task::none(),
+            },
+            Message::OwnedGames(answer) => {
+                match answer.and_then(|json| {
+                    let owned = rigcheck_steam::owned_games(&json).map_err(|e| e.to_string())?;
+                    account::save_owned(&self.paths.cache, &json);
+                    Ok(owned)
+                }) {
+                    Ok(owned) => {
+                        self.owned = Some(owned);
+                        self.owned_failed = false;
+                        self.key_rejected = false;
+                        self.load_records();
+                    }
+                    Err(error) => {
+                        // Never the URL (it holds the key): the net client keeps it out.
+                        eprintln!("couldn't list the owned games: {error}");
+                        self.owned_failed = true;
+                        self.key_rejected =
+                            error.contains("HTTP 401") || error.contains("HTTP 403");
+                    }
+                }
+                Task::none()
+            }
             Message::LibraryOrder(order) => {
                 self.library_order = order;
                 Task::none()
@@ -915,17 +1065,26 @@ impl App {
         let i18n = &self.i18n;
         let page = match self.page {
             Page::Library => {
-                let entries = self.games.as_ref().map(|games| {
+                let entries = self.library_games().map(|games| {
                     games
-                        .iter()
-                        .map(|game| library::Entry {
-                            game,
-                            status: self.status(game.app_id),
-                            cover: self.covers.get(&game.app_id),
+                        .into_iter()
+                        .map(|(app_id, name)| library::Entry {
+                            app_id,
+                            name,
+                            status: self.status(app_id),
+                            cover: self.covers.get(&app_id),
                         })
                         .collect()
                 });
-                library::view(entries, &self.search, self.library_order, i18n, colors)
+                library::view(
+                    entries,
+                    &self.search,
+                    self.library_order,
+                    self.library_scope,
+                    self.library_note(),
+                    i18n,
+                    colors,
+                )
             }
             Page::Game(app_id) => {
                 // Installed games that aren't in games.db have only Steam's name.
@@ -1007,7 +1166,20 @@ impl App {
                 };
                 compare::view(side(a), side(b), i18n, colors)
             }
-            Page::Settings => settings_page::view(&self.settings, self.storage, i18n, colors),
+            Page::Settings => settings_page::view(
+                &self.settings,
+                self.storage,
+                account::view(
+                    &self.steam_key_input,
+                    self.has_steam_key,
+                    self.steam_id,
+                    self.bad_key,
+                    i18n,
+                    colors,
+                ),
+                i18n,
+                colors,
+            ),
         };
         let mut body = column![].spacing(18);
         if let Some(banner) = download::view(&self.download, i18n, colors) {
@@ -1766,7 +1938,10 @@ mod tests {
         let _ = app.update(steam_says(BG3));
 
         click(&mut app, "SETTINGS");
-        click(&mut app, "CLEAR FETCHED GAMES");
+        // Settings is long: a window tall enough to reach Storage.
+        on_tall_window(&mut app, |ui| {
+            ui.click("CLEAR FETCHED GAMES").unwrap();
+        });
         let _ = app.update(Message::Open(Page::Game(BG3)));
 
         assert!(shows(&app, "Checking Steam…"));
@@ -1780,7 +1955,10 @@ mod tests {
 
         click(&mut app, "SETTINGS");
         assert!(shows(&app, "1.5 MB"));
-        click(&mut app, "CLEAR IMAGES");
+        // Settings is long: a window tall enough to reach Storage.
+        on_tall_window(&mut app, |ui| {
+            ui.click("CLEAR IMAGES").unwrap();
+        });
 
         assert!(shows(&app, "0.0 MB"));
         let images = Paths::under(dir.path()).cache.join("images");
@@ -1796,7 +1974,10 @@ mod tests {
         let mut app = library_app(&dir);
 
         click(&mut app, "SETTINGS");
-        click(&mut app, "250 MB");
+        // Settings is long: a window tall enough to reach Storage.
+        on_tall_window(&mut app, |ui| {
+            ui.click("250 MB").unwrap();
+        });
 
         let saved = Settings::load(&Paths::under(dir.path()).config);
         assert_eq!(saved.image_cache_mb, Some(250));
@@ -1808,7 +1989,10 @@ mod tests {
         let mut app = library_app(&dir);
 
         click(&mut app, "SETTINGS");
-        click(&mut app, "RE-DOWNLOAD");
+        // Settings is long: a window tall enough to reach Storage.
+        on_tall_window(&mut app, |ui| {
+            ui.click("RE-DOWNLOAD").unwrap();
+        });
 
         assert!(shows(&app, "Updating the game database…"));
     }
@@ -2177,6 +2361,136 @@ mod tests {
         assert!(shows(
             &app,
             "rigcheck hasn't read this game's store page yet."
+        ));
+    }
+
+    const KEY: &str = "0123456789ABCDEF0123456789ABCDEF";
+
+    /// Steam's (saved) GetOwnedGames answer: Cyberpunk 2077, OMORI and
+    /// Baldur's Gate 3, which isn't installed.
+    fn steam_owns() -> Message {
+        let json = std::fs::read_to_string("../data/fixtures/steam/owned_games.json").unwrap();
+        Message::OwnedGames(Ok(json))
+    }
+
+    #[test]
+    fn a_saved_steam_key_stays_private() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        click(&mut app, "SETTINGS");
+
+        on_tall_window(&mut app, |ui| {
+            ui.click(iced::widget::Id::new(account::KEY_INPUT)).unwrap();
+            ui.typewrite(KEY);
+        });
+        on_tall_window(&mut app, |ui| {
+            ui.click("SAVE KEY").unwrap();
+        });
+
+        let paths = Paths::under(dir.path());
+        let file = paths.config.join("steam-api-key");
+        assert_eq!(std::fs::read_to_string(&file).unwrap().trim(), KEY);
+        use std::os::unix::fs::PermissionsExt;
+        let mode = std::fs::metadata(&file).unwrap().permissions().mode();
+        assert_eq!(mode & 0o777, 0o600, "only the user may read it");
+        let settings =
+            std::fs::read_to_string(paths.config.join("settings.json")).unwrap_or_default();
+        assert!(!settings.contains(KEY));
+        assert!(!shows(&app, KEY));
+        assert!(shows(&app, "A key is saved."));
+    }
+
+    #[test]
+    fn all_my_games_lists_every_game_the_account_owns() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        let _ = app.update(steam_owns());
+
+        click(&mut app, "ALL MY GAMES");
+
+        // Baldur's Gate 3 is owned, not installed: TOO WEAK on the iGPU like
+        // Cyberpunk 2077 (RX 480 95 vs Vega 7 32); OMORI is READY.
+        assert!(shows(&app, "Baldur's Gate 3"));
+        assert!(shows(
+            &app,
+            "1 of 3 games you own meet the recommended specs."
+        ));
+        click(&mut app, "INSTALLED");
+        assert!(!shows(&app, "Baldur's Gate 3"));
+    }
+
+    #[test]
+    fn the_owned_games_are_remembered_for_offline_starts() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        let _ = app.update(steam_owns());
+
+        let (mut reopened, _) = App::new(Paths::under(dir.path()), Language::English);
+        let _ = reopened.update(Message::HardwareDetected(test_support::amd_laptop()));
+        click(&mut reopened, "ALL MY GAMES");
+
+        assert!(shows(&reopened, "Baldur's Gate 3"));
+    }
+
+    #[test]
+    fn a_private_profile_is_explained() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        let _ = app.update(Message::OwnedGames(Ok(r#"{"response":{}}"#.to_owned())));
+
+        click(&mut app, "ALL MY GAMES");
+
+        assert!(shows(
+            &app,
+            "Steam isn't sharing this account's games. In Steam: your profile → Edit Profile → Privacy Settings → Game details: Public."
+        ));
+    }
+
+    #[test]
+    fn without_a_key_all_my_games_points_to_settings() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        click(&mut app, "ALL MY GAMES");
+
+        assert!(shows(
+            &app,
+            "Add your Steam Web API key in Settings to see every game you own."
+        ));
+    }
+
+    #[test]
+    fn a_steam_id_pasted_as_the_key_is_refused_with_a_hint() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        click(&mut app, "SETTINGS");
+
+        let _ = app.update(Message::SteamKeyInput("76561198388197563".to_owned()));
+        let _ = app.update(Message::SaveSteamKey);
+
+        assert!(
+            !Paths::under(dir.path())
+                .config
+                .join("steam-api-key")
+                .exists()
+        );
+        assert!(shows(
+            &app,
+            "That's a SteamID, not an API key. A Steam Web API key is 32 letters and digits, from GET A KEY. Your SteamID is found automatically."
+        ));
+    }
+
+    #[test]
+    fn a_rejected_key_is_named_as_the_problem() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        let _ = app.update(Message::OwnedGames(Err("HTTP 401 Unauthorized".to_owned())));
+
+        click(&mut app, "ALL MY GAMES");
+
+        assert!(shows(
+            &app,
+            "Steam didn't accept the key. Check it in Settings, or get a new one."
         ));
     }
 
