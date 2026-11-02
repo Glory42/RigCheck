@@ -446,7 +446,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 - [x] Full game page: per-component table (each row says how your PC compares), bottleneck, Linux status, raw requirement text and a link to the Steam store page. The text is kept in games.db (`requirements.text`, ~620 bytes a game); games crawled before that are re-crawled once. The store link opens in the user's browser through `xdg-open`, so the app itself sends nothing
 - [x] `fetch` module: live `appdetails` lookup for games missing from `games.db` or with `not_crawled` status → parse with `core` → store in `fetched.db` (`app/src/lookup.rs`; ingest now lives in `gamedb`, shared with the pipeline). Asked when the game's page opens; the lookup keeps the ProtonDB/anti-cheat/Deck facts games.db has, and is asked again after 30 days. Not done yet: pruning old `fetched.db` rows, and Catalog rows still say NOT CHECKED YET for looked-up games
 - [x] Client-side rate limiting and a clear "couldn't reach Steam" state: one shared client, 20 lookups a minute (Steam allows ~200 per 5 minutes), one retry on 429/5xx; offline shows "Couldn't reach Steam." with RETRY, and DLC or delisted apps say Steam lists no requirements
-- [ ] Cover art from the Steam CDN (via `crates/net`, cached in `~/.cache/rigcheck/images/`) for games Steam hasn't cached locally
+- [x] Cover art from the Steam CDN (via `crates/net`, cached in `~/.cache/rigcheck/images/`) for games Steam hasn't cached locally (`app/src/covers.rs`: Steam's own cache wins; each cover asked for at most once a session; 10 a second)
 
 **Done when:** you can search any Steam game, open it and get a verdict, including games the pipeline hasn't crawled yet.
 
