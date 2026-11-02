@@ -8,6 +8,10 @@ use std::path::{Path, PathBuf};
 
 use steamlocate::{Library, SteamDir};
 
+mod owned;
+
+pub use owned::{Error, Owned, OwnedGame, owned_games};
+
 /// A game installed in one of the user's Steam libraries.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InstalledGame {

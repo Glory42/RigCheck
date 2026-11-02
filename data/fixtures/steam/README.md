@@ -9,3 +9,5 @@ App manifests used by `crates/steam/tests/`. Tests copy them into fake home dire
 | `appmanifest_1493710.acf` | Proton Experimental | Real, `LastOwner` zeroed |
 | `appmanifest_4183110.acf` | Steam Linux Runtime 4.0 | Real, `LastOwner` zeroed |
 | `appmanifest_228980.acf` | Steamworks Common Redistributables | Hand-written in the same shape |
+
+`owned_games.json` is a `IPlayerService/GetOwnedGames/v1/?include_appinfo=1` response, written by hand in the shape Valve documents (partner.steamgames.com/doc/webapi/IPlayerService), with three games and made-up icon hashes. A profile whose game details are private answers `{"response":{}}`.

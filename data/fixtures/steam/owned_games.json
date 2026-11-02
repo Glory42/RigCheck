@@ -1,0 +1,46 @@
+{
+  "response": {
+    "game_count": 3,
+    "games": [
+      {
+        "appid": 1091500,
+        "name": "Cyberpunk 2077",
+        "playtime_forever": 3120,
+        "img_icon_url": "15ba5f2a5ebd5b3d57d62e3a1c6e83e4c4c1d1fa",
+        "has_community_visible_stats": true,
+        "playtime_windows_forever": 0,
+        "playtime_mac_forever": 0,
+        "playtime_linux_forever": 3120,
+        "playtime_deck_forever": 0,
+        "rtime_last_played": 1793000000,
+        "playtime_disconnected": 0
+      },
+      {
+        "appid": 1150690,
+        "name": "OMORI",
+        "playtime_forever": 845,
+        "img_icon_url": "a2b4d2bcbd5f2b0c4e7d1e8f6b3a9c0d1e2f3a4b",
+        "has_community_visible_stats": true,
+        "playtime_windows_forever": 0,
+        "playtime_mac_forever": 0,
+        "playtime_linux_forever": 845,
+        "playtime_deck_forever": 0,
+        "rtime_last_played": 1790000000,
+        "playtime_disconnected": 0
+      },
+      {
+        "appid": 1086940,
+        "name": "Baldur's Gate 3",
+        "playtime_forever": 0,
+        "img_icon_url": "d866cd77cd1b7a5c2a5d4e1f0b9c8a7d6e5f4a3b",
+        "has_community_visible_stats": true,
+        "playtime_windows_forever": 0,
+        "playtime_mac_forever": 0,
+        "playtime_linux_forever": 0,
+        "playtime_deck_forever": 0,
+        "rtime_last_played": 0,
+        "playtime_disconnected": 0
+      }
+    ]
+  }
+}
