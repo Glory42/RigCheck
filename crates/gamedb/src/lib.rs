@@ -15,7 +15,7 @@ use serde::Deserialize;
 
 mod update;
 
-pub use update::{Manifest, SCHEMA_VERSION};
+pub use update::{Manifest, SCHEMA_VERSION, install};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
