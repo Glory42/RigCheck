@@ -1212,6 +1212,19 @@ mod tests {
     }
 
     #[test]
+    fn an_app_that_isnt_a_game_has_no_requirements_to_check() {
+        let dir = TempDir::new().unwrap();
+        let mut app = lookup_app(&dir);
+        let phantom_liberty = 2138330; // a DLC
+        let _ = app.update(Message::Open(Page::Game(phantom_liberty)));
+
+        let _ = app.update(steam_says(phantom_liberty));
+
+        assert!(shows(&app, "Steam lists no system requirements for this."));
+        assert!(!shows(&app, "Checking Steam…"));
+    }
+
+    #[test]
     fn window_has_the_brand_icon() {
         assert!(window_settings().icon.is_some());
     }
