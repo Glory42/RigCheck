@@ -144,6 +144,16 @@ fn upgrade(conn: &Connection) -> Result<(), Error> {
     Ok(())
 }
 
+/// "parsed" when the minimum tier names a CPU, a GPU and RAM; "partial"
+/// when it lacks one; "missing" without a minimum tier.
+fn requirements_status(minimum: Option<&ParsedTier>) -> &'static str {
+    match minimum {
+        None => "missing",
+        Some(m) if m.cpu.is_some() && m.gpu.is_some() && m.ram_mb.is_some() => "parsed",
+        Some(_) => "partial",
+    }
+}
+
 /// A game's Linux facts from its games.db columns.
 fn linux_info(native: bool, protondb: Option<&str>, anticheat: Option<&str>) -> LinuxInfo {
     LinuxInfo {
@@ -320,6 +330,46 @@ impl GameDb {
 
     /// Matches every stored requirement's CPU and GPU text against the
     /// current hardware table again, so table growth reaches every game.
+    /// Parses every stored requirement text again with the current parser
+    /// (`requirements.text`), so a parser fix reaches every crawled game
+    /// without fetching its store page. Hardware is matched by
+    /// [`GameDb::rematch`], which should run after.
+    pub fn reparse(&self) -> Result<(), Error> {
+        let tx = self.conn.unchecked_transaction()?;
+        let mut statement =
+            tx.prepare("SELECT app_id, tier, text FROM requirements WHERE text IS NOT NULL")?;
+        let rows: Vec<(u32, String, String)> = statement
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
+            .collect::<Result<_, _>>()?;
+        drop(statement);
+        for (app_id, tier, text) in rows {
+            let parsed = parse(&text);
+            tx.execute(
+                "UPDATE requirements SET ram_mb = ?3, vram_mb = ?4, storage_mb = ?5,
+                     directx = ?6, cpu_raw = ?7, gpu_raw = ?8
+                 WHERE app_id = ?1 AND tier = ?2",
+                params![
+                    app_id,
+                    tier,
+                    parsed.ram_mb,
+                    parsed.vram_mb,
+                    parsed.storage_mb,
+                    parsed.directx,
+                    parsed.cpu,
+                    parsed.gpu
+                ],
+            )?;
+            if tier == "minimum" {
+                tx.execute(
+                    "UPDATE games SET requirements_status = ?2 WHERE app_id = ?1",
+                    params![app_id, requirements_status(Some(&parsed))],
+                )?;
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
     pub fn rematch(&self) -> Result<(), Error> {
         let catalog = self.catalog()?;
         let tx = self.conn.unchecked_transaction()?;
@@ -343,11 +393,7 @@ impl GameDb {
     /// matched against `catalog`, which must already be stored.
     pub fn store(&self, record: &GameRecord, catalog: &Catalog) -> Result<(), Error> {
         let tx = self.conn.unchecked_transaction()?;
-        let status = match &record.minimum {
-            None => "missing",
-            Some(m) if m.cpu.is_some() && m.gpu.is_some() && m.ram_mb.is_some() => "parsed",
-            Some(_) => "partial",
-        };
+        let status = requirements_status(record.minimum.as_ref());
         for table in ["requirement_hardware", "requirements"] {
             tx.execute(
                 &format!("DELETE FROM {table} WHERE app_id = ?1"),

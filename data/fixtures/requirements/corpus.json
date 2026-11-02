@@ -72,6 +72,18 @@
   "recommended": "<strong>OS Version: </strong>Windows 10 64-bit<br><strong>Processor: </strong>Intel Core i5-6600k @3.5GHz or AMD Ryzen 5 1600 @3.2GHz<br><strong>Memory: </strong>8GB System RAM<br><strong>Graphics:</strong>NVIDIA GeForce GTX 1070 TI (8GB) or AMD RX Vega 56 (8GB) or Intel Arc A380 in 3840x2160<br><strong>Direct X: </strong>Version 12<br><strong>Disk Space: </strong>Minimum 2GB free space on hard drive"
  },
  {
+  "app_id": 2310,
+  "name": "Quake",
+  "minimum": "Minimum Spec (1080p/60 HZ) <br><ul class=\"bb_ul\"><li>Win 10 64-bit version<br></li><li>Intel Core i5-3570 @3.4 GHz or AMD Ryzen 3 1300X @3.5 GHz <br></li><li>NVIDIA GeForce GTX 650 TI (2GB) or AMD HD 7750 (1GB) <br></li><li>8GB System RAM <br></li><li>Minimum 2GB free space on hard drive (additional space required for add-on downloads) <br></li><li>High speed broadband connection required for online play </li></ul>",
+  "recommended": "Recommended Spec (*4K/120 HZ) <br><ul class=\"bb_ul\"><li>Win 10 64-bit version<br></li><li>Intel Core i5-6600k @3.5 GHz or AMD Ryzen 5 1600 @3.2 GHz <br></li><li>NVIDIA GeForce GTX 1070 (8GB) or AMD RX Vega 56 (8GB) <br></li><li>8GB System RAM <br></li><li>Minimum 2GB free space on hard drive (additional space required for add-on downloads) <br></li><li>High speed broadband connection required for online play </li></ul>*Compatible display required"
+ },
+ {
+  "app_id": 2990,
+  "name": "FlatOut 2",
+  "minimum": "<ul class=\"bb_ul\"><li>Windows XP/2000 XP SP2 / 2000 SP4, 256 MB RAM, 64 MB video card, 2.0 GHz Pentium® 4 or AMD® 2000+ processor, DirectX compatible sound card, 3.5 GB free hard drive space, DirectX 9.0c, TCP/IP required for LAN play, 512kbs minimum, Broadband connection required</li></ul>",
+  "recommended": null
+ },
+ {
   "app_id": 3590,
   "name": "Plants vs. Zombies GOTY Edition",
   "minimum": "<ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows XP/Vista/7<br>\t                    </li><li><strong>Processor:</strong> 1.2GHz+ processor<br>\t                    </li><li><strong>Memory:</strong> 1GB of RAM<br>\t                    </li><li><strong>Graphics:</strong> 128MB of video memory, 16-bit or 32-bit color quality<br>\t                    </li><li><strong>DirectX:</strong> DirectX 8 or later<br>\t                    </li><li><strong>Hard Drive:</strong> 65+MB of free hard drive space<br>\t                    </li><li><strong>Sound:</strong> DirectX-compatible sound<br>                    </li></ul>",
@@ -96,6 +108,12 @@
   "recommended": "<strong>Recommended:</strong><br>\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows® Vista SP2/ Windows® 7 <br>\t\t\t\t\t\t</li><li><strong>Processor:</strong> 1.8 GHz Quad Core CPU <br>\t\t\t\t\t\t</li><li><strong>Memory:</strong> 4 GB RAM <br>\t\t\t\t\t\t</li><li><strong>Graphics:</strong> 512 MB ATI 4800 series or better, 512 MB nVidia 9800 series or better<br>\t\t\t\t\t\t</li><li><strong>DirectX®:</strong> DirectX® version 11<br>\t\t\t\t\t\t</li><li><strong>Hard Drive:</strong> 8 GB Free <br>\t\t\t\t\t\t</li><li><strong>Sound:</strong> DirectX 9.0c-compatible sound card <br>\t\t\t\t\t\t</li><li><strong>Note:</strong> Optimized for the touch-screen Ultrabook™ device<br>\t\t\t\t\t</li></ul>"
  },
  {
+  "app_id": 10090,
+  "name": "Call of Duty: World at War",
+  "minimum": "<ul class=\"bb_ul\"><li><strong>Supported OS:  </strong>Windows XP/Vista/7                    <br>\t\t\t\t\t</li><li><strong>Processor: </strong>Pentium 4 @ 3 GHz/AMD 64 3200+                    <br>\t\t\t\t\t</li><li><strong>Memory: </strong>512 MB (1 GB for Vista)                    <br>\t\t\t\t\t</li><li><strong>Hard Drive: </strong>8 GB Free                    <br>\t\t\t\t\t</li><li><strong>DirectX version: </strong>DirectX 9.0c                    <br>\t\t\t\t\t</li><li><strong>Sound: </strong>on-board or better                      <br>\t\t\t\t\t</li><li><strong>Graphics Card: </strong>256 MB (nVidia GeForce 6600/ATI Radeon X1600)                    </li></ul>",
+  "recommended": null
+ },
+ {
   "app_id": 12100,
   "name": "Grand Theft Auto III",
   "minimum": "<strong>Minimum:</strong><br>\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>OS *:</strong> Microsoft® Windows® 2000/XP<br>\t\t\t\t\t</li><li><strong>Processor:</strong> Pentium III® 450 MHz CPU<br>\t\t\t\t\t</li><li><strong>Memory:</strong> 96 MB RAM<br>\t\t\t\t\t</li><li><strong>Graphics:</strong> 16 MB Direct 3D Video Card<br>\t\t\t\t\t</li><li><strong>DirectX Version:</strong> Microsoft DirectX® 8.1<br>\t\t\t\t\t</li><li><strong>Hard Drive:</strong> 500 MB uncompressed free hard disk space<br>\t\t\t\t\t</li><li><strong>Sound Card:</strong>Fully DirectX compatible Sound Card</li></ul><strong>Recommended:</strong><br>\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>Processor:</strong> 700 MHz CPU<br>\t\t\t\t\t</li><li><strong>Memory:</strong> 128 MB RAM<br>\t\t\t\t\t</li><li><strong>Graphics:</strong> 32 MB Direct3D Video Card</li></ul>",
@@ -118,6 +136,12 @@
   "name": "LEGO® Batman™: The Videogame",
   "minimum": "<strong>Minimum:</strong>                            <br>\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>Supported OS: </strong>Windows Vista®/XP                            <br>\t\t\t\t\t</li><li><strong>Processor: </strong>Intel® P3 1.5 GHz or AMD Athlon™ XP                            <br>\t\t\t\t\t</li><li><strong>Memory: </strong>256 MB RAM, 512 MB RAM required for Windows Vista®                            <br>\t\t\t\t\t</li><li><strong>Graphics: </strong>128 MB with Shader Model 2.0 capability (Shader Model 3.0 recommended)                            </li></ul>",
   "recommended": null
+ },
+ {
+  "app_id": 21130,
+  "name": "LEGO® Harry Potter: Years 1-4",
+  "minimum": "<strong>Minimum:</strong><br>\t\t\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows XP/Vista<br>\t\t\t\t\t\t\t\t</li><li><strong>Processor:</strong> Intel P4 1.8 GHz/AMD Athlon XP 2200+<br>\t\t\t\t\t\t\t\t</li><li><strong>RAM:</strong> 512MB<br>\t\t\t\t\t\t\t\t</li><li><strong>Graphics Card:</strong> ATI X1300/NVIDIA GeForce FX 5800 (256 MB RAM)<br>\t\t\t\t\t\t\t\t</li><li><strong>Sound Card:</strong> 100% DirectX®9.0c compatible audio device<br>\t\t\t\t\t\t\t\t</li><li><strong>Input Devices:</strong> Keyboard; Xbox 360 Controller for Windows supported<br>\t\t\t\t\t\t\t</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br>\t\t\t\t\t\t\t\t<ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows XP/Vista<br>\t\t\t\t\t\t\t\t\t</li><li><strong>Processor:</strong> Intel Core 2 Duo/AMD Athlon 64, 2.8GHz<br>\t\t\t\t\t\t\t\t\t</li><li><strong>RAM:</strong> 2GB<br>\t\t\t\t\t\t\t\t\t</li><li><strong>Graphics Card:</strong> ATI HD 2900/NVIDIA GeForce 8800<br>\t\t\t\t\t\t\t\t\t</li><li><strong>Sound Card:</strong> 100% DirectX®9.0c compatible audio device<br>\t\t\t\t\t\t\t\t\t</li><li><strong>Input Devices:</strong> Keyboard; Xbox 360 Controller for Windows supported<br>\t\t\t\t\t\t\t\t</li></ul>"
  },
  {
   "app_id": 22380,
@@ -148,6 +172,18 @@
   "name": "Terraria",
   "minimum": "<h2 class=\"bb_tag\" ><strong>REQUIRED</strong></h2><ul class=\"bb_ul\"><li><strong>OS: Windows Xp, Vista, 7, 8/8.1, 10</strong> <br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Processor: 2.0 Ghz</strong> <br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Memory: 2.5GB</strong><br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Hard Disk Space: 200MB </strong> \t<br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Video Card: 128mb Video Memory, capable of Shader Model 2.0+</strong> <br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>DirectX®: 9.0c or Greater</strong> \t<br>\t\t\t\t\t\t\t\t\t</li></ul>",
   "recommended": "<h2 class=\"bb_tag\" ><strong>RECOMMENDED</strong></h2><ul class=\"bb_ul\"><li><strong>OS: Windows 7, 8/8.1, 10</strong> <br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Processor: Dual Core 3.0 Ghz</strong> <br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Memory: 4GB</strong><br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Hard Disk Space: 200MB </strong> \t<br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>Video Card: 256mb Video Memory, capable of Shader Model 2.0+</strong> <br>\t\t\t\t\t\t\t\t\t\t</li><li><strong>DirectX®: 9.0c or Greater</strong> \t<br>\t\t\t\t\t\t\t\t\t</li></ul>"
+ },
+ {
+  "app_id": 200210,
+  "name": "Realm of the Mad God Exalt",
+  "minimum": "<h2 class=\"bb_tag\" >Exalt - Minimum</h2><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Microsoft Windows 10 version 21H1 (build 19043) or newer<br></li><li><strong>Processor:</strong> Intel Core i5-3330 or AMD A10 5700<br></li><li><strong>Memory:</strong> 8GB RAM<br></li><li><strong>GPU:</strong> NVIDIA GeForce GTX 650 / AMD Radeon HD 7750 (1GB VRAM)<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Hard Drive:</strong> 350MB available space<br></li><li><strong>Resolution:</strong> 800x600<br></li><li><strong>Avg. FPS:</strong> 30</li></ul>",
+  "recommended": "<h2 class=\"bb_tag\" >Exalt - Recommended</h2><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Microsoft Windows 10 version 21H1 (build 19043) or newer<br></li><li><strong>Processor:</strong> Intel Core i7-9700 or AMD Ryzen 5 3600<br></li><li><strong>Memory:</strong> 16GB RAM<br></li><li><strong>GPU:</strong> NVIDIA GeForce GTX 1060 / AMD Radeon RX 580 (6GB VRAM)<br></li><li><strong>Network:</strong> Broadband Internet connection<br></li><li><strong>Hard Drive:</strong> 350MB available space<br></li><li><strong>Resolution:</strong> 1920x1080<br></li><li><strong>Avg. FPS:</strong> 60</li></ul>"
+ },
+ {
+  "app_id": 209160,
+  "name": "Call of Duty®: Ghosts",
+  "minimum": "<strong> Minimum</strong><br><br><ul class=\"bb_ul\"><li><strong>OS</strong>: Windows 7 64-Bit / Windows 8 64-Bit<br><strong>CPU</strong>: Intel® Core™ 2 Duo E8200 2.66 GHZ / AMD Phenom™ X3 8750 2.4 GHZ or better<br><strong>RAM</strong>: 6 GB RAM<br><strong>HDD</strong>\t: 40 GB HD space<br><strong>Video</strong>: NVIDIA® GeForce™ GTS 450 / ATI® Radeon™ HD 5870 or better<br><strong>Sound</strong>: DirectX® compatible sound card<br><strong>DirectX®</strong>: DirectX® 11<br><strong>Internet</strong>: Broadband connection and service required for Multiplayer Connectivity. Internet connection required for activation.</li></ul>",
+  "recommended": "<strong> Recommended</strong><br><br><ul class=\"bb_ul\"><li><strong>OS</strong>: Windows 7 64-Bit / Windows 8 64-Bit<br><strong>CPU</strong>: Intel® Core™ i5 – 680 @ 3.6GHz <br><strong>RAM</strong>: 8 GB RAM<br><strong>HDD</strong>\t: 40 GB HD space<br><strong>Video</strong>: NVIDIA® GeForce™ GTX 760 @ 4GB <br><strong>Sound</strong>: DirectX® compatible sound card<br><strong>DirectX®</strong>: DirectX® 11<br><strong>Internet</strong>: Broadband connection and service required for Multiplayer Connectivity. Internet connection required for activation.</li></ul>"
  },
  {
   "app_id": 218620,
@@ -262,6 +298,12 @@
   "name": "RimWorld",
   "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS *:</strong> Windows 7<br></li><li><strong>Processor:</strong> Core 2 Duo<br></li><li><strong>Memory:</strong> 4 GB RAM<br></li><li><strong>Graphics:</strong> Intel HD Graphics 4000 or other shader model 4.0<br></li><li><strong>Storage:</strong> 1 GB available space</li></ul>",
   "recommended": null
+ },
+ {
+  "app_id": 315210,
+  "name": "Suicide Squad: Kill the Justice League",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Win 10 (64 bit)<br></li><li><strong>Processor:</strong> Intel i5-8400 or AMD Ryzen 5 1600 3.20 GHz<br></li><li><strong>Graphics:</strong> NVIDIA GTX 1070 or AMD Radeon RX Vega 56<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 65 GB available space<br></li><li><strong>Additional Notes:</strong> RAM: 16 GB (2x8); SSD Recommended</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li><strong>OS:</strong> Win 10 (64 bit)<br></li><li><strong>Processor:</strong> Intel i7-10700K or AMD Ryzen 7 5800 X3D<br></li><li><strong>Graphics:</strong> NVIDIA RTX 2080 or AMD RX 6800-XT (16GiB)<br></li><li><strong>DirectX:</strong> Version 12<br></li><li><strong>Storage:</strong> 65 GB available space<br></li><li><strong>Additional Notes:</strong> RAM: 16 GB (2x8); SSD Recommended</li></ul>"
  },
  {
   "app_id": 322330,
@@ -694,6 +736,12 @@
   "name": "Mass Effect™ Legendary Edition",
   "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Intel Core i5 3570 or AMD FX-8350<br></li><li><strong>Memory:</strong> 8 GB RAM<br></li><li><strong>Graphics:</strong> GPU: NVIDIA GTX 760, AMD Radeon 7970 / R9280X GPU RAM: 2 GB Video Memory<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 120 GB available space</li></ul>",
   "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> 64-bit Windows 10<br></li><li><strong>Processor:</strong> Intel Core i7-7700 or AMD Ryzen 7 3700X<br></li><li><strong>Memory:</strong> 16 GB RAM<br></li><li><strong>Graphics:</strong> GPU: NVIDIA GTX 1070 / RTX 200, Radeon Vega 56, GPU RAM: 4 GB Video Memory<br></li><li><strong>DirectX:</strong> Version 11<br></li><li><strong>Storage:</strong> 120 GB available space</li></ul>"
+ },
+ {
+  "app_id": 1422450,
+  "name": "Deadlock",
+  "minimum": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system<br></li><li><strong>OS:</strong> TBD<br></li><li><strong>Processor:</strong> TBD<br></li><li><strong>Graphics:</strong> TBD<br></li><li><strong>Sound Card:</strong> TBD</li></ul>",
+  "recommended": "<strong>Recommended:</strong><br><ul class=\"bb_ul\"><li>Requires a 64-bit processor and operating system</li></ul>"
  },
  {
   "app_id": 1426210,

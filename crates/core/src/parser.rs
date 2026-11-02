@@ -25,15 +25,25 @@ pub fn parse(html: &str) -> ParsedTier {
     let field = |labels: &[&str]| {
         fields
             .iter()
-            .find(|(label, _)| labels.contains(&label.as_str()))
+            .find(|(label, value)| labels.contains(&label.as_str()) && !is_placeholder(value))
             .map(|(_, value)| value.as_str())
     };
-    let gpu = field(&["graphics", "video card", "video"]);
+    // Pages without labels: the first item that reads like each part.
+    let items = unlabelled_items(html);
+    let unlabelled = |looks_like: fn(&str) -> bool| {
+        items
+            .iter()
+            .find(|item| looks_like(item))
+            .map(String::as_str)
+    };
+    let cpu = field(&["processor", "cpu"]).or_else(|| unlabelled(looks_like_cpu));
+    let gpu = field(&["graphics", "graphics card", "video card", "video", "gpu"])
+        .or_else(|| unlabelled(looks_like_gpu));
     ParsedTier {
-        cpu: field(&["processor"]).map(str::to_owned),
+        cpu: cpu.map(str::to_owned),
         gpu: gpu.map(str::to_owned),
         vram_mb: gpu.and_then(|text| sizes_mb(text).min()),
-        ram_mb: field(&["memory"])
+        ram_mb: field(&["memory", "ram", "system memory"])
             .and_then(size_mb)
             .or_else(|| unlabelled_ram_mb(html)),
         storage_mb: field(&["storage", "hard drive", "hard disk space", "disk space"])
@@ -51,6 +61,58 @@ fn fields(html: &str) -> Vec<(String, String)> {
             Some((label.trim().to_lowercase(), value.trim().to_owned()))
         })
         .collect()
+}
+
+/// A value that stands for "not stated yet": "Processor: TBD".
+fn is_placeholder(value: &str) -> bool {
+    matches!(
+        value.trim().to_lowercase().as_str(),
+        "" | "tbd" | "tba" | "n/a" | "-" | "?"
+    )
+}
+
+/// Requirements written without labels, item by item: each line that has
+/// no "Label:" (after a leading "Minimum:" or "Recommended:"), split at
+/// commas. Quake: "Intel Core i5-3570 @3.4 GHz or AMD Ryzen 3 1300X";
+/// Counter-Strike: "500 mhz processor, 96mb ram, 16mb video card, …".
+fn unlabelled_items(html: &str) -> Vec<String> {
+    static HEADING: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"(?i)^(minimum|recommended|required)\s*:\s*").unwrap());
+    plain_lines(html)
+        .into_iter()
+        .map(|line| HEADING.replace(&line, "").into_owned())
+        .filter(|line| !line.contains(':'))
+        .flat_map(|line| {
+            line.split(", ")
+                .map(|item| item.trim().to_owned())
+                .collect::<Vec<_>>()
+        })
+        .filter(|item| !item.is_empty())
+        .collect()
+}
+
+/// "1.2 GHz Pentium® III processor", "Intel Core i5-3570 @3.4 GHz or …".
+/// Not Steam's "Requires a 64-bit processor and operating system".
+fn looks_like_cpu(item: &str) -> bool {
+    static FAMILY: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(
+            r"(?i)\b(processor|cpu|core\s*i[3579]|core\s*2|ryzen|athlon|pentium|phenom|celeron|xeon|amd\s+fx)\b",
+        )
+        .unwrap()
+    });
+    !item.contains("64-bit") && FAMILY.is_match(item) && !looks_like_gpu(item)
+}
+
+/// "64 MB video card", "NVIDIA GeForce GTX 650 TI (2GB) or AMD HD 7750".
+fn looks_like_gpu(item: &str) -> bool {
+    static GPU: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(
+            r"(?i)(video card|graphics card|\bgeforce\b|\bradeon\b|\bnvidia\b|\bgtx\b|\brtx\b|intel\s+u?hd\b|\biris\b)",
+        )
+        .unwrap()
+    });
+    let lower = item.to_lowercase();
+    !lower.contains("sound") && GPU.is_match(item)
 }
 
 /// Steam's requirement HTML as plain text, one line per item, the way the
@@ -88,11 +150,17 @@ fn decode_entities(text: &str) -> String {
         .replace("&amp;", "&")
 }
 
-/// RAM on old pages without labels: "96mb ram", "512MB RAM".
+/// RAM on pages without a Memory line: "96mb ram", "512MB RAM", "8GB
+/// System RAM", or "RAM: 16 GB" inside another field.
 fn unlabelled_ram_mb(html: &str) -> Option<u32> {
-    static RAM: LazyLock<Regex> =
-        LazyLock::new(|| Regex::new(r"(?i)(\d+(?:\.\d+)?\s*(?:gb|mb))\s+(?:of\s+)?ram\b").unwrap());
-    size_mb(&RAM.captures(html)?[1])
+    static RAM: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(
+                r"(?i)(\d+(?:\.\d+)?\s*(?:gb|mb))\s+(?:of\s+)?(?:system\s+)?ram\b|\bram\s*:\s*(\d+(?:\.\d+)?\s*(?:gb|mb))",
+            )
+            .unwrap()
+    });
+    let caps = RAM.captures(html)?;
+    size_mb(caps.get(1).or_else(|| caps.get(2))?.as_str())
 }
 
 /// The first version number in a DirectX field: "DirectX® version 9.0c" → 9.

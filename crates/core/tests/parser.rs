@@ -211,3 +211,77 @@ fn corpus() {
 
     insta::assert_debug_snapshot!(parsed);
 }
+
+/// Labels some store pages use instead of Processor / Graphics / Memory.
+#[test]
+fn reads_cpu_gpu_and_ram_under_other_labels() {
+    // Call of Duty: Ghosts: "CPU:", "RAM:"
+    let ghosts = parse(tier(209160, "minimum"));
+    assert_eq!(
+        ghosts.cpu.as_deref(),
+        Some("Intel® Core™ 2 Duo E8200 2.66 GHZ / AMD Phenom™ X3 8750 2.4 GHZ or better")
+    );
+    assert_eq!(ghosts.ram_mb, Some(6144));
+    // Realm of the Mad God Exalt: "GPU:"
+    assert_eq!(
+        parse(tier(200210, "minimum")).gpu.as_deref(),
+        Some("NVIDIA GeForce GTX 650 / AMD Radeon HD 7750 (1GB VRAM)")
+    );
+    // Call of Duty: World at War: "Graphics Card:"
+    assert_eq!(
+        parse(tier(10090, "minimum")).gpu.as_deref(),
+        Some("256 MB (nVidia GeForce 6600/ATI Radeon X1600)")
+    );
+    // LEGO Harry Potter: Years 1-4: "RAM: 512MB"
+    assert_eq!(parse(tier(21130, "minimum")).ram_mb, Some(512));
+}
+
+/// Quake lists its parts on lines without labels.
+#[test]
+fn finds_cpu_gpu_and_ram_lines_without_labels() {
+    let quake = parse(tier(2310, "minimum"));
+
+    assert_eq!(
+        quake.cpu.as_deref(),
+        Some("Intel Core i5-3570 @3.4 GHz or AMD Ryzen 3 1300X @3.5 GHz")
+    );
+    assert_eq!(
+        quake.gpu.as_deref(),
+        Some("NVIDIA GeForce GTX 650 TI (2GB) or AMD HD 7750 (1GB)")
+    );
+    assert_eq!(quake.ram_mb, Some(8192)); // "8GB System RAM"
+}
+
+/// Older pages write everything on one line, separated by commas.
+#[test]
+fn reads_comma_separated_requirements() {
+    // Counter-Strike: "500 mhz processor, 96mb ram, 16mb video card, …"
+    let counter_strike = parse(tier(10, "minimum"));
+    assert_eq!(counter_strike.cpu.as_deref(), Some("500 mhz processor"));
+    assert_eq!(counter_strike.gpu.as_deref(), Some("16mb video card"));
+    // FlatOut 2: "…, 256 MB RAM, 64 MB video card, 2.0 GHz Pentium® 4 or AMD® 2000+ processor, …"
+    let flatout = parse(tier(2990, "minimum"));
+    assert_eq!(
+        flatout.cpu.as_deref(),
+        Some("2.0 GHz Pentium® 4 or AMD® 2000+ processor")
+    );
+    assert_eq!(flatout.gpu.as_deref(), Some("64 MB video card"));
+    assert_eq!(flatout.ram_mb, Some(256));
+}
+
+/// "TBD" isn't a CPU; nor is Steam's "Requires a 64-bit processor and
+/// operating system" line.
+#[test]
+fn placeholders_and_the_64_bit_line_are_not_parts() {
+    let deadlock = parse(tier(1422450, "minimum"));
+
+    assert_eq!(deadlock.cpu, None);
+    assert_eq!(deadlock.gpu, None);
+}
+
+/// Suicide Squad: Kill the Justice League has no Memory line; its RAM is
+/// in "Additional Notes: RAM: 16 GB (2x8); SSD Recommended".
+#[test]
+fn finds_ram_written_as_ram_colon() {
+    assert_eq!(parse(tier(315210, "minimum")).ram_mb, Some(16384));
+}

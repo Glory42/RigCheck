@@ -60,6 +60,8 @@ pub fn build(db: &GameDb, sources: &Sources) -> Result<(), Error> {
         .map(|id| (id.vendor_id, id.device_id, id.name.as_str()))
         .collect();
     db.add_pci_ids(&pci_rows)?;
+    // A parser fix reaches every crawled game, not just re-crawled ones.
+    db.reparse()?;
     db.rematch()?;
     let names: Vec<(u32, &str)> = apps
         .iter()
