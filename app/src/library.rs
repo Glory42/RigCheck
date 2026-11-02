@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use iced::widget::grid::Sizing;
 use iced::widget::image::Handle;
 use iced::widget::{
-    Space, button, center, column, container, grid, image, scrollable, text, text_input,
+    Space, button, center, column, container, grid, image, row, scrollable, space, text, text_input,
 };
 use iced::{ContentFit, Element, Fill};
 use rigcheck_core::{Level, Specs, Verdict};
@@ -46,6 +46,7 @@ pub fn status(game: Option<&Game>, specs: Option<&Specs>) -> Status {
     }
 }
 
+#[derive(Clone)]
 pub struct Entry<'a> {
     pub game: &'a InstalledGame,
     pub status: Status,
@@ -53,13 +54,24 @@ pub struct Entry<'a> {
 }
 
 /// `games` is `None` while Steam is being scanned.
+/// How the Library lists games.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum Order {
+    #[default]
+    Name,
+    /// Grouped under each verdict, best first.
+    Verdict,
+}
+
+/// `games` is `None` while Steam is being scanned.
 pub fn view<'a>(
     games: Option<Vec<Entry<'a>>>,
     search: &str,
+    order: Order,
     i18n: &I18n,
     colors: Colors,
 ) -> Element<'a, Message> {
-    let Some(games) = games else {
+    let Some(mut games) = games else {
         return center(text(i18n.t("library-scanning"))).into();
     };
     let search_box = text_input(&i18n.t("library-search"), search)
@@ -67,25 +79,99 @@ pub fn view<'a>(
         .on_input(Message::Search)
         .padding(10)
         .font(BOLD);
-    let query = search.to_lowercase();
-    let tiles = games
-        .into_iter()
-        .filter(|entry| entry.game.name.to_lowercase().contains(&query))
-        .map(|entry| tile(entry, i18n, colors));
-
-    column![
-        search_box,
-        // Shrink: each tile is as tall as its content, not square.
-        scrollable(
-            grid(tiles)
-                .fluid(COVER_WIDTH + 30.0)
-                .height(Sizing::EvenlyDistribute(iced::Length::Shrink))
-                .spacing(18),
-        )
-        .height(Fill),
+    let order_button = |id: &str, this: Order| {
+        button(text(i18n.t(id)).font(BOLD).size(12))
+            .padding([6, 10])
+            .style(colors.button(order == this))
+            .on_press(Message::LibraryOrder(this))
+    };
+    let mut header = row![
+        order_button("library-by-name", Order::Name),
+        order_button("library-by-verdict", Order::Verdict),
     ]
-    .spacing(16)
-    .into()
+    .spacing(8)
+    .align_y(iced::Center);
+    if let Some(summary) = summary(&games, i18n) {
+        header = header
+            .push(space::horizontal())
+            .push(text(summary).font(BOLD));
+    }
+
+    let query = search.to_lowercase();
+    games.retain(|entry| entry.game.name.to_lowercase().contains(&query));
+    games.sort_by_key(|entry| entry.game.name.to_lowercase());
+    let content: Element<'a, Message> = match order {
+        Order::Name => tiles(games, i18n, colors),
+        Order::Verdict => {
+            games.sort_by_key(|entry| rank(&entry.status));
+            let mut groups = column![].spacing(18);
+            for group in games.chunk_by(|a, b| rank(&a.status) == rank(&b.status)) {
+                let (label, _) = stamp(&group[0].status, i18n);
+                groups = groups.push(
+                    text(format!("{label} · {}", group.len()))
+                        .font(BOLD)
+                        .size(16),
+                );
+                let group: Vec<Entry<'a>> = group.iter().map(Entry::clone).collect();
+                groups = groups.push(tiles(group, i18n, colors));
+            }
+            groups.into()
+        }
+    };
+
+    column![search_box, header, scrollable(content).height(Fill)]
+        .spacing(16)
+        .into()
+}
+
+/// The tile grid. Shrink: each tile is as tall as its content, not square.
+fn tiles<'a>(games: Vec<Entry<'a>>, i18n: &I18n, colors: Colors) -> Element<'a, Message> {
+    grid(games.into_iter().map(|entry| tile(entry, i18n, colors)))
+        .fluid(COVER_WIDTH + 30.0)
+        .height(Sizing::EvenlyDistribute(iced::Length::Shrink))
+        .spacing(18)
+        .into()
+}
+
+/// "38 of 42 installed games meet the recommended specs.", once every
+/// game has a verdict or is known to have none.
+fn summary(games: &[Entry], i18n: &I18n) -> Option<String> {
+    if games.is_empty()
+        || games
+            .iter()
+            .any(|entry| matches!(entry.status, Status::Checking))
+    {
+        return None;
+    }
+    let ready = games
+        .iter()
+        .filter(
+            |entry| matches!(&entry.status, Status::Verdict(v) if v.overall == Level::Recommended),
+        )
+        .count();
+    Some(i18n.t_with(
+        "library-summary",
+        &[
+            ("ready", &ready.to_string()),
+            ("total", &games.len().to_string()),
+        ],
+    ))
+}
+
+/// Best first: the order verdict groups are listed in.
+fn rank(status: &Status) -> u8 {
+    match status {
+        Status::Verdict(verdict) => match verdict.overall {
+            Level::Recommended => 0,
+            Level::Minimum => 1,
+            Level::Below => 2,
+            Level::Blocked => 3,
+            Level::Unknown => 4,
+        },
+        Status::NotChecked => 5,
+        Status::NoData => 6,
+        Status::Checking => 7,
+    }
 }
 
 fn tile<'a>(entry: Entry<'a>, i18n: &I18n, colors: Colors) -> Element<'a, Message> {

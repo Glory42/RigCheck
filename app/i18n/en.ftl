@@ -135,3 +135,6 @@ about-database-license = The game database: Open Database License (ODbL 1.0)
 about-credits = DATA SOURCES
 release-out = rigcheck { $version } is out.
 release-get = GET IT
+library-by-name = A–Z
+library-by-verdict = BY VERDICT
+library-summary = { $ready } of { $total } installed games meet the recommended specs.

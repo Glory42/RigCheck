@@ -133,3 +133,6 @@ about-database-license = Die Spieldatenbank: Open Database License (ODbL 1.0)
 about-credits = DATENQUELLEN
 release-out = rigcheck { $version } ist da.
 release-get = HOLEN
+library-by-name = A–Z
+library-by-verdict = NACH ERGEBNIS
+library-summary = { $ready } von { $total } installierten Spielen erfüllen die empfohlenen Anforderungen.
