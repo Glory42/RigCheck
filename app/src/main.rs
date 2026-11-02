@@ -2,6 +2,7 @@
 
 mod about;
 mod catalog;
+mod compare;
 mod covers;
 mod download;
 mod game_page;
@@ -157,6 +158,8 @@ struct App {
     opened_from: Page,
     override_choices: overrides::Choices,
     whatif: whatif::Picks,
+    /// The game picked to compare with another.
+    compare_pick: Option<u32>,
     whatif_choices: overrides::Choices,
 }
 
@@ -170,6 +173,8 @@ enum Page {
     MyRig,
     Settings,
     About,
+    /// Two games side by side, by app ID.
+    Compare(u32, u32),
 }
 
 #[derive(Debug, Clone)]
@@ -216,6 +221,8 @@ enum Message {
     /// Steam's `appdetails` answer for an app ID, or why there's none.
     SteamLookup(u32, Result<String, String>),
     RetryLookup(u32),
+    /// A game page's COMPARE: remember this game (again: forget it).
+    PickToCompare(u32),
     /// A cover downloaded from Steam's CDN, or why it couldn't be.
     CoverFetched(u32, Result<Vec<u8>, String>),
 }
@@ -260,6 +267,7 @@ impl App {
         let mut app = App {
             override_choices: overrides::Choices::default(),
             whatif: whatif::Picks::default(),
+            compare_pick: None,
             whatif_choices: overrides::Choices::default(),
             i18n: I18n::new(settings.language.unwrap_or(system_language)),
             settings,
@@ -527,6 +535,10 @@ impl App {
                 }
                 Task::none()
             }
+            Message::PickToCompare(app_id) => {
+                self.compare_pick = (self.compare_pick != Some(app_id)).then_some(app_id);
+                Task::none()
+            }
             Message::RetryLookup(app_id) => {
                 self.lookup = lookup::State::Checking(app_id);
                 self.steam.ask(app_id)
@@ -726,6 +738,34 @@ impl App {
         }
     }
 
+    /// A game's record by the lookup order of its page (ROADMAP §7.1):
+    /// games.db if checked, else a recent live lookup, else games.db's name.
+    fn record(&self, app_id: u32) -> Option<Game> {
+        let from_db = self.db.as_ref().and_then(|db| db.game(app_id).ok()?);
+        if from_db.as_ref().is_some_and(|game| game.crawled) {
+            return from_db;
+        }
+        self.fetched
+            .as_ref()
+            .and_then(|fetched| fetched.lookup(app_id, now()).ok()?)
+            .or(from_db)
+    }
+
+    /// A game's name: its record's, else Steam's for an installed game.
+    fn game_name(&self, app_id: u32) -> String {
+        self.record(app_id)
+            .map(|game| game.name)
+            .or_else(|| {
+                let installed = self
+                    .games
+                    .iter()
+                    .flatten()
+                    .find(|game| game.app_id == app_id);
+                installed.map(|game| game.name.clone())
+            })
+            .unwrap_or_else(|| app_id.to_string())
+    }
+
     /// Measures what Settings > Storage shows.
     fn refresh_storage(&mut self) {
         let size = |path: PathBuf| std::fs::metadata(path).map_or(0, |meta| meta.len());
@@ -789,6 +829,8 @@ impl App {
                         &self.rig(),
                         self.covers.get(&app_id),
                         self.opened_from,
+                        self.compare_pick
+                            .map(|other| (other, self.game_name(other))),
                         i18n,
                         colors,
                     ),
@@ -827,6 +869,18 @@ impl App {
                 None => center(text(i18n.t("detecting-hardware"))).into(),
             },
             Page::About => about::view(i18n, colors),
+            Page::Compare(a, b) => {
+                let side = |app_id| {
+                    let record = self.record(app_id);
+                    compare::Side {
+                        app_id,
+                        name: self.game_name(app_id),
+                        status: library::status(record.as_ref(), self.specs().as_ref()),
+                        record,
+                    }
+                };
+                compare::view(side(a), side(b), i18n, colors)
+            }
             Page::Settings => settings_page::view(&self.settings, self.storage, i18n, colors),
         };
         let mut body = column![].spacing(18);
@@ -1796,6 +1850,44 @@ mod tests {
         });
 
         assert!(shows(&app, "No installed game would change verdict."));
+    }
+
+    #[test]
+    fn two_games_can_be_compared_side_by_side() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        click(&mut app, "Cyberpunk 2077");
+        click(&mut app, "COMPARE");
+        click(&mut app, "◀ LIBRARY");
+        click(&mut app, "OMORI");
+        click(&mut app, "COMPARE WITH Cyberpunk 2077");
+
+        // Both games, each with its verdict and its own results (gamedb's
+        // tests/verdict.rs: Cyberpunk's GPU is below the minimum on the AMD
+        // laptop; OMORI's RAM meets the recommended 8 GB).
+        for text in [
+            "Cyberpunk 2077",
+            "OMORI",
+            "TOO WEAK",
+            "READY",
+            "BELOW MINIMUM",
+            "MEETS RECOMMENDED",
+            "GeForce GTX 1060 6GB or Radeon RX 580 8GB or Arc A380",
+        ] {
+            assert!(shows(&app, text), "{text} not shown");
+        }
+    }
+
+    #[test]
+    fn a_game_isnt_offered_to_compare_with_itself() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        click(&mut app, "OMORI");
+        click(&mut app, "COMPARE");
+
+        assert!(!shows(&app, "COMPARE WITH OMORI"));
     }
 
     #[test]

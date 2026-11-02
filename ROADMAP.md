@@ -476,7 +476,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 - [x] "What if I upgrade?": pick a hypothetical GPU/CPU/RAM and see which games change verdict (My Rig; installed games, nothing saved)
 - [x] Library summary: "38 of 42 installed games meet recommended specs"
 - [x] Sort and group the library by verdict (A–Z, or grouped READY → LOW → TOO WEAK → BLOCKED → ??? → NOT CHECKED YET → NO DATA)
-- [ ] Compare two games side by side
+- [x] Compare two games side by side (COMPARE on one game page, COMPARE WITH … on another: verdicts, each part's minimum and result, Linux facts)
 - [ ] Keyboard navigation and accessibility pass
 - [ ] Light/dark theme following the system
 - [ ] Performance pass: cold start under 1 s, search under 50 ms on 100k games
