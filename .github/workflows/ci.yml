@@ -1,6 +1,6 @@
 name: CI
 
-# Private repo: run only where it matters to stay inside the free minutes (ROADMAP §1.1).
+# Pushes to master and pull requests: where checks matter.
 on:
   push:
     branches: [master]
@@ -36,3 +36,15 @@ jobs:
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check bans
+
+  # Desktop integration files (packaging/): what app menus and software
+  # centers read. Not a required check.
+  packaging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - run: sudo apt-get update && sudo apt-get install -y desktop-file-utils appstream
+      - run: desktop-file-validate packaging/dev.gorkemkaryol.rigcheck.desktop
+      - run: appstreamcli validate --no-net --explain packaging/dev.gorkemkaryol.rigcheck.metainfo.xml
+

@@ -35,7 +35,9 @@ const SOURCES: &str = "Steam store data: Valve Corporation (store.steampowered.c
 ProtonDB reports: ProtonDB (protondb.com), ODbL, via github.com/bdefore/protondb-data; \
 tiers computed by rigcheck's own rule. \
 Anti-cheat status: AreWeAntiCheatYet (areweanticheatyet.com), MIT, © AreWeAntiCheatYet contributors. \
-Hardware table: rigcheck (github.com/Glory42/rigcheck).";
+Steam Deck compatibility: Valve Corporation's Deck compatibility reports. \
+Hardware scores: rigcheck's table (github.com/Glory42/rigcheck), gaps from Blender Open Data \
+(opendata.blender.org), CC0. GPU PCI IDs: pci.ids (pci-ids.ucw.cz), BSD-3-Clause or GPL-2.0.";
 
 /// Adds missing hardware and GPU PCI IDs and re-matches every game against
 /// the grown table; adds every app-list game not crawled yet (by name),
