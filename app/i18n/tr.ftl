@@ -145,3 +145,4 @@ compare-with = { $name } İLE KARŞILAŞTIR
 compare-back = ◀ GERİ
 compare-verdict = SONUÇ
 compare-minimum-note = Her oyunun minimum gereksinimi ve bu bilgisayarın ona karşı durumu.
+theme-system = SİSTEM

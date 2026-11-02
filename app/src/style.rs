@@ -41,6 +41,7 @@ impl Appearance {
             Appearance::Plum => "Plum",
             Appearance::Forest => "Forest",
             Appearance::Paper => "Paper",
+            Appearance::System => "System",
         }
     }
 
@@ -94,7 +95,9 @@ impl Appearance {
                 accent: rgb(0x2ea043),
                 on_accent: rgb(0x04130a),
             },
-            Appearance::Paper => Colors {
+            // Resolved before drawing (Appearance::resolve); Paper's
+            // colors stand in for its swatches in Settings.
+            Appearance::Paper | Appearance::System => Colors {
                 bg: rgb(0xf2e8d5),
                 hud: rgb(0xf58a1f),
                 panel: rgb(0xfffaf0),

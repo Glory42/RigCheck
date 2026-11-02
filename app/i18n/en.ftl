@@ -147,3 +147,4 @@ compare-with = COMPARE WITH { $name }
 compare-back = ◀ BACK
 compare-verdict = VERDICT
 compare-minimum-note = Each game's minimum requirement, and how this PC does against it.
+theme-system = SYSTEM

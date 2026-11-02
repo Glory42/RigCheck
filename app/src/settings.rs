@@ -32,17 +32,29 @@ pub struct Settings {
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Appearance {
+    /// Paper when the system is light, Ink when it's dark.
+    #[default]
+    System,
     Ink,
     Midnight,
     Plum,
     Forest,
-    #[default]
     Paper,
 }
 
 impl Appearance {
+    /// The appearance to draw with, given the system's light or dark mode.
+    pub fn resolve(self, system: iced::theme::Mode) -> Appearance {
+        match (self, system) {
+            (Appearance::System, iced::theme::Mode::Dark) => Appearance::Ink,
+            (Appearance::System, _) => Appearance::Paper,
+            (picked, _) => picked,
+        }
+    }
+
     /// In the order Settings shows them.
-    pub const ALL: [Appearance; 5] = [
+    pub const ALL: [Appearance; 6] = [
+        Appearance::System,
         Appearance::Paper,
         Appearance::Ink,
         Appearance::Midnight,
@@ -79,12 +91,12 @@ mod tests {
     use tempfile::TempDir;
 
     #[test]
-    fn a_fresh_install_uses_paper() {
+    fn a_fresh_install_follows_the_system() {
         let dir = TempDir::new().unwrap();
 
         let settings = Settings::load(dir.path());
 
-        assert_eq!(settings.appearance, Appearance::Paper);
+        assert_eq!(settings.appearance, Appearance::System);
     }
 
     #[test]
@@ -108,7 +120,7 @@ mod tests {
 
             assert_eq!(
                 Settings::load(dir.path()).appearance,
-                Appearance::Paper,
+                Appearance::System,
                 "{broken}"
             );
         }

@@ -40,13 +40,14 @@ pub fn view(
             i18n.t("appearance-description"),
             colors
         ),
-        row(appearances).spacing(18),
+        // Wraps in a narrow window instead of running off the side.
+        row(appearances).spacing(18).wrap(),
         section(
             i18n.t("language-title"),
             i18n.t("language-description"),
             colors
         ),
-        row(languages).spacing(18),
+        row(languages).spacing(18).wrap(),
         section(
             i18n.t("storage-title"),
             i18n.t("storage-description"),
@@ -195,11 +196,17 @@ fn appearance_option(
             ..container::Style::default()
         })
     };
+    // System: two of Paper's colors and two of Ink's, light and dark.
+    let (light, dark) = (Appearance::Paper.colors(), Appearance::Ink.colors());
+    let shown = match appearance {
+        Appearance::System => [light.bg, light.hud, dark.bg, dark.accent],
+        _ => [own.bg, own.hud, own.panel, own.accent],
+    };
     let preview = row![
-        swatch(own.bg),
-        swatch(own.hud),
-        swatch(own.panel),
-        swatch(own.accent)
+        swatch(shown[0]),
+        swatch(shown[1]),
+        swatch(shown[2]),
+        swatch(shown[3])
     ]
     .spacing(4);
     let name = i18n.t(&format!("theme-{}", appearance.name().to_lowercase()));
