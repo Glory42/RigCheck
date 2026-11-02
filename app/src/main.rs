@@ -160,6 +160,9 @@ enum Message {
     LanguageSelected(Option<Language>),
     Download(download::Event),
     CatalogSearch(String),
+    CatalogFilter(catalog::Chip),
+    /// Only games ProtonDB rates this or better; `None` for all.
+    CatalogProtonDb(Option<rigcheck_core::ProtonTier>),
     /// The Catalog list's scroll position and height, in pixels.
     CatalogScrolled {
         offset: f32,
@@ -349,6 +352,7 @@ impl App {
             }
             Message::HardwareDetected(hardware) => {
                 self.hardware = Some(hardware);
+                self.specs_changed();
                 Task::none()
             }
             Message::GamesFound(games) => {
@@ -368,11 +372,13 @@ impl App {
             Message::OverrideGpu(name) => {
                 self.settings.gpu_override = name;
                 self.save_settings();
+                self.specs_changed();
                 Task::none()
             }
             Message::OverrideCpu(name) => {
                 self.settings.cpu_override = name;
                 self.save_settings();
+                self.specs_changed();
                 Task::none()
             }
             Message::Download(download::Event::Progress { done, total }) => {
@@ -396,10 +402,21 @@ impl App {
             Message::CatalogSearch(query) => match &self.db {
                 Some(db) => {
                     self.catalog_list.search(query, db);
-                    iced::widget::operation::snap_to(
-                        catalog::LIST,
-                        iced::widget::operation::RelativeOffset::START,
-                    )
+                    catalog_to_top()
+                }
+                None => Task::none(),
+            },
+            Message::CatalogProtonDb(lowest) => match &self.db {
+                Some(db) => {
+                    self.catalog_list.protondb(lowest, db);
+                    catalog_to_top()
+                }
+                None => Task::none(),
+            },
+            Message::CatalogFilter(chip) => match &self.db {
+                Some(db) => {
+                    self.catalog_list.toggle(chip, self.specs(), db);
+                    catalog_to_top()
                 }
                 None => Task::none(),
             },
@@ -417,6 +434,14 @@ impl App {
                 Some(hardware) => clipboard::write(hardware.report()),
                 None => Task::none(),
             },
+        }
+    }
+
+    /// Lets the Catalog's CAN RUN use the current specs.
+    fn specs_changed(&mut self) {
+        let specs = self.specs();
+        if let Some(db) = &self.db {
+            self.catalog_list.use_specs(specs, db);
         }
     }
 
@@ -547,6 +572,14 @@ impl App {
             .style(move |_| container::Style::default().background(colors.rule));
         column![bar, rule].into()
     }
+}
+
+/// Scrolls the Catalog list back to its first row.
+fn catalog_to_top() -> Task<Message> {
+    iced::widget::operation::snap_to(
+        catalog::LIST,
+        iced::widget::operation::RelativeOffset::START,
+    )
 }
 
 /// Downloads games.db into `data`, reporting progress as messages.
@@ -891,6 +924,61 @@ mod tests {
 
         click(&mut app, "◀ CATALOG");
         assert!(shows(&app, "Search every Steam game"));
+    }
+
+    #[test]
+    fn a_filter_chip_narrows_the_catalog_from_the_top() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+        let _ = app.update(Message::CatalogScrolled {
+            offset: row,
+            height: row,
+        });
+
+        click(&mut app, "NATIVE LINUX");
+
+        // Native seed games have no popularity, so they list by name.
+        assert!(shows(&app, "Counter-Strike 2"));
+        assert!(!shows(&app, "OMORI"));
+    }
+
+    #[test]
+    fn can_run_follows_a_hardware_override() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+
+        click(&mut app, "CAN RUN");
+        let _ = app.update(Message::CatalogScrolled {
+            offset: 0.0,
+            height: row,
+        });
+        // Cyberpunk is the most popular, but too much for the iGPU.
+        assert!(shows(&app, "OMORI"));
+        assert!(!shows(&app, "Cyberpunk 2077"));
+
+        let _ = app.update(Message::OverrideGpu(Some("GeForce RTX 3060".to_owned())));
+
+        assert!(shows(&app, "Cyberpunk 2077"));
+    }
+
+    #[test]
+    fn the_protondb_filter_keeps_games_rated_at_least_that() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+
+        click(&mut app, "GOLD+");
+        let _ = app.update(Message::CatalogScrolled {
+            offset: 0.0,
+            height: row,
+        });
+
+        // catalog_app's popularity rows have no tier, so the seed's Gold and
+        // Platinum games are left, by name: Balatro (Platinum) first.
+        assert!(shows(&app, "Balatro"));
+        assert!(!shows(&app, "Cyberpunk 2077"));
     }
 
     #[test]
