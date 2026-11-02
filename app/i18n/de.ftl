@@ -136,3 +136,7 @@ release-get = HOLEN
 library-by-name = A–Z
 library-by-verdict = NACH ERGEBNIS
 library-summary = { $ready } von { $total } installierten Spielen erfüllen die empfohlenen Anforderungen.
+whatif-title = WAS WÄRE, WENN ICH AUFRÜSTE?
+whatif-description = Wähle ein Bauteil und sieh, welche installierten Spiele ihr Ergebnis ändern würden. Nichts wird gespeichert.
+whatif-hint = Wähle oben eine GPU, CPU oder RAM-Menge.
+whatif-no-change = Kein installiertes Spiel würde sein Ergebnis ändern.

@@ -136,3 +136,7 @@ release-get = İNDİR
 library-by-name = A–Z
 library-by-verdict = SONUCA GÖRE
 library-summary = Yüklü { $total } oyunun { $ready } tanesi önerilen gereksinimleri karşılıyor.
+whatif-title = YÜKSELTİRSEM NE OLUR?
+whatif-description = Hangi yüklü oyunların sonucunun değişeceğini görmek için bir parça seç. Hiçbir şey kaydedilmez.
+whatif-hint = Yukarıdan bir GPU, CPU ya da RAM miktarı seç.
+whatif-no-change = Hiçbir yüklü oyunun sonucu değişmez.

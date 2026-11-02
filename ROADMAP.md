@@ -473,7 +473,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 **Done when:** a stranger can install the app from Flathub or AUR and it works.
 
 ### Phase 8: Polish → v1.0
-- [ ] "What if I upgrade?": pick a hypothetical GPU/CPU/RAM and see which games change verdict
+- [x] "What if I upgrade?": pick a hypothetical GPU/CPU/RAM and see which games change verdict (My Rig; installed games, nothing saved)
 - [x] Library summary: "38 of 42 installed games meet recommended specs"
 - [x] Sort and group the library by verdict (A–Z, or grouped READY → LOW → TOO WEAK → BLOCKED → ??? → NOT CHECKED YET → NO DATA)
 - [ ] Compare two games side by side

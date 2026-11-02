@@ -63,18 +63,19 @@ pub fn view<'a>(
     .into()
 }
 
-/// One row: what's in use, a searchable list of the table, and a reset button.
-struct Picker<'a> {
-    label: &'static str,
-    in_use: String,
-    id: &'static str,
-    state: &'a combo_box::State<String>,
-    selection: Option<&'a String>,
-    on_pick: fn(Option<String>) -> Message,
+/// One row: what's in use, a searchable list of the table, and a reset
+/// button. Also used by "What if I upgrade?".
+pub struct Picker<'a> {
+    pub label: &'static str,
+    pub in_use: String,
+    pub id: &'static str,
+    pub state: &'a combo_box::State<String>,
+    pub selection: Option<&'a String>,
+    pub on_pick: fn(Option<String>) -> Message,
 }
 
 impl<'a> Picker<'a> {
-    fn view(self, i18n: &I18n, colors: Colors) -> Row<'a, Message> {
+    pub fn view(self, i18n: &I18n, colors: Colors) -> Row<'a, Message> {
         let on_pick = self.on_pick;
         let input = combo_box(
             self.state,

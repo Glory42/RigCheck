@@ -18,6 +18,7 @@ mod settings_page;
 mod style;
 #[cfg(test)]
 mod test_support;
+mod whatif;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -155,6 +156,8 @@ struct App {
     opened: Option<Game>,
     opened_from: Page,
     override_choices: overrides::Choices,
+    whatif: whatif::Picks,
+    whatif_choices: overrides::Choices,
 }
 
 /// The tabs in the top bar.
@@ -180,6 +183,10 @@ enum Message {
     OverrideGpu(Option<String>),
     OverrideCpu(Option<String>),
     CopyHardwareReport,
+    /// My Rig > What if: hypothetical parts (`None` keeps your own).
+    WhatIfGpu(Option<String>),
+    WhatIfCpu(Option<String>),
+    WhatIfRam(Option<u32>),
     /// Settings > Privacy: check for a new games.db only when asked.
     SetManualUpdates(bool),
     /// Settings > Storage: the image cache limit in MB.
@@ -252,6 +259,8 @@ impl App {
         art.evict(settings.image_cache_bytes());
         let mut app = App {
             override_choices: overrides::Choices::default(),
+            whatif: whatif::Picks::default(),
+            whatif_choices: overrides::Choices::default(),
             i18n: I18n::new(settings.language.unwrap_or(system_language)),
             settings,
             system_language,
@@ -290,6 +299,10 @@ impl App {
             entries.iter().map(|entry| entry.name.clone()).collect()
         };
         self.override_choices = overrides::Choices {
+            gpus: combo_box::State::new(names(self.catalog.gpus())),
+            cpus: combo_box::State::new(names(self.catalog.cpus())),
+        };
+        self.whatif_choices = overrides::Choices {
             gpus: combo_box::State::new(names(self.catalog.gpus())),
             cpus: combo_box::State::new(names(self.catalog.cpus())),
         };
@@ -332,6 +345,45 @@ impl App {
     fn override_cpu(&self) -> Option<&rigcheck_core::CatalogEntry> {
         let name = self.settings.cpu_override.as_ref()?;
         self.catalog.cpus().iter().find(|entry| &entry.name == name)
+    }
+
+    /// [`App::specs`] with the What if picks in place of your parts.
+    fn what_if_specs(&self) -> Option<Specs> {
+        let mut specs = self.specs()?;
+        let find = |entries: &[rigcheck_core::CatalogEntry], name: &Option<String>| {
+            let name = name.as_ref()?;
+            entries.iter().find(|entry| &entry.name == name).cloned()
+        };
+        if let Some(gpu) = find(self.catalog.gpus(), &self.whatif.gpu) {
+            specs.gpu = Some(gpu.to_ref());
+            specs.vram_mb = gpu.vram_mb;
+        }
+        if let Some(cpu) = find(self.catalog.cpus(), &self.whatif.cpu) {
+            specs.cpu = Some(cpu.to_ref());
+        }
+        if let Some(gb) = self.whatif.ram_gb {
+            specs.ram_mb = Some(gb * 1024);
+        }
+        Some(specs)
+    }
+
+    /// "Cyberpunk 2077: TOO WEAK → LOW" for each installed game the What
+    /// if picks would move to another stamp, by name.
+    fn what_if_changes(&self) -> Vec<String> {
+        let (now, then) = (self.specs(), self.what_if_specs());
+        let mut games: Vec<&InstalledGame> = self.games.iter().flatten().collect();
+        games.sort_by_key(|game| game.name.to_lowercase());
+        games
+            .into_iter()
+            .filter_map(|game| {
+                let record = self.records.get(&game.app_id);
+                let (before, _) =
+                    library::stamp(&library::status(record, now.as_ref()), &self.i18n);
+                let (after, _) =
+                    library::stamp(&library::status(record, then.as_ref()), &self.i18n);
+                (before != after).then(|| format!("{}: {before} → {after}", game.name))
+            })
+            .collect()
     }
 
     /// Your PC as the game page shows it, named by the hardware table when possible.
@@ -590,6 +642,18 @@ impl App {
                 self.download = download::Status::Running { done: 0, total: 0 };
                 download_db(&self.paths.data, None)
             }
+            Message::WhatIfGpu(name) => {
+                self.whatif.gpu = name;
+                Task::none()
+            }
+            Message::WhatIfCpu(name) => {
+                self.whatif.cpu = name;
+                Task::none()
+            }
+            Message::WhatIfRam(gb) => {
+                self.whatif.ram_gb = gb;
+                Task::none()
+            }
             Message::CopyHardwareReport => match &self.hardware {
                 Some(hardware) => clipboard::write(hardware.report()),
                 None => Task::none(),
@@ -738,14 +802,22 @@ impl App {
                     let picked = overrides::Picked {
                         gpu: self.settings.gpu_override.as_ref(),
                         cpu: self.settings.cpu_override.as_ref(),
-                        gpu_in_use: rig.gpu,
-                        cpu_in_use: rig.cpu,
+                        gpu_in_use: rig.gpu.clone(),
+                        cpu_in_use: rig.cpu.clone(),
                     };
                     // Room on the right and bottom so hard shadows aren't clipped.
                     scrollable(
                         column![
                             my_hardware::view(hardware, i18n, colors),
                             overrides::view(&self.override_choices, picked, i18n, colors),
+                            whatif::view(
+                                &self.whatif_choices,
+                                &self.whatif,
+                                (rig.gpu, rig.cpu),
+                                self.what_if_changes(),
+                                i18n,
+                                colors,
+                            ),
                         ]
                         .spacing(18)
                         .padding([0, 6]),
@@ -1670,6 +1742,60 @@ mod tests {
 
         // READY comes before TOO WEAK.
         assert!(bounds(&app, "OMORI").y < bounds(&app, "Cyberpunk 2077").y);
+    }
+
+    /// Runs `act` on a window tall enough for all of My Rig, then the
+    /// messages it produced.
+    fn on_tall_window(app: &mut App, act: impl FnOnce(&mut iced_test::Simulator<'_, Message>)) {
+        let mut ui = iced_test::Simulator::with_size(
+            iced_test::core::Settings::default(),
+            (1100.0, 1800.0),
+            app.view(),
+        );
+        act(&mut ui);
+        let messages: Vec<Message> = ui.into_messages().collect();
+        for message in messages {
+            let _ = app.update(message);
+        }
+    }
+
+    #[test]
+    fn what_if_lists_the_games_an_upgrade_changes() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        click(&mut app, "MY RIG");
+
+        on_tall_window(&mut app, |ui| {
+            ui.click(iced::widget::Id::new(whatif::GPU)).unwrap();
+            ui.typewrite("RTX 3060");
+            ui.tap_key(iced::keyboard::key::Named::Enter);
+        });
+
+        // By hand from data/hardware.toml: the RTX 3060 (175) meets the
+        // recommended RTX 2060 Super (160); the Ryzen 5 7530U (190) only the
+        // minimum Ryzen 5 1600 (150), not the 7800X3D (380). OMORI was READY.
+        assert!(shows(&app, "Cyberpunk 2077: TOO WEAK → LOW"));
+        assert!(!shows(&app, "OMORI: READY → READY"));
+        // Nothing is saved: the rest of the app keeps the detected GPU.
+        assert_eq!(
+            Settings::load(&Paths::under(dir.path()).config).gpu_override,
+            None
+        );
+        click(&mut app, "LIBRARY");
+        assert!(shows(&app, "TOO WEAK"));
+    }
+
+    #[test]
+    fn what_if_says_when_nothing_changes() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        click(&mut app, "MY RIG");
+
+        on_tall_window(&mut app, |ui| {
+            ui.click("32 GB").unwrap();
+        });
+
+        assert!(shows(&app, "No installed game would change verdict."));
     }
 
     #[test]
