@@ -10,6 +10,7 @@ mod library;
 mod lookup;
 mod my_hardware;
 mod overrides;
+mod release;
 mod settings;
 mod settings_page;
 mod style;
@@ -136,6 +137,8 @@ struct App {
     covers: HashMap<u32, PathBuf>,
     /// Where covers come from: Steam's cache, or downloads.
     art: covers::Covers,
+    /// A newer rigcheck release's version, if one is out.
+    newer_release: Option<String>,
     /// Sizes for Settings > Storage, refreshed when they can change.
     storage: settings_page::Storage,
     search: String,
@@ -197,6 +200,8 @@ enum Message {
     RetryDownload,
     /// Opens a web page in the user's browser.
     OpenUrl(String),
+    /// The latest release's version (`version.txt`), or why there's none.
+    LatestRelease(Result<String, String>),
     /// Steam's `appdetails` answer for an app ID, or why there's none.
     SteamLookup(u32, Result<String, String>),
     RetryLookup(u32),
@@ -232,6 +237,12 @@ impl App {
             Some(_) => Task::none(),
             None => download_db(&paths.data, None),
         };
+        // Same setting: is there a newer rigcheck?
+        let release_check = if settings.manual_updates {
+            Task::none()
+        } else {
+            release::check()
+        };
         let fetched = open_fetched(&paths.cache);
         let art = covers::Covers::new(paths.home.clone(), paths.cache.join("images"));
         art.evict(settings.image_cache_bytes());
@@ -251,6 +262,7 @@ impl App {
             covers: HashMap::new(),
             art,
             storage: settings_page::Storage::default(),
+            newer_release: None,
             search: String::new(),
             catalog_list: catalog::List::default(),
             fetched,
@@ -262,7 +274,7 @@ impl App {
         if let Some(db) = db {
             app.use_db(db);
         }
-        (app, Task::batch([detect, scan, fetch]))
+        (app, Task::batch([detect, scan, fetch, release_check]))
     }
 
     /// Switches to `db`: its hardware table, and its records for the
@@ -431,6 +443,14 @@ impl App {
                     return self.open_game(app_id);
                 }
                 self.page = page;
+                Task::none()
+            }
+            Message::LatestRelease(answer) => {
+                // Offline, or no release yet: nothing to say.
+                self.newer_release = answer
+                    .ok()
+                    .filter(|latest| release::is_newer(latest, env!("CARGO_PKG_VERSION")))
+                    .map(|latest| latest.trim().to_owned());
                 Task::none()
             }
             Message::SteamLookup(app_id, answer) => {
@@ -731,6 +751,9 @@ impl App {
         let mut body = column![].spacing(18);
         if let Some(banner) = download::view(&self.download, i18n, colors) {
             body = body.push(banner);
+        }
+        if let Some(version) = &self.newer_release {
+            body = body.push(release::notice(version, i18n, colors));
         }
         column![
             self.top_bar(colors),
@@ -1439,8 +1462,8 @@ mod tests {
         }
 
         assert!(Settings::load(&paths.config).manual_updates);
-        // The next start skips the manifest check: one task fewer.
-        assert_eq!(App::new(paths, Language::English).1.units(), automatic - 1);
+        // The next start skips the games.db and app version checks.
+        assert_eq!(App::new(paths, Language::English).1.units(), automatic - 2);
     }
 
     #[test]
@@ -1566,6 +1589,41 @@ mod tests {
 
         assert!(desktop.lines().any(|line| line == format!("Icon={APP_ID}")));
         assert!(desktop.lines().any(|line| line == "Exec=rigcheck"));
+    }
+
+    #[test]
+    fn a_newer_release_is_announced_with_a_link() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        let _ = app.update(Message::LatestRelease(Ok("999.0.0\n".to_owned())));
+
+        assert!(shows(&app, "rigcheck 999.0.0 is out."));
+        let mut ui = iced_test::simulator(app.view());
+        ui.click("GET IT").unwrap();
+        let messages: Vec<Message> = ui.into_messages().collect();
+        assert!(
+            matches!(
+                messages.as_slice(),
+                [Message::OpenUrl(url)] if url == "https://github.com/Glory42/rigcheck/releases/latest"
+            ),
+            "{messages:?}"
+        );
+    }
+
+    #[test]
+    fn no_release_notice_without_a_newer_version() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        for answer in [
+            Ok(env!("CARGO_PKG_VERSION").to_owned()),
+            Ok("0.0.1".to_owned()),
+            Err("offline".to_owned()),
+        ] {
+            let _ = app.update(Message::LatestRelease(answer));
+            assert!(!shows(&app, "GET IT"));
+        }
     }
 
     #[test]

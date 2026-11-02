@@ -174,7 +174,7 @@ The app makes **only** these requests. This list goes in the README and on an in
 
 | Destination | When | What is sent |
 |---|---|---|
-| `github.com` (Releases, files served from `release-assets.githubusercontent.com`) | On startup (configurable), to fetch `manifest.json` and, if newer, `games.db.zst` | A plain file download. No identifiers |
+| `github.com` (Releases, files served from `release-assets.githubusercontent.com`) | On startup (configurable), to fetch `manifest.json` and, if newer, `games.db.zst`; and the latest app release's `version.txt` for the update notice | A plain file download. No identifiers |
 | `store.steampowered.com/api/appdetails` | When the user opens a game missing from `games.db` | The app ID being looked up |
 | Steam CDN | When showing cover art | The app ID of the image |
 
@@ -461,7 +461,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 
 ### Phase 7: Packaging & release (v0.7)
 - [x] `release-app.yml`: on tag → build AppImage, `.deb`, `.rpm` and a tarball → attach to a GitHub Release. Uses `cargo-deb`, `cargo-generate-rpm` and `appimagetool` on a hand-made AppDir instead of `cargo-packager`, so every package installs our own `.desktop` file, metainfo and icons. Pull requests touching packaging build them too
-- [ ] Update notice: compare the running version with the latest GitHub Release and link to it. Flathub and AUR users get updates from their package manager, so the app never replaces its own binary
+- [x] Update notice: compare the running version with the latest GitHub Release and link to it (each release uploads `version.txt`; `releases/latest/download/version.txt` skips the `db-latest` prerelease). Flathub and AUR users get updates from their package manager, so the app never replaces its own binary
 - [ ] Test on at least Arch, Ubuntu/Debian, Fedora and SteamOS (Deck desktop mode)
 - [ ] Test on NVIDIA proprietary drivers and on a machine without working Vulkan. iced should fall back to its software renderer (tiny-skia); check that it does
 - [ ] AUR package (`rigcheck-bin`): `packaging/aur/PKGBUILD` is ready and builds with `makepkg`; publishing needs the maintainer's AUR account
