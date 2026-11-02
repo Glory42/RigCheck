@@ -65,3 +65,28 @@ fn an_app_the_store_has_no_page_for_is_unavailable() {
         Ingested::Unavailable
     );
 }
+
+#[test]
+fn keeps_steams_requirement_text_for_the_game_page() {
+    let dir = TempDir::new().unwrap();
+    let db = database(&dir);
+    let Ingested::Game(record) = ingest(413150, &fixture(413150)).unwrap() else {
+        panic!("Stardew Valley is a game");
+    };
+
+    db.store(&record, &catalog()).unwrap();
+
+    let minimum = db.game(413150).unwrap().unwrap().minimum.unwrap();
+    assert_eq!(
+        minimum.text.as_deref(),
+        Some(
+            "Minimum:\n\
+             OS *: Windows Vista or greater\n\
+             Processor: 2 Ghz\n\
+             Memory: 2 GB RAM\n\
+             Graphics: 256 mb video memory, shader model 3.0+\n\
+             DirectX: Version 10\n\
+             Storage: 500 MB available space"
+        )
+    );
+}

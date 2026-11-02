@@ -8,8 +8,9 @@ use rigcheck_gamedb::GameDb;
 use crate::Error;
 use crate::applist::App;
 
-/// The next apps to fetch, at most `budget`: those never fetched or whose
-/// store page changed since, popular ones first (by ProtonDB report count),
+/// The next apps to fetch, at most `budget`: those never fetched, whose
+/// store page changed since, or stored without their requirement text,
+/// popular ones first (by ProtonDB report count),
 /// then the most recently changed.
 pub fn plan(
     apps: &[App],
@@ -18,12 +19,14 @@ pub fn plan(
     budget: usize,
 ) -> Result<Vec<u32>, Error> {
     let fetched = db.fetched()?;
+    let without_text = db.without_requirement_text()?;
     let mut candidates: Vec<&App> = apps
         .iter()
         .filter(|app| {
-            fetched
-                .get(&app.app_id)
-                .is_none_or(|&at| app.last_modified > at)
+            without_text.contains(&app.app_id)
+                || fetched
+                    .get(&app.app_id)
+                    .is_none_or(|&at| app.last_modified > at)
         })
         .collect();
     candidates.sort_by_key(|app| {

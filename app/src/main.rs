@@ -169,6 +169,8 @@ enum Message {
         height: f32,
     },
     RetryDownload,
+    /// Opens a web page in the user's browser.
+    OpenUrl(String),
 }
 
 impl App {
@@ -426,6 +428,15 @@ impl App {
                 }
                 Task::none()
             }
+            Message::OpenUrl(url) => {
+                // The desktop's own "open this link": the app sends nothing.
+                std::thread::spawn(move || {
+                    if let Err(error) = std::process::Command::new("xdg-open").arg(&url).status() {
+                        eprintln!("couldn't open {url}: {error}");
+                    }
+                });
+                Task::none()
+            }
             Message::RetryDownload => {
                 self.download = download::Status::Running { done: 0, total: 0 };
                 download_db(&self.paths.data)
@@ -482,6 +493,7 @@ impl App {
                     .or_else(|| installed.map(|game| game.name.clone()));
                 match name {
                     Some(name) => game_page::view(
+                        app_id,
                         name,
                         self.opened.as_ref(),
                         &library::status(self.opened.as_ref(), self.specs().as_ref()),
@@ -979,6 +991,59 @@ mod tests {
         // Platinum games are left, by name: Balatro (Platinum) first.
         assert!(shows(&app, "Balatro"));
         assert!(!shows(&app, "Cyberpunk 2077"));
+    }
+
+    #[test]
+    fn each_requirement_row_shows_how_this_pc_compares() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        // tests/verdict.rs in gamedb: OMORI's RAM meets the recommended 8 GB;
+        // its CPU and GPU aren't in the hardware table.
+        click(&mut app, "OMORI");
+        assert!(shows(&app, "MEETS RECOMMENDED"));
+        assert!(shows(&app, "NOT COMPARED"));
+
+        click(&mut app, "◀ LIBRARY");
+        click(&mut app, "Cyberpunk 2077");
+        assert!(shows(&app, "BELOW MINIMUM"));
+    }
+
+    #[test]
+    fn the_game_page_shows_steams_requirement_text() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        click(&mut app, "OMORI");
+
+        // From OMORI's store page in the requirement corpus.
+        for line in [
+            "Memory: 4 GB RAM",
+            "Memory: 8 GB RAM",
+            "Additional Notes: 1280x720 display is recommended at x2 resolution but is not required",
+        ] {
+            assert!(shows(&app, line), "{line} not shown");
+        }
+    }
+
+    #[test]
+    fn the_store_button_opens_the_games_steam_page() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        click(&mut app, "OMORI");
+
+        // Clicked by hand: running the message would open a browser.
+        let mut ui = iced_test::simulator(app.view());
+        ui.click("STEAM STORE").unwrap();
+        let messages: Vec<Message> = ui.into_messages().collect();
+
+        assert!(
+            matches!(
+                messages.as_slice(),
+                [Message::OpenUrl(url)] if url == "https://store.steampowered.com/app/1150690/"
+            ),
+            "{messages:?}"
+        );
     }
 
     #[test]

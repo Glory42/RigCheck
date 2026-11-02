@@ -404,3 +404,27 @@ fn meeting_the_only_tier_listed_is_recommended() {
 
     assert_eq!(verdict.overall, Level::Recommended);
 }
+
+#[test]
+fn the_verdict_lists_each_compared_components_level() {
+    let mut game = needs_gpu(&[hw(Vendor::Nvidia, 100)], &[hw(Vendor::Nvidia, 200)]);
+    for (tier, ram_mb) in [(&mut game.minimum, 8192), (&mut game.recommended, 16384)] {
+        tier.as_mut().unwrap().ram_mb = Some(ram_mb);
+    }
+    let specs = Specs {
+        gpu: Some(hw(Vendor::Nvidia, 60)),
+        ram_mb: Some(12288),
+        ..Specs::default()
+    };
+
+    let verdict = evaluate(&game, &specs, &LinuxInfo::default());
+
+    // CPU, VRAM, storage and the graphics API weren't stated or known.
+    assert_eq!(
+        verdict.components,
+        [
+            (Component::Gpu, Level::Below),
+            (Component::Ram, Level::Minimum)
+        ]
+    );
+}

@@ -25,6 +25,7 @@ pub struct Rig {
 /// `back` is the tab the page was opened from.
 #[allow(clippy::too_many_arguments)]
 pub fn view<'a>(
+    app_id: u32,
     name: String,
     record: Option<&'a Game>,
     status: &Status,
@@ -61,7 +62,17 @@ pub fn view<'a>(
     header = header.push(
         column![
             text(name).font(BOLD).size(24),
-            stamp,
+            row![
+                stamp,
+                button(text(i18n.t("game-store")).font(BOLD).size(13))
+                    .padding([7, 12])
+                    .style(colors.button(false))
+                    .on_press(Message::OpenUrl(format!(
+                        "https://store.steampowered.com/app/{app_id}/"
+                    ))),
+            ]
+            .spacing(12)
+            .align_y(Center),
             text(reason(status, record, i18n)),
         ]
         .spacing(10),
@@ -71,6 +82,9 @@ pub fn view<'a>(
     if let Some(record) = record {
         page = page.push(requirements(record, status, rig, i18n, colors));
         page = page.push(linux(record, i18n, colors));
+        if let Some(text) = steam_text(record, i18n, colors) {
+            page = page.push(text);
+        }
     }
     scrollable(page.padding([0, 6])).into()
 }
@@ -123,9 +137,27 @@ fn requirements<'a>(
     i18n: &I18n,
     colors: Colors,
 ) -> Element<'a, Message> {
-    let bottleneck = match status {
-        Status::Verdict(verdict) => verdict.bottleneck,
+    let verdict = match status {
+        Status::Verdict(verdict) => Some(verdict),
         _ => None,
+    };
+    let bottleneck = verdict.and_then(|verdict| verdict.bottleneck);
+    // How this PC did on one row; "—" until there's a verdict.
+    let result = |component: Component| {
+        let Some(verdict) = verdict else {
+            return "—".to_owned();
+        };
+        let level = verdict
+            .components
+            .iter()
+            .find(|(compared, _)| *compared == component)
+            .map(|(_, level)| *level);
+        i18n.t(match level {
+            Some(Level::Recommended) => "row-meets-recommended",
+            Some(Level::Minimum) => "row-meets-minimum",
+            Some(Level::Below) => "row-below-minimum",
+            _ => "row-not-compared",
+        })
     };
     let (minimum, recommended) = (game.minimum.as_ref(), game.recommended.as_ref());
     let tier_text = |tier: Option<&Tier>, pick: TierField| {
@@ -153,6 +185,7 @@ fn requirements<'a>(
             cell(i18n.t("game-your-pc"), true, 3.0),
             cell(i18n.t("game-minimum"), true, 4.0),
             cell(i18n.t("game-recommended"), true, 4.0),
+            cell(i18n.t("game-result"), true, 3.0),
         ]
         .width(Fill),
     );
@@ -163,6 +196,7 @@ fn requirements<'a>(
             cell(yours, highlight, 3.0),
             cell(tier_text(minimum, pick), false, 4.0),
             cell(tier_text(recommended, pick), false, 4.0),
+            cell(result(component), true, 3.0),
         ]
         .width(Fill);
         table = table.push(container(line).style(move |_| {
@@ -186,6 +220,38 @@ fn requirements<'a>(
         .width(Fill)
         .style(move |_| colors.boxed(colors.panel))
         .into()
+}
+
+/// The requirements as Steam's store page words them, next to each other,
+/// so anything the parser missed is still there to read (ROADMAP §1.5).
+/// `None` if the store page lists none.
+fn steam_text<'a>(game: &'a Game, i18n: &I18n, colors: Colors) -> Option<Element<'a, Message>> {
+    let tiers: Vec<&str> = [&game.minimum, &game.recommended]
+        .into_iter()
+        .filter_map(|tier| tier.as_ref()?.text.as_deref())
+        .collect();
+    if tiers.is_empty() {
+        return None;
+    }
+    let columns = tiers.into_iter().map(|tier| {
+        Column::with_children(tier.lines().map(|line| text(line).size(13).into()))
+            .spacing(4)
+            .width(Fill)
+            .into()
+    });
+    Some(
+        container(
+            column![
+                text(i18n.t("game-steam-text")).size(11).font(BOLD),
+                row(columns).spacing(18),
+            ]
+            .spacing(10),
+        )
+        .padding(12)
+        .width(Fill)
+        .style(move |_| colors.boxed(colors.panel))
+        .into(),
+    )
 }
 
 /// ProtonDB, anti-cheat and Steam Deck boxes.

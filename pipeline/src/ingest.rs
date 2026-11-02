@@ -1,6 +1,6 @@
 //! One game from Steam's store API (`appdetails`) → a record for games.db.
 
-use rigcheck_core::parse;
+use rigcheck_core::{parse, requirement_text};
 use rigcheck_gamedb::GameRecord;
 use serde::Deserialize;
 use serde_json::Value;
@@ -57,11 +57,13 @@ pub fn ingest(app_id: u32, json: &str) -> Result<Ingested, Error> {
     if data.kind != "game" {
         return Ok(Ingested::NotAGame { kind: data.kind });
     }
-    let tier = |name: &str| data.pc_requirements.get(name)?.as_str().map(parse);
+    let html = |name: &str| data.pc_requirements.get(name)?.as_str();
     Ok(Ingested::Game(Box::new(GameRecord {
         app_id,
-        minimum: tier("minimum"),
-        recommended: tier("recommended"),
+        minimum: html("minimum").map(parse),
+        recommended: html("recommended").map(parse),
+        minimum_text: html("minimum").map(requirement_text),
+        recommended_text: html("recommended").map(requirement_text),
         name: data.name,
         release_date: data.release_date.map(|release| release.date),
         native: data.platforms.linux,
