@@ -676,6 +676,59 @@ impl GameDb {
         Ok(games.into_values().collect())
     }
 
+    /// In fetched.db: saves a live lookup of a store page, made at `now`
+    /// (Unix seconds). A store page doesn't say what ProtonDB, the Deck or
+    /// AreWeAntiCheatYet think, so whatever `games` (games.db) knows about
+    /// that is kept, and its hardware table matches the CPU and GPU text.
+    pub fn store_lookup(
+        &self,
+        mut record: GameRecord,
+        games: &GameDb,
+        now: i64,
+    ) -> Result<(), Error> {
+        type Known = (
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+        );
+        let known: Option<Known> = games
+            .conn
+            .query_row(
+                "SELECT protondb_tier, deck_status, anticheat_status, anticheat_name
+                 FROM games WHERE app_id = ?1",
+                [record.app_id],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+            )
+            .optional()?;
+        if let Some((protondb, deck, anticheat, anticheat_name)) = known {
+            record.protondb = record.protondb.or(protondb);
+            record.deck = record.deck.or(deck);
+            record.anticheat = record.anticheat.or(anticheat);
+            record.anticheat_name = record.anticheat_name.or(anticheat_name);
+        }
+        record.updated_at = now;
+        self.store(&record, &games.catalog()?)
+    }
+
+    /// In fetched.db: the game with `app_id`, unless it was looked up more
+    /// than 30 days before `now` (ROADMAP §7.1), when it's worth asking again.
+    pub fn lookup(&self, app_id: u32, now: i64) -> Result<Option<Game>, Error> {
+        const STALE_AFTER: i64 = 30 * 24 * 60 * 60;
+        let looked_up_at: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT updated_at FROM games WHERE app_id = ?1",
+                [app_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        match looked_up_at {
+            Some(at) if now - at <= STALE_AFTER => self.game(app_id),
+            _ => Ok(None),
+        }
+    }
+
     /// Games with a requirement tier but not its text: crawled before
     /// games.db kept the text, so their store page is worth fetching again.
     pub fn without_requirement_text(&self) -> Result<std::collections::HashSet<u32>, Error> {
