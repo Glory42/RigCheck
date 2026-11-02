@@ -3,19 +3,19 @@
 
 use rigcheck_core::Catalog;
 use rigcheck_gamedb::GameDb;
-use rigcheck_pipeline::ingest::{Ingested, ingest};
+use rigcheck_gamedb::ingest::{Ingested, ingest};
 use tempfile::TempDir;
 
 fn fixture(app_id: u32) -> String {
     let path = format!(
-        "{}/../data/fixtures/appdetails/{app_id}.json",
+        "{}/../../data/fixtures/appdetails/{app_id}.json",
         env!("CARGO_MANIFEST_DIR")
     );
     std::fs::read_to_string(path).unwrap()
 }
 
 fn catalog() -> Catalog {
-    Catalog::from_toml(include_str!("../../data/hardware.toml")).unwrap()
+    Catalog::from_toml(include_str!("../../../data/hardware.toml")).unwrap()
 }
 
 /// A fresh games.db in a temp dir, with the hardware table.

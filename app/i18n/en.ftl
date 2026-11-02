@@ -102,3 +102,6 @@ row-below-minimum = BELOW MINIMUM
 row-not-compared = NOT COMPARED
 game-steam-text = STEAM'S REQUIREMENTS
 game-store = STEAM STORE
+lookup-checking = Checking Steam…
+lookup-failed = Couldn't reach Steam.
+lookup-no-requirements = Steam lists no system requirements for this.

@@ -16,6 +16,7 @@ use rigcheck_hardware::{Hardware, Vram};
 use rusqlite::{Connection, OptionalExtension, params, params_from_iter};
 use serde::Deserialize;
 
+pub mod ingest;
 mod update;
 
 pub use update::{Manifest, SCHEMA_VERSION, install};
@@ -673,6 +674,83 @@ impl GameDb {
             }
         }
         Ok(games.into_values().collect())
+    }
+
+    /// In fetched.db: saves a live lookup of a store page, made at `now`
+    /// (Unix seconds). A store page doesn't say what ProtonDB, the Deck or
+    /// AreWeAntiCheatYet think, so whatever `games` (games.db) knows about
+    /// that is kept, and its hardware table matches the CPU and GPU text.
+    pub fn store_lookup(
+        &self,
+        mut record: GameRecord,
+        games: &GameDb,
+        now: i64,
+    ) -> Result<(), Error> {
+        type Known = (
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+        );
+        let known: Option<Known> = games
+            .conn
+            .query_row(
+                "SELECT protondb_tier, deck_status, anticheat_status, anticheat_name
+                 FROM games WHERE app_id = ?1",
+                [record.app_id],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+            )
+            .optional()?;
+        if let Some((protondb, deck, anticheat, anticheat_name)) = known {
+            record.protondb = record.protondb.or(protondb);
+            record.deck = record.deck.or(deck);
+            record.anticheat = record.anticheat.or(anticheat);
+            record.anticheat_name = record.anticheat_name.or(anticheat_name);
+        }
+        record.updated_at = now;
+        let catalog = games.catalog()?;
+        // Requirement rows point at this file's own hardware rows: add the
+        // ones it lacks, never renumbering those earlier lookups point at.
+        let tx = self.conn.unchecked_transaction()?;
+        let entries = catalog
+            .cpus()
+            .iter()
+            .map(|entry| ("cpu", entry))
+            .chain(catalog.gpus().iter().map(|entry| ("gpu", entry)));
+        for (kind, entry) in entries {
+            tx.execute(
+                "INSERT INTO hardware (kind, vendor, name, score, score_source, vram_mb)
+                 SELECT ?1, ?2, ?3, ?4, 'games.db', ?5
+                 WHERE NOT EXISTS (SELECT 1 FROM hardware WHERE kind = ?1 AND name = ?3)",
+                params![
+                    kind,
+                    vendor_name(entry.vendor),
+                    entry.name,
+                    entry.score,
+                    entry.vram_mb
+                ],
+            )?;
+        }
+        tx.commit()?;
+        self.store(&record, &catalog)
+    }
+
+    /// In fetched.db: the game with `app_id`, unless it was looked up more
+    /// than 30 days before `now` (ROADMAP §7.1), when it's worth asking again.
+    pub fn lookup(&self, app_id: u32, now: i64) -> Result<Option<Game>, Error> {
+        const STALE_AFTER: i64 = 30 * 24 * 60 * 60;
+        let looked_up_at: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT updated_at FROM games WHERE app_id = ?1",
+                [app_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        match looked_up_at {
+            Some(at) if now - at <= STALE_AFTER => self.game(app_id),
+            _ => Ok(None),
+        }
     }
 
     /// Games with a requirement tier but not its text: crawled before

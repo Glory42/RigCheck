@@ -26,11 +26,11 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use rigcheck_core::Catalog;
 use rigcheck_gamedb::GameDb;
+use rigcheck_gamedb::ingest::{Ingested, ingest};
 use rigcheck_net::{Allowlist, Client, RateLimiter, Retry};
 use rigcheck_pipeline::Error;
 use rigcheck_pipeline::applist::{self, App};
 use rigcheck_pipeline::crawl::plan;
-use rigcheck_pipeline::ingest::{Ingested, ingest};
 use rigcheck_pipeline::validate::{Rules, validate};
 use rigcheck_pipeline::{awacy, blender, build, deck, pci, protondb, publish, report};
 

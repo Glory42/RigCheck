@@ -27,6 +27,8 @@ pub struct Rig {
 pub fn view<'a>(
     app_id: u32,
     name: String,
+    // About a live lookup on Steam, under the header.
+    note: Option<Element<'a, Message>>,
     record: Option<&'a Game>,
     status: &Status,
     rig: &Rig,
@@ -79,6 +81,9 @@ pub fn view<'a>(
     );
 
     let mut page = column![back, header].spacing(18);
+    if let Some(note) = note {
+        page = page.push(note);
+    }
     if let Some(record) = record {
         page = page.push(requirements(record, status, rig, i18n, colors));
         page = page.push(linux(record, i18n, colors));

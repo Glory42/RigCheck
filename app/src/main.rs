@@ -5,6 +5,7 @@ mod download;
 mod game_page;
 mod i18n;
 mod library;
+mod lookup;
 mod my_hardware;
 mod overrides;
 mod settings;
@@ -23,6 +24,7 @@ use iced::widget::{
 };
 use iced::{Element, Fill, Size, Task, Theme, clipboard, window};
 use rigcheck_core::{Catalog, Specs};
+use rigcheck_gamedb::ingest::{Ingested, ingest};
 use rigcheck_gamedb::{Game, GameDb};
 use rigcheck_hardware::Hardware;
 use rigcheck_steam::InstalledGame;
@@ -55,6 +57,8 @@ struct Paths {
     config: PathBuf,
     /// `games.db`: ~/.local/share/rigcheck
     data: PathBuf,
+    /// `fetched.db`, live lookups: ~/.cache/rigcheck
+    cache: PathBuf,
     /// Where Steam installs are looked for.
     home: PathBuf,
 }
@@ -68,6 +72,7 @@ impl Paths {
         Paths {
             config: project.config_dir().to_owned(),
             data: project.data_dir().to_owned(),
+            cache: project.cache_dir().to_owned(),
             home: base.home_dir().to_owned(),
         }
     }
@@ -77,6 +82,7 @@ impl Paths {
         Paths {
             config: dir.join("config"),
             data: dir.join("data"),
+            cache: dir.join("cache"),
             home: dir.join("home"),
         }
     }
@@ -128,7 +134,12 @@ struct App {
     covers: HashMap<u32, PathBuf>,
     search: String,
     catalog_list: catalog::List,
-    /// The open game page's games.db record, and the tab it was opened from.
+    /// Live lookups of games games.db hasn't checked; `None` if the cache
+    /// directory can't be written.
+    fetched: Option<GameDb>,
+    steam: lookup::Steam,
+    lookup: lookup::State,
+    /// The open game page's record, and the tab it was opened from.
     opened: Option<Game>,
     opened_from: Page,
     override_choices: overrides::Choices,
@@ -171,6 +182,9 @@ enum Message {
     RetryDownload,
     /// Opens a web page in the user's browser.
     OpenUrl(String),
+    /// Steam's `appdetails` answer for an app ID, or why there's none.
+    SteamLookup(u32, Result<String, String>),
+    RetryLookup(u32),
 }
 
 impl App {
@@ -197,6 +211,7 @@ impl App {
             None => download_db(&paths.data),
         };
         let settings = Settings::load(&paths.config);
+        let fetched = open_fetched(&paths.cache);
         let mut app = App {
             override_choices: overrides::Choices::default(),
             i18n: I18n::new(settings.language.unwrap_or(system_language)),
@@ -213,6 +228,9 @@ impl App {
             covers: HashMap::new(),
             search: String::new(),
             catalog_list: catalog::List::default(),
+            fetched,
+            steam: lookup::Steam::default(),
+            lookup: lookup::State::Idle,
             opened: None,
             opened_from: Page::Library,
         };
@@ -336,10 +354,19 @@ impl App {
                     if !matches!(self.page, Page::Game(_)) {
                         self.opened_from = self.page;
                     }
-                    self.opened = self.db.as_ref().and_then(|db| db.game(app_id).ok()?);
+                    self.page = page;
+                    return self.open_game(app_id);
                 }
                 self.page = page;
                 Task::none()
+            }
+            Message::SteamLookup(app_id, answer) => {
+                self.looked_up(app_id, answer);
+                Task::none()
+            }
+            Message::RetryLookup(app_id) => {
+                self.lookup = lookup::State::Checking(app_id);
+                self.steam.ask(app_id)
             }
             Message::AppearanceSelected(appearance) => {
                 self.settings.appearance = appearance;
@@ -448,6 +475,51 @@ impl App {
         }
     }
 
+    /// Loads a game for its page: games.db, then a recent lookup in
+    /// fetched.db, else asks Steam (ROADMAP §7.1).
+    fn open_game(&mut self, app_id: u32) -> Task<Message> {
+        self.opened = self.db.as_ref().and_then(|db| db.game(app_id).ok()?);
+        if self.opened.as_ref().is_some_and(|game| game.crawled) {
+            return Task::none();
+        }
+        let (Some(_), Some(fetched)) = (&self.db, &self.fetched) else {
+            return Task::none();
+        };
+        if let Some(game) = fetched.lookup(app_id, now()).ok().flatten() {
+            self.opened = Some(game);
+            return Task::none();
+        }
+        self.lookup = lookup::State::Checking(app_id);
+        self.steam.ask(app_id)
+    }
+
+    /// Keeps Steam's answer about `app_id` in fetched.db and shows it.
+    fn looked_up(&mut self, app_id: u32, answer: Result<String, String>) {
+        let (Some(db), Some(fetched)) = (&self.db, &self.fetched) else {
+            return;
+        };
+        let stored = answer.and_then(|json| {
+            match ingest(app_id, &json).map_err(|error| error.to_string())? {
+                Ingested::Game(record) => fetched
+                    .store_lookup(*record, db, now())
+                    .map(|()| true)
+                    .map_err(|error| error.to_string()),
+                Ingested::NotAGame { .. } | Ingested::Unavailable => Ok(false),
+            }
+        });
+        self.lookup = match stored {
+            Ok(true) => lookup::State::Idle,
+            Ok(false) => lookup::State::NoRequirements(app_id),
+            Err(error) => {
+                eprintln!("couldn't look up {app_id} on Steam: {error}");
+                lookup::State::Failed(app_id)
+            }
+        };
+        if self.page == Page::Game(app_id) && self.lookup == lookup::State::Idle {
+            self.opened = fetched.lookup(app_id, now()).ok().flatten();
+        }
+    }
+
     /// Lets the Catalog's CAN RUN use the current specs.
     fn specs_changed(&mut self) {
         let specs = self.specs();
@@ -495,6 +567,7 @@ impl App {
                     Some(name) => game_page::view(
                         app_id,
                         name,
+                        lookup::note(self.lookup, app_id, i18n, colors),
                         self.opened.as_ref(),
                         &library::status(self.opened.as_ref(), self.specs().as_ref()),
                         &self.rig(),
@@ -584,6 +657,28 @@ impl App {
             .style(move |_| container::Style::default().background(colors.rule));
         column![bar, rule].into()
     }
+}
+
+/// fetched.db in `dir`, created on first use.
+fn open_fetched(dir: &Path) -> Option<GameDb> {
+    let path = dir.join("fetched.db");
+    let opened = if path.exists() {
+        GameDb::open(&path)
+    } else {
+        std::fs::create_dir_all(dir)
+            .map_err(Into::into)
+            .and_then(|()| GameDb::create(&path))
+    };
+    opened
+        .inspect_err(|error| eprintln!("couldn't open fetched.db: {error}"))
+        .ok()
+}
+
+/// Seconds since 1970, the way games.db and fetched.db store times.
+fn now() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_secs() as i64)
 }
 
 /// Scrolls the Catalog list back to its first row.
@@ -1044,6 +1139,89 @@ mod tests {
             ),
             "{messages:?}"
         );
+    }
+
+    const BG3: u32 = 1086940;
+
+    /// A games.db that knows Baldur's Gate 3 only by name, on the AMD laptop.
+    fn lookup_app(dir: &TempDir) -> App {
+        let paths = Paths::under(dir.path());
+        std::fs::create_dir_all(&paths.data).unwrap();
+        let db = GameDb::create(&paths.data.join("games.db")).unwrap();
+        let table = include_str!("../../data/hardware.toml");
+        db.store_catalog(&Catalog::from_toml(table).unwrap())
+            .unwrap();
+        db.store_names(&[
+            (BG3, "Baldur's Gate 3"),
+            (2138330, "Cyberpunk 2077: Phantom Liberty"),
+        ])
+        .unwrap();
+        let (mut app, _) = App::new(paths, Language::English);
+        let _ = app.update(Message::HardwareDetected(test_support::amd_laptop()));
+        app
+    }
+
+    /// Steam's saved `appdetails` response for `app_id`.
+    fn steam_says(app_id: u32) -> Message {
+        let path = format!("../data/fixtures/appdetails/{app_id}.json");
+        Message::SteamLookup(app_id, Ok(std::fs::read_to_string(path).unwrap()))
+    }
+
+    #[test]
+    fn a_game_not_checked_yet_is_looked_up_on_steam() {
+        let dir = TempDir::new().unwrap();
+        let mut app = lookup_app(&dir);
+
+        let _ = app.update(Message::Open(Page::Game(BG3)));
+        assert!(shows(&app, "Checking Steam…"));
+
+        let _ = app.update(steam_says(BG3));
+
+        // Radeon Vega 7 (32) against the RX 480 (95) in data/hardware.toml.
+        assert!(shows(&app, "TOO WEAK"));
+        assert!(shows(&app, "Memory: 8 GB RAM"));
+        assert!(!shows(&app, "Checking Steam…"));
+    }
+
+    #[test]
+    fn a_looked_up_game_is_remembered_across_restarts() {
+        let dir = TempDir::new().unwrap();
+        let mut app = lookup_app(&dir);
+        let _ = app.update(Message::Open(Page::Game(BG3)));
+        let _ = app.update(steam_says(BG3));
+
+        let (mut reopened, _) = App::new(Paths::under(dir.path()), Language::English);
+        let _ = reopened.update(Message::HardwareDetected(test_support::amd_laptop()));
+        let _ = reopened.update(Message::Open(Page::Game(BG3)));
+
+        assert!(shows(&reopened, "TOO WEAK"));
+        assert!(!shows(&reopened, "Checking Steam…"));
+    }
+
+    #[test]
+    fn a_failed_lookup_says_so_and_can_be_retried() {
+        let dir = TempDir::new().unwrap();
+        let mut app = lookup_app(&dir);
+        let _ = app.update(Message::Open(Page::Game(BG3)));
+
+        let _ = app.update(Message::SteamLookup(BG3, Err("offline".to_owned())));
+        assert!(shows(&app, "Couldn't reach Steam."));
+
+        click(&mut app, "RETRY");
+        assert!(shows(&app, "Checking Steam…"));
+    }
+
+    #[test]
+    fn an_app_that_isnt_a_game_has_no_requirements_to_check() {
+        let dir = TempDir::new().unwrap();
+        let mut app = lookup_app(&dir);
+        let phantom_liberty = 2138330; // a DLC
+        let _ = app.update(Message::Open(Page::Game(phantom_liberty)));
+
+        let _ = app.update(steam_says(phantom_liberty));
+
+        assert!(shows(&app, "Steam lists no system requirements for this."));
+        assert!(!shows(&app, "Checking Steam…"));
     }
 
     #[test]
