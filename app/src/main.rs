@@ -135,6 +135,8 @@ struct App {
     covers: HashMap<u32, PathBuf>,
     /// Where covers come from: Steam's cache, or downloads.
     art: covers::Covers,
+    /// Sizes for Settings > Storage, refreshed when they can change.
+    storage: settings_page::Storage,
     search: String,
     catalog_list: catalog::List,
     /// Live lookups of games games.db hasn't checked; `None` if the cache
@@ -169,6 +171,14 @@ enum Message {
     OverrideGpu(Option<String>),
     OverrideCpu(Option<String>),
     CopyHardwareReport,
+    /// Settings > Privacy: check for a new games.db only when asked.
+    SetManualUpdates(bool),
+    /// Settings > Storage: the image cache limit in MB.
+    ImageCacheLimit(u32),
+    CheckForUpdates,
+    Redownload,
+    ClearFetched,
+    ClearImages,
     AppearanceSelected(Appearance),
     /// `None` picks "System default".
     LanguageSelected(Option<Language>),
@@ -222,6 +232,7 @@ impl App {
         };
         let fetched = open_fetched(&paths.cache);
         let art = covers::Covers::new(paths.home.clone(), paths.cache.join("images"));
+        art.evict(settings.image_cache_bytes());
         let mut app = App {
             override_choices: overrides::Choices::default(),
             i18n: I18n::new(settings.language.unwrap_or(system_language)),
@@ -237,6 +248,7 @@ impl App {
             records: HashMap::new(),
             covers: HashMap::new(),
             art,
+            storage: settings_page::Storage::default(),
             search: String::new(),
             catalog_list: catalog::List::default(),
             fetched,
@@ -360,6 +372,54 @@ impl App {
 
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::Open(Page::Settings) => {
+                self.page = Page::Settings;
+                self.refresh_storage();
+                Task::none()
+            }
+            Message::SetManualUpdates(manual) => {
+                self.settings.manual_updates = manual;
+                self.save_settings();
+                Task::none()
+            }
+            Message::ImageCacheLimit(mb) => {
+                self.settings.image_cache_mb = Some(mb);
+                self.save_settings();
+                self.art.evict(self.settings.image_cache_bytes());
+                self.refresh_storage();
+                Task::none()
+            }
+            Message::CheckForUpdates | Message::Redownload => {
+                let installed = match message {
+                    Message::CheckForUpdates => self
+                        .db
+                        .as_ref()
+                        .and_then(|db| db.meta("db_version").ok().flatten()),
+                    _ => None,
+                };
+                self.download = match self.db {
+                    Some(_) => download::Status::Updating { done: 0, total: 0 },
+                    None => download::Status::Running { done: 0, total: 0 },
+                };
+                download_db(&self.paths.data, installed)
+            }
+            Message::ClearFetched => {
+                // Closed first: the file is replaced by an empty one.
+                self.fetched = None;
+                let path = self.paths.cache.join("fetched.db");
+                let _ = std::fs::remove_file(&path);
+                self.fetched = open_fetched(&self.paths.cache);
+                self.lookup = lookup::State::Idle;
+                self.refresh_storage();
+                Task::none()
+            }
+            Message::ClearImages => {
+                self.art.clear();
+                let images = self.paths.cache.join("images");
+                self.covers.retain(|_, path| !path.starts_with(&images));
+                self.refresh_storage();
+                Task::none()
+            }
             Message::Open(page) => {
                 if let Page::Game(app_id) = page {
                     if !matches!(self.page, Page::Game(_)) {
@@ -381,6 +441,7 @@ impl App {
                     match self.art.save(app_id, &jpeg) {
                         Ok(path) => {
                             self.covers.insert(app_id, path);
+                            self.art.evict(self.settings.image_cache_bytes());
                         }
                         Err(error) => eprintln!("couldn't keep the cover of {app_id}: {error}"),
                     }
@@ -570,6 +631,16 @@ impl App {
         }
     }
 
+    /// Measures what Settings > Storage shows.
+    fn refresh_storage(&mut self) {
+        let size = |path: PathBuf| std::fs::metadata(path).map_or(0, |meta| meta.len());
+        self.storage = settings_page::Storage {
+            games_db: size(self.paths.data.join("games.db")),
+            fetched_db: size(self.paths.cache.join("fetched.db")),
+            images: self.art.size(),
+        };
+    }
+
     /// Lets the Catalog's CAN RUN use the current specs.
     fn specs_changed(&mut self) {
         let specs = self.specs();
@@ -652,7 +723,7 @@ impl App {
                 }
                 None => center(text(i18n.t("detecting-hardware"))).into(),
             },
-            Page::Settings => settings_page::view(&self.settings, i18n, colors),
+            Page::Settings => settings_page::view(&self.settings, self.storage, i18n, colors),
         };
         let mut body = column![].spacing(18);
         if let Some(banner) = download::view(&self.download, i18n, colors) {
@@ -1342,6 +1413,102 @@ mod tests {
             "The game database needs a newer rigcheck. Update the app to get it."
         ));
         assert!(shows(&app, "READY"));
+    }
+
+    #[test]
+    fn updates_can_be_left_for_when_asked() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        let paths = Paths::under(dir.path());
+        let automatic = App::new(paths.clone(), Language::English).1.units();
+
+        click(&mut app, "SETTINGS");
+        // Privacy is at the bottom: a window tall enough to show it.
+        let mut ui = iced_test::Simulator::with_size(
+            iced_test::core::Settings::default(),
+            (1100.0, 1400.0),
+            app.view(),
+        );
+        ui.click("ONLY WHEN I ASK").unwrap();
+        for message in ui.into_messages() {
+            let _ = app.update(message);
+        }
+
+        assert!(Settings::load(&paths.config).manual_updates);
+        // The next start skips the manifest check: one task fewer.
+        assert_eq!(App::new(paths, Language::English).1.units(), automatic - 1);
+    }
+
+    #[test]
+    fn clearing_fetched_games_means_asking_steam_again() {
+        let dir = TempDir::new().unwrap();
+        let mut app = lookup_app(&dir);
+        let _ = app.update(Message::Open(Page::Game(BG3)));
+        let _ = app.update(steam_says(BG3));
+
+        click(&mut app, "SETTINGS");
+        click(&mut app, "CLEAR FETCHED GAMES");
+        let _ = app.update(Message::Open(Page::Game(BG3)));
+
+        assert!(shows(&app, "Checking Steam…"));
+    }
+
+    #[test]
+    fn clearing_images_frees_their_space() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        let _ = app.update(Message::CoverFetched(1150690, Ok(vec![0; 1_500_000])));
+
+        click(&mut app, "SETTINGS");
+        assert!(shows(&app, "1.5 MB"));
+        click(&mut app, "CLEAR IMAGES");
+
+        assert!(shows(&app, "0.0 MB"));
+        let images = Paths::under(dir.path()).cache.join("images");
+        assert_eq!(
+            covers::Covers::new(dir.path().join("home"), images).size(),
+            0
+        );
+    }
+
+    #[test]
+    fn the_image_cache_limit_is_saved() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        click(&mut app, "SETTINGS");
+        click(&mut app, "250 MB");
+
+        let saved = Settings::load(&Paths::under(dir.path()).config);
+        assert_eq!(saved.image_cache_mb, Some(250));
+    }
+
+    #[test]
+    fn re_downloading_the_database_starts_right_away() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        click(&mut app, "SETTINGS");
+        click(&mut app, "RE-DOWNLOAD");
+
+        assert!(shows(&app, "Updating the game database…"));
+    }
+
+    #[test]
+    fn the_privacy_section_lists_every_place_the_app_talks_to() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        click(&mut app, "SETTINGS");
+
+        // ROADMAP §6.
+        for destination in [
+            "github.com: the game database",
+            "store.steampowered.com: games the database hasn't checked",
+            "shared.akamai.steamstatic.com: cover art",
+        ] {
+            assert!(shows(&app, destination), "{destination} not listed");
+        }
     }
 
     #[test]

@@ -23,6 +23,9 @@ pub struct Settings {
     /// load, and every setting would reset.
     #[serde(default)]
     pub manual_updates: bool,
+    /// The most space downloaded covers may take; `None` for the default.
+    #[serde(default)]
+    pub image_cache_mb: Option<u32>,
 }
 
 /// The app's color theme, picked under Settings > Appearance.
@@ -49,6 +52,11 @@ impl Appearance {
 }
 
 impl Settings {
+    /// The image cache limit in bytes: 500 MB unless set (ROADMAP §7.1).
+    pub fn image_cache_bytes(&self) -> u64 {
+        u64::from(self.image_cache_mb.unwrap_or(500)) * 1_000_000
+    }
+
     /// Reads the settings in `dir`.
     pub fn load(dir: &Path) -> Settings {
         let Ok(json) = fs::read_to_string(dir.join(FILE)) else {

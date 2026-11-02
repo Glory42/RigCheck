@@ -4,7 +4,7 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use iced::Task;
 use iced::futures::channel::oneshot;
@@ -34,11 +34,58 @@ impl Covers {
     }
 
     /// The cover for `app_id`, if Steam or rigcheck has one on disk.
+    /// Showing a downloaded cover marks it used, for [`Covers::evict`].
     pub fn path(&self, app_id: u32) -> Option<PathBuf> {
         rigcheck_steam::cover_art(&self.home, app_id).or_else(|| {
             let downloaded = self.file(app_id);
-            downloaded.is_file().then_some(downloaded)
+            let file = std::fs::File::options()
+                .write(true)
+                .open(&downloaded)
+                .ok()?;
+            let _ = file.set_modified(SystemTime::now());
+            Some(downloaded)
         })
+    }
+
+    /// Bytes the downloaded covers take.
+    pub fn size(&self) -> u64 {
+        self.downloaded().iter().map(|(_, bytes, _)| bytes).sum()
+    }
+
+    /// Deletes the least recently used downloaded covers until they take at
+    /// most `limit` bytes (ROADMAP §7.1). Steam's own cache isn't touched.
+    pub fn evict(&self, limit: u64) {
+        let mut covers = self.downloaded();
+        covers.sort_by_key(|(_, _, used)| *used);
+        let mut size: u64 = covers.iter().map(|(_, bytes, _)| bytes).sum();
+        for (path, bytes, _) in covers {
+            if size <= limit {
+                break;
+            }
+            if std::fs::remove_file(&path).is_ok() {
+                size -= bytes;
+            }
+        }
+    }
+
+    /// Deletes every downloaded cover.
+    pub fn clear(&self) {
+        self.evict(0);
+    }
+
+    /// Each downloaded cover: its path, size and when it was last used.
+    fn downloaded(&self) -> Vec<(PathBuf, u64, SystemTime)> {
+        let Ok(entries) = std::fs::read_dir(&self.dir) else {
+            return Vec::new();
+        };
+        entries
+            .flatten()
+            .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "jpg"))
+            .filter_map(|entry| {
+                let meta = entry.metadata().ok()?;
+                Some((entry.path(), meta.len(), meta.modified().ok()?))
+            })
+            .collect()
     }
 
     /// Keeps a downloaded cover. Written to a temp file and renamed, so a
@@ -146,5 +193,57 @@ mod tests {
 
         covers.save(620, b"jpeg").unwrap();
         assert_eq!(covers.fetch(620).units(), 0, "already on disk");
+    }
+
+    /// Saves a 10-byte cover for each app, oldest use first: `n` seconds ago.
+    fn used_at(covers: &Covers, uses: &[(u32, u64)]) {
+        let now = std::time::SystemTime::now();
+        for &(app_id, seconds_ago) in uses {
+            let path = covers.save(app_id, b"0123456789").unwrap();
+            std::fs::File::options()
+                .write(true)
+                .open(path)
+                .unwrap()
+                .set_modified(now - std::time::Duration::from_secs(seconds_ago))
+                .unwrap();
+        }
+    }
+
+    #[test]
+    fn eviction_removes_the_least_recently_used_covers_first() {
+        let dir = TempDir::new().unwrap();
+        let covers = covers(&dir);
+        used_at(&covers, &[(1, 300), (2, 100), (3, 200)]);
+
+        covers.evict(20);
+
+        assert_eq!(covers.size(), 20);
+        assert!(covers.path(1).is_none(), "used longest ago");
+        assert!(covers.path(2).is_some() && covers.path(3).is_some());
+    }
+
+    #[test]
+    fn showing_a_cover_counts_as_using_it() {
+        let dir = TempDir::new().unwrap();
+        let covers = covers(&dir);
+        used_at(&covers, &[(1, 300), (2, 100)]);
+
+        assert!(covers.path(1).is_some()); // shown just now
+        covers.evict(10);
+
+        assert!(covers.path(1).is_some());
+        assert!(covers.path(2).is_none());
+    }
+
+    #[test]
+    fn clearing_removes_every_downloaded_cover() {
+        let dir = TempDir::new().unwrap();
+        let covers = covers(&dir);
+        used_at(&covers, &[(1, 0), (2, 0)]);
+
+        covers.clear();
+
+        assert_eq!(covers.size(), 0);
+        assert!(covers.path(1).is_none());
     }
 }
