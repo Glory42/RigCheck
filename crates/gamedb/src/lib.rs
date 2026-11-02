@@ -13,6 +13,10 @@ use rigcheck_hardware::{Hardware, Vram};
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::Deserialize;
 
+mod update;
+
+pub use update::{Manifest, SCHEMA_VERSION};
+
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
 const SCHEMA: &str = include_str!("schema.sql");
@@ -154,8 +158,8 @@ impl GameDb {
         let conn = Connection::open(path)?;
         conn.execute_batch(SCHEMA)?;
         conn.execute(
-            "INSERT INTO meta (key, value) VALUES ('schema_version', '1')",
-            [],
+            "INSERT INTO meta (key, value) VALUES ('schema_version', ?1)",
+            [SCHEMA_VERSION],
         )?;
         Ok(GameDb { conn })
     }

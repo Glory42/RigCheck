@@ -6,8 +6,7 @@ use std::fs::{self, File};
 use std::io::BufReader;
 use std::path::Path;
 
-use rigcheck_gamedb::GameDb;
-use serde::{Deserialize, Serialize};
+use rigcheck_gamedb::{GameDb, Manifest};
 use sha2::{Digest, Sha256};
 
 use crate::Error;
@@ -22,17 +21,6 @@ pub struct Release {
     /// Where `games.db.zst` will be downloaded from.
     pub url: String,
     /// The oldest app version that can read this schema.
-    pub min_app_version: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Manifest {
-    pub schema_version: u32,
-    pub db_version: String,
-    pub built_at: String,
-    pub url: String,
-    pub sha256: String,
-    pub size_bytes: u64,
     pub min_app_version: String,
 }
 
