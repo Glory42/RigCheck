@@ -19,6 +19,10 @@ pub struct Covers {
     dir: PathBuf,
     /// Asked for in this session, found or not.
     asked: HashSet<u32>,
+    /// Asked for and not answered yet: their tiles pulse. Once answered
+    /// without art, a tile gets a still placeholder (and `asked` keeps it
+    /// from being asked again).
+    loading: HashSet<u32>,
     /// One client for every download, so its rate limiter sees them all.
     cdn: Arc<Mutex<Option<Client>>>,
 }
@@ -29,6 +33,7 @@ impl Covers {
             home,
             dir,
             asked: HashSet::new(),
+            loading: HashSet::new(),
             cdn: Arc::default(),
         }
     }
@@ -107,6 +112,7 @@ impl Covers {
         if self.path(app_id).is_some() || !self.asked.insert(app_id) {
             return Task::none();
         }
+        self.loading.insert(app_id);
         let cdn = self.cdn.clone();
         Task::perform(
             async move {
@@ -128,6 +134,20 @@ impl Covers {
     pub fn download_now(&self, app_id: u32) -> Option<PathBuf> {
         let jpeg = download(&self.cdn, app_id).ok()?;
         self.save(app_id, &jpeg).ok()
+    }
+
+    /// The download for `app_id` ended, with a cover or without.
+    pub fn settled(&mut self, app_id: u32) {
+        self.loading.remove(&app_id);
+    }
+
+    pub fn is_loading(&self, app_id: u32) -> bool {
+        self.loading.contains(&app_id)
+    }
+
+    /// Whether any cover is on its way, so the pulse needs frames.
+    pub fn any_loading(&self) -> bool {
+        !self.loading.is_empty()
     }
 
     fn file(&self, app_id: u32) -> PathBuf {
@@ -253,5 +273,31 @@ mod tests {
 
         assert_eq!(covers.size(), 0);
         assert!(covers.path(1).is_none());
+    }
+
+    #[test]
+    fn a_cover_is_loading_from_its_request_until_it_arrives() {
+        let dir = TempDir::new().unwrap();
+        let mut covers = covers(&dir);
+        assert!(!covers.is_loading(BG3) && !covers.any_loading());
+
+        let _ = covers.fetch(BG3);
+        assert!(covers.is_loading(BG3) && covers.any_loading());
+
+        covers.settled(BG3);
+        assert!(!covers.is_loading(BG3) && !covers.any_loading());
+    }
+
+    #[test]
+    fn a_game_without_art_is_missing_and_not_asked_again() {
+        let dir = TempDir::new().unwrap();
+        let mut covers = covers(&dir);
+        let _ = covers.fetch(BG3);
+
+        covers.settled(BG3);
+
+        assert!(!covers.is_loading(BG3));
+        assert_eq!(covers.fetch(BG3).units(), 0);
+        assert!(!covers.is_loading(BG3), "no pulsing forever");
     }
 }

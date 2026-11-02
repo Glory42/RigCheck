@@ -56,7 +56,61 @@ pub struct Entry<'a> {
     pub app_id: u32,
     pub name: &'a str,
     pub status: Status,
-    pub cover: Option<&'a PathBuf>,
+    pub cover: Cover<'a>,
+}
+
+/// A cover as drawn: the art (fading in as it arrives), a pulsing skeleton
+/// while it's on its way, or a still placeholder when Steam has none.
+#[derive(Debug, Clone, Copy)]
+pub enum Cover<'a> {
+    Ready {
+        path: &'a PathBuf,
+        opacity: f32,
+    },
+    /// `pulse` is 0…1 ([`crate::motion::pulse`]).
+    Loading {
+        pulse: f32,
+    },
+    Missing,
+}
+
+/// `cover` at `width` × `height`. The art fills the box exactly (Steam's
+/// covers are 2:3, like the box), so it never spills over.
+pub fn cover_box(
+    cover: Cover,
+    width: f32,
+    height: f32,
+    colors: Colors,
+) -> Element<'static, Message> {
+    let placeholder = |color: iced::Color| -> Element<'static, Message> {
+        container(Space::new())
+            .width(width)
+            .height(height)
+            .style(move |_| container::Style::default().background(color))
+            .into()
+    };
+    match cover {
+        Cover::Ready { path, opacity } => image(Handle::from_path(path))
+            .width(width)
+            .height(height)
+            .content_fit(ContentFit::Cover)
+            .opacity(opacity)
+            .into(),
+        // Breathes a little toward the muted text color, in every theme.
+        Cover::Loading { pulse } => {
+            placeholder(mix(colors.panel2, colors.muted, 0.06 + 0.14 * pulse))
+        }
+        Cover::Missing => placeholder(colors.panel2),
+    }
+}
+
+/// `a`, moved `t` (0…1) of the way to `b`.
+fn mix(a: iced::Color, b: iced::Color, t: f32) -> iced::Color {
+    iced::Color::from_rgb(
+        a.r + (b.r - a.r) * t,
+        a.g + (b.g - a.g) * t,
+        a.b + (b.b - a.b) * t,
+    )
 }
 
 /// Which games the Library lists.
@@ -243,24 +297,12 @@ pub fn game_tile(
     app_id: u32,
     name: &str,
     status: &Status,
-    cover: Option<&PathBuf>,
+    cover: Cover,
     selected: bool,
     i18n: &I18n,
     colors: Colors,
 ) -> Element<'static, Message> {
-    let cover: Element<'static, Message> = match cover {
-        // Exactly the art's 2:3 shape, so filling the box never spills over.
-        Some(path) => image(Handle::from_path(path))
-            .width(COVER_WIDTH)
-            .height(COVER_HEIGHT)
-            .content_fit(ContentFit::Cover)
-            .into(),
-        None => container(Space::new())
-            .width(COVER_WIDTH)
-            .height(COVER_HEIGHT)
-            .style(move |_| container::Style::default().background(colors.panel2))
-            .into(),
-    };
+    let cover = cover_box(cover, COVER_WIDTH, COVER_HEIGHT, colors);
     let (label, color) = stamp(status, i18n);
     // Fixed heights: the grid sizes cells to fit, and would squash the stamp.
     let stamp = container(text(label).font(BOLD).size(12))
