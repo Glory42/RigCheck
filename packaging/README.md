@@ -20,6 +20,7 @@ CI validates the first two (`desktop-file-validate`, `appstreamcli validate`).
 | `rigcheck-<version>-x86_64-linux.tar.gz` | `packaging/package.sh` |
 | `rigcheck_<version>-1_amd64.deb` | `cargo deb` (`[package.metadata.deb]` in `app/Cargo.toml`) |
 | `rigcheck-<version>-1.x86_64.rpm` | `cargo generate-rpm` (`[package.metadata.generate-rpm]`) |
+| `version.txt` | `packaging/package.sh`; the app's update notice reads it |
 
 Built on Ubuntu 22.04, so the binary runs on any distro with glibc 2.35 or newer. It links only glibc and libgcc; Wayland/X11 and Vulkan are loaded at runtime.
 

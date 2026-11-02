@@ -41,4 +41,7 @@ APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 "$appimagetool" --no-appstream "$appdir" 
     "$dist/rigcheck-$version-x86_64.AppImage"
 rm -rf "$appdir"
 
+# What the app's update notice reads (app/src/release.rs).
+echo "$version" > "$dist/version.txt"
+
 ls -l "$dist"
