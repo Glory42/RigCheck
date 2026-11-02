@@ -708,7 +708,31 @@ impl GameDb {
             record.anticheat_name = record.anticheat_name.or(anticheat_name);
         }
         record.updated_at = now;
-        self.store(&record, &games.catalog()?)
+        let catalog = games.catalog()?;
+        // Requirement rows point at this file's own hardware rows: add the
+        // ones it lacks, never renumbering those earlier lookups point at.
+        let tx = self.conn.unchecked_transaction()?;
+        let entries = catalog
+            .cpus()
+            .iter()
+            .map(|entry| ("cpu", entry))
+            .chain(catalog.gpus().iter().map(|entry| ("gpu", entry)));
+        for (kind, entry) in entries {
+            tx.execute(
+                "INSERT INTO hardware (kind, vendor, name, score, score_source, vram_mb)
+                 SELECT ?1, ?2, ?3, ?4, 'games.db', ?5
+                 WHERE NOT EXISTS (SELECT 1 FROM hardware WHERE kind = ?1 AND name = ?3)",
+                params![
+                    kind,
+                    vendor_name(entry.vendor),
+                    entry.name,
+                    entry.score,
+                    entry.vram_mb
+                ],
+            )?;
+        }
+        tx.commit()?;
+        self.store(&record, &catalog)
     }
 
     /// In fetched.db: the game with `app_id`, unless it was looked up more

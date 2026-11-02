@@ -100,3 +100,6 @@ row-below-minimum = MİNİMUMUN ALTINDA
 row-not-compared = KARŞILAŞTIRILMADI
 game-steam-text = STEAM'İN SİSTEM GEREKSİNİMLERİ
 game-store = STEAM MAĞAZASI
+lookup-checking = Steam'e bakılıyor…
+lookup-failed = Steam'e ulaşılamadı.
+lookup-no-requirements = Steam bunun için sistem gereksinimi listelemiyor.

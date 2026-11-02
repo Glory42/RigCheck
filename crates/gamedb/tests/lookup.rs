@@ -47,8 +47,13 @@ fn a_lookup_keeps_what_games_db_already_knows() {
     fetched.store_lookup(looked_up(BG3), &games, NOW).unwrap();
 
     let game = fetched.lookup(BG3, NOW).unwrap().expect("just looked up");
-    // From Steam's store page…
-    assert_eq!(game.minimum.unwrap().ram_mb, Some(8192));
+    // From Steam's store page, matched with games.db's hardware table…
+    let minimum = game.minimum.unwrap();
+    assert_eq!(minimum.ram_mb, Some(8192));
+    let gpus: Vec<&str> = minimum.gpus.iter().map(|gpu| gpu.name.as_str()).collect();
+    // "Nvidia GTX 970 / RX 480 / Intel Arc A380 / Qualcomm Adreno X1": the
+    // table has no Adreno.
+    assert_eq!(gpus, ["GeForce GTX 970", "Radeon RX 480", "Arc A380"]);
     // …and from games.db.
     assert_eq!(game.linux.protondb, Some(ProtonTier::Platinum));
     assert!(game.crawled);
