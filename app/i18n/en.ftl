@@ -138,3 +138,7 @@ release-get = GET IT
 library-by-name = A–Z
 library-by-verdict = BY VERDICT
 library-summary = { $ready } of { $total } installed games meet the recommended specs.
+whatif-title = WHAT IF I UPGRADE?
+whatif-description = Pick a part to see which installed games would change verdict. Nothing is saved.
+whatif-hint = Pick a GPU, CPU or amount of RAM above.
+whatif-no-change = No installed game would change verdict.
