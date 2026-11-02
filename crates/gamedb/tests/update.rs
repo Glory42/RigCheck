@@ -160,3 +160,30 @@ fn an_update_killed_halfway_leaves_the_db_working_and_the_next_one_succeeds() {
     let db = install(&zst, &manifest, &dest).unwrap();
     assert!(db.game(1086940).unwrap().is_some());
 }
+
+/// Installed databases search a faster table built on install; the results
+/// must be the same.
+#[test]
+fn an_installed_db_finds_games_by_a_one_letter_prefix() {
+    let dir = TempDir::new().unwrap();
+    let (zst, manifest) = published(dir.path());
+    let db = install(&zst, &manifest, &dir.path().join("data/games.db")).unwrap();
+
+    let names: Vec<String> = db
+        .games_page("b", &rigcheck_gamedb::Filters::default(), 0, 10)
+        .unwrap()
+        .into_iter()
+        .map(|(_, name)| name)
+        .collect();
+
+    // Seed names with a word starting with "b", by name (no popularity).
+    assert_eq!(
+        names,
+        [
+            "Balatro",
+            "Baldur's Gate 3",
+            "LEGO® Batman™: The Videogame",
+            "PUBG: BATTLEGROUNDS"
+        ]
+    );
+}

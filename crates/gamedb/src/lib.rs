@@ -33,6 +33,9 @@ pub struct GameDb {
     /// The specs `temp.runnable` was filled for, if it has been (see
     /// [`Filters::runs_on`]).
     runnable_for: RefCell<Option<Specs>>,
+    /// The name search table: `games_search` (with prefix indexes, built on
+    /// install) if the file has one, else the pipeline's `games_fts`.
+    search_table: &'static str,
 }
 
 /// A game and what it needs.
@@ -265,9 +268,21 @@ impl GameDb {
     }
 
     fn with(conn: Connection) -> GameDb {
+        let prefix_indexed = conn
+            .query_row(
+                "SELECT 1 FROM sqlite_master WHERE name = 'games_search'",
+                [],
+                |_| Ok(()),
+            )
+            .is_ok();
         GameDb {
             conn,
             runnable_for: RefCell::new(None),
+            search_table: if prefix_indexed {
+                "games_search"
+            } else {
+                "games_fts"
+            },
         }
     }
 
@@ -283,6 +298,7 @@ impl GameDb {
             "INSERT INTO meta (key, value) VALUES ('source', 'seed')",
             [],
         )?;
+        db.rebuild_search()?;
         Ok(db)
     }
 
@@ -517,7 +533,7 @@ impl GameDb {
         offset: usize,
         limit: usize,
     ) -> Result<Vec<(u32, String)>, Error> {
-        let (from, values) = self.catalog_from(query, filters)?;
+        let (from, values) = self.catalog_from(query, filters, self.is_broad(query))?;
         let sql = format!(
             "SELECT g.app_id, g.name {from} ORDER BY g.popularity DESC, g.name LIMIT {limit} OFFSET {offset}"
         );
@@ -533,7 +549,18 @@ impl GameDb {
 
     /// How many games the Catalog lists for `query` and `filters`.
     pub fn games_count(&self, query: &str, filters: &Filters) -> Result<usize, Error> {
-        let (from, values) = self.catalog_from(query, filters)?;
+        // Just a search: the search table alone knows (~8 ms instead of ~40
+        // for "s" on 200k games).
+        if let (Some(terms), true) = (fts_query(query), *filters == Filters::default()) {
+            let table = self.search_table;
+            let count: i64 = self.conn.query_row(
+                &format!("SELECT count(*) FROM {table} WHERE {table} MATCH ?1"),
+                [terms],
+                |row| row.get(0),
+            )?;
+            return Ok(count as usize);
+        }
+        let (from, values) = self.catalog_from(query, filters, false)?;
         let count: i64 = self.conn.query_row(
             &format!("SELECT count(*) {from}"),
             params_from_iter(values),
@@ -542,18 +569,48 @@ impl GameDb {
         Ok(count as usize)
     }
 
+    /// Whether `query` matches so many names (every word 3 letters or
+    /// fewer: "s", "co", "the") that walking the popularity index beats
+    /// sorting the matches: ~23 ms instead of ~45 for "s". Only installed
+    /// files have that index (see `games_search`).
+    fn is_broad(&self, query: &str) -> bool {
+        self.search_table == "games_search"
+            && fts_query(query).is_some()
+            && query
+                .split_whitespace()
+                .all(|word| word.chars().count() <= 3)
+    }
+
     /// The `FROM … WHERE …` of a Catalog query, and the values for its `?`s.
-    fn catalog_from(&self, query: &str, filters: &Filters) -> Result<(String, Vec<String>), Error> {
-        let mut from = "FROM games g".to_owned();
+    /// `broad` walks the popularity index and keeps the matches, instead of
+    /// joining the matches and sorting them.
+    fn catalog_from(
+        &self,
+        query: &str,
+        filters: &Filters,
+        broad: bool,
+    ) -> Result<(String, Vec<String>), Error> {
+        let mut from = if broad {
+            "FROM games g INDEXED BY games_by_popularity".to_owned()
+        } else {
+            "FROM games g".to_owned()
+        };
         if let Some(specs) = &filters.runs_on {
             self.fill_runnable(specs)?;
             from.push_str(" JOIN temp.runnable USING (app_id)");
         }
         let mut conditions = Vec::new();
         let mut values = Vec::new();
+        let table = self.search_table;
         if let Some(terms) = fts_query(query) {
-            from.push_str(" JOIN games_fts ON games_fts.rowid = g.app_id");
-            conditions.push("games_fts MATCH ?".to_owned());
+            if broad {
+                conditions.push(format!(
+                    "g.app_id IN (SELECT rowid FROM {table} WHERE {table} MATCH ?)"
+                ));
+            } else {
+                from.push_str(&format!(" JOIN {table} ON {table}.rowid = g.app_id"));
+                conditions.push(format!("{table} MATCH ?"));
+            }
             values.push(terms);
         }
         conditions.extend(filter_conditions(filters));

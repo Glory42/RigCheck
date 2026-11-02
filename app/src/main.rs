@@ -12,6 +12,8 @@ mod library;
 mod lookup;
 mod my_hardware;
 mod overrides;
+#[cfg(test)]
+mod perf;
 mod release;
 #[cfg(test)]
 mod screenshots;
