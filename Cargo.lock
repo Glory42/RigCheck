@@ -3891,6 +3891,7 @@ dependencies = [
  "rigcheck-core",
  "rigcheck-gamedb",
  "rigcheck-hardware",
+ "rigcheck-net",
  "rigcheck-steam",
  "serde",
  "serde_json",
@@ -3918,8 +3919,10 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
+ "sha2 0.11.1",
  "tempfile",
  "toml",
+ "zstd",
 ]
 
 [[package]]

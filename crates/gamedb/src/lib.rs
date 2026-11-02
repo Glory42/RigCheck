@@ -1,7 +1,8 @@
 //! `games.db`: games, their requirements and the hardware table (ROADMAP §7.2).
 //!
-//! Until Phase 4's pipeline publishes the real database, [`GameDb::create_seed`]
-//! builds a small one from `data/seed/`, the hardware table and the corpus.
+//! The app downloads the pipeline's build ([`install`]). [`GameDb::create_seed`]
+//! builds a small one from `data/seed/`, the hardware table and the corpus,
+//! for tests.
 
 use std::path::Path;
 
@@ -12,6 +13,10 @@ use rigcheck_core::{
 use rigcheck_hardware::{Hardware, Vram};
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::Deserialize;
+
+mod update;
+
+pub use update::{Manifest, SCHEMA_VERSION, install};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
@@ -154,8 +159,8 @@ impl GameDb {
         let conn = Connection::open(path)?;
         conn.execute_batch(SCHEMA)?;
         conn.execute(
-            "INSERT INTO meta (key, value) VALUES ('schema_version', '1')",
-            [],
+            "INSERT INTO meta (key, value) VALUES ('schema_version', ?1)",
+            [SCHEMA_VERSION],
         )?;
         Ok(GameDb { conn })
     }

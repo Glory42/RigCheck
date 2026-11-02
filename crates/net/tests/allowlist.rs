@@ -9,6 +9,8 @@ fn the_app_may_only_reach_the_three_privacy_destinations() {
 
     for url in [
         "https://github.com/Glory42/rigcheck/releases/download/db-latest/manifest.json",
+        // Where github.com redirects release downloads.
+        "https://release-assets.githubusercontent.com/github-production-release-asset/1441615821/eec53fcc-5b7c-4082-aa08-4b61f6291d26",
         "https://store.steampowered.com/api/appdetails?appids=1086940",
         "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1086940/library_600x900.jpg",
     ] {

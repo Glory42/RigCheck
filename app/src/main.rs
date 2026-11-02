@@ -1,5 +1,6 @@
 //! The rigcheck desktop app: an iced UI on top of the workspace crates.
 
+mod download;
 mod game_page;
 mod i18n;
 mod library;
@@ -115,8 +116,9 @@ struct App {
     page: Page,
     /// `None` until detection finishes.
     hardware: Option<Hardware>,
-    /// `None` if games.db couldn't be opened; the Library then shows NO DATA.
+    /// `None` until games.db is downloaded; the Library then shows NO DATA.
     db: Option<GameDb>,
+    download: download::Status,
     catalog: Catalog,
     /// `None` until Steam has been scanned.
     games: Option<Vec<InstalledGame>>,
@@ -151,6 +153,8 @@ enum Message {
     AppearanceSelected(Appearance),
     /// `None` picks "System default".
     LanguageSelected(Option<Language>),
+    Download(download::Event),
+    RetryDownload,
 }
 
 impl App {
@@ -167,35 +171,63 @@ impl App {
             async move { rigcheck_steam::installed_games(&home) },
             Message::GamesFound,
         );
-        let db = open_db(&paths.data);
-        let catalog = db
-            .as_ref()
-            .and_then(|db| db.catalog().ok())
-            .unwrap_or_default();
+        let db_path = paths.data.join("games.db");
+        let db = db_path
+            .exists()
+            .then(|| GameDb::open(&db_path).ok())
+            .flatten();
+        let fetch = match db {
+            Some(_) => Task::none(),
+            None => download_db(&paths.data),
+        };
         let settings = Settings::load(&paths.config);
-        let names = |entries: &[rigcheck_core::CatalogEntry]| {
-            entries.iter().map(|entry| entry.name.clone()).collect()
-        };
-        let override_choices = overrides::Choices {
-            gpus: combo_box::State::new(names(catalog.gpus())),
-            cpus: combo_box::State::new(names(catalog.cpus())),
-        };
-        let app = App {
-            override_choices,
+        let mut app = App {
+            override_choices: overrides::Choices::default(),
             i18n: I18n::new(settings.language.unwrap_or(system_language)),
             settings,
             system_language,
             paths,
             page: Page::Library,
             hardware: None,
-            db,
-            catalog,
+            db: None,
+            download: download::Status::Running { done: 0, total: 0 },
+            catalog: Catalog::default(),
             games: None,
             records: HashMap::new(),
             covers: HashMap::new(),
             search: String::new(),
         };
-        (app, Task::batch([detect, scan]))
+        if let Some(db) = db {
+            app.use_db(db);
+        }
+        (app, Task::batch([detect, scan, fetch]))
+    }
+
+    /// Switches to `db`: its hardware table, and its records for the
+    /// installed games found so far.
+    fn use_db(&mut self, db: GameDb) {
+        self.catalog = db.catalog().unwrap_or_default();
+        let names = |entries: &[rigcheck_core::CatalogEntry]| {
+            entries.iter().map(|entry| entry.name.clone()).collect()
+        };
+        self.override_choices = overrides::Choices {
+            gpus: combo_box::State::new(names(self.catalog.gpus())),
+            cpus: combo_box::State::new(names(self.catalog.cpus())),
+        };
+        self.db = Some(db);
+        self.download = download::Status::Done;
+        self.load_records();
+    }
+
+    /// Looks up each installed game in games.db.
+    fn load_records(&mut self) {
+        let (Some(db), Some(games)) = (&self.db, &self.games) else {
+            return;
+        };
+        self.records = games
+            .iter()
+            .filter_map(|game| Some((game.app_id, db.game(game.app_id).ok()??)))
+            .collect();
     }
 
     /// What verdicts compare against: detected hardware scored with the
@@ -304,16 +336,12 @@ impl App {
             }
             Message::GamesFound(games) => {
                 for game in &games {
-                    if let Some(record) =
-                        self.db.as_ref().and_then(|db| db.game(game.app_id).ok()?)
-                    {
-                        self.records.insert(game.app_id, record);
-                    }
                     if let Some(cover) = rigcheck_steam::cover_art(&self.paths.home, game.app_id) {
                         self.covers.insert(game.app_id, cover);
                     }
                 }
                 self.games = Some(games);
+                self.load_records();
                 Task::none()
             }
             Message::Search(query) => {
@@ -329,6 +357,28 @@ impl App {
                 self.settings.cpu_override = name;
                 self.save_settings();
                 Task::none()
+            }
+            Message::Download(download::Event::Progress { done, total }) => {
+                self.download = download::Status::Running { done, total };
+                Task::none()
+            }
+            Message::Download(download::Event::Finished(result)) => {
+                let opened = result.and_then(|()| {
+                    GameDb::open(&self.paths.data.join("games.db"))
+                        .map_err(|error| download::Failure::Failed(error.to_string()))
+                });
+                match opened {
+                    Ok(db) => self.use_db(db),
+                    Err(failure) => {
+                        eprintln!("couldn't download games.db: {failure:?}");
+                        self.download = download::Status::Failed(failure);
+                    }
+                }
+                Task::none()
+            }
+            Message::RetryDownload => {
+                self.download = download::Status::Running { done: 0, total: 0 };
+                download_db(&self.paths.data)
             }
             Message::CopyHardwareReport => match &self.hardware {
                 Some(hardware) => clipboard::write(hardware.report()),
@@ -402,9 +452,16 @@ impl App {
             },
             Page::Settings => settings_page::view(&self.settings, i18n, colors),
         };
+        let mut body = column![].spacing(18);
+        if let Some(banner) = download::view(&self.download, i18n, colors) {
+            body = body.push(banner);
+        }
         column![
             self.top_bar(colors),
-            container(page).padding(18).width(Fill).height(Fill),
+            container(body.push(page))
+                .padding(18)
+                .width(Fill)
+                .height(Fill),
         ]
         .into()
     }
@@ -450,19 +507,9 @@ impl App {
     }
 }
 
-/// Opens games.db in `dir`. Until Phase 5 downloads the real database, the
-/// seed is rebuilt from the data inside the binary on every start.
-fn open_db(dir: &Path) -> Option<GameDb> {
-    let result = std::fs::create_dir_all(dir)
-        .map_err(Into::into)
-        .and_then(|()| GameDb::create_seed(&dir.join("games.db")));
-    match result {
-        Ok(db) => Some(db),
-        Err(error) => {
-            eprintln!("couldn't create games.db: {error}");
-            None
-        }
-    }
+/// Downloads games.db into `data`, reporting progress as messages.
+fn download_db(data: &Path) -> Task<Message> {
+    Task::run(download::games_db(data.join("games.db")), Message::Download)
 }
 
 /// Placeholder for pages that later phases build.
@@ -559,6 +606,9 @@ mod tests {
 
     /// An app on the AMD laptop with Cyberpunk 2077 and OMORI installed.
     fn library_app(dir: &TempDir) -> App {
+        let paths = Paths::under(dir.path());
+        std::fs::create_dir_all(&paths.data).unwrap();
+        GameDb::create_seed(&paths.data.join("games.db")).unwrap();
         let (mut app, _) = App::new(Paths::under(dir.path()), Language::English);
         let _ = app.update(Message::HardwareDetected(test_support::amd_laptop()));
         let _ = app.update(Message::GamesFound(vec![
@@ -632,6 +682,74 @@ mod tests {
 
         assert!(shows(&app, "OMORI"));
         assert!(!shows(&app, "Cyberpunk 2077"));
+    }
+
+    #[test]
+    fn a_fresh_install_downloads_the_game_database_with_progress() {
+        let dir = TempDir::new().unwrap();
+        let (mut app, _) = App::new(Paths::under(dir.path()), Language::English);
+
+        assert!(shows(&app, "Downloading the game database…"));
+        let _ = app.update(Message::Download(download::Event::Progress {
+            done: 3_200_000,
+            total: 6_400_000,
+        }));
+
+        assert!(shows(&app, "3.2 of 6.4 MB"));
+    }
+
+    #[test]
+    fn verdicts_appear_once_the_download_is_installed() {
+        let dir = TempDir::new().unwrap();
+        let paths = Paths::under(dir.path());
+        let (mut app, _) = App::new(paths.clone(), Language::English);
+        let _ = app.update(Message::HardwareDetected(test_support::amd_laptop()));
+        let _ = app.update(Message::GamesFound(vec![test_support::installed(
+            1091500,
+            "Cyberpunk 2077",
+        )]));
+        assert!(shows(&app, "NO DATA"));
+
+        // What a finished download leaves behind: games.db in the data dir.
+        std::fs::create_dir_all(&paths.data).unwrap();
+        GameDb::create_seed(&paths.data.join("games.db")).unwrap();
+        let _ = app.update(Message::Download(download::Event::Finished(Ok(()))));
+
+        assert!(shows(&app, "TOO WEAK"));
+        assert!(!shows(&app, "Downloading the game database…"));
+    }
+
+    #[test]
+    fn a_failed_download_can_be_retried() {
+        let dir = TempDir::new().unwrap();
+        let (mut app, _) = App::new(Paths::under(dir.path()), Language::English);
+
+        let _ = app.update(Message::Download(download::Event::Finished(Err(
+            download::Failure::Failed("offline".to_owned()),
+        ))));
+
+        assert!(shows(
+            &app,
+            "Couldn't download the game database. Check your connection."
+        ));
+        click(&mut app, "RETRY");
+        assert!(shows(&app, "Downloading the game database…"));
+    }
+
+    #[test]
+    fn a_database_too_new_for_this_build_asks_for_an_update() {
+        let dir = TempDir::new().unwrap();
+        let (mut app, _) = App::new(Paths::under(dir.path()), Language::English);
+
+        let _ = app.update(Message::Download(download::Event::Finished(Err(
+            download::Failure::NeedsNewerApp,
+        ))));
+
+        assert!(shows(
+            &app,
+            "The game database needs a newer rigcheck. Update the app to get it."
+        ));
+        assert!(!shows(&app, "RETRY"));
     }
 
     #[test]

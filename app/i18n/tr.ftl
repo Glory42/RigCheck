@@ -78,3 +78,9 @@ override-title = ELLE SEÇ
 override-description = Yanlış algılamayı düzelt ya da "ya şuna sahip olsaydım…" diye dene. Kararlar seçimini kullanır.
 override-placeholder = Başkasını seçmek için yaz…
 override-reset = SIFIRLA
+
+download-title = Oyun veritabanı indiriliyor…
+download-progress = { $done } / { $total } MB
+download-failed = Oyun veritabanı indirilemedi. Bağlantını kontrol et.
+download-retry = TEKRAR DENE
+download-needs-newer-app = Oyun veritabanı rigcheck'in daha yeni bir sürümünü gerektiriyor. Almak için uygulamayı güncelle.
