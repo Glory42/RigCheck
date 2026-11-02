@@ -88,3 +88,5 @@ download-retry = RETRY
 download-needs-newer-app = The game database needs a newer rigcheck. Update the app to get it.
 stamp-not-checked = NOT CHECKED YET
 why-not-checked = rigcheck hasn't read this game's store page yet.
+catalog-search = Search every Steam game
+game-back-catalog = ◀ CATALOG

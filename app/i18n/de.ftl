@@ -86,3 +86,5 @@ download-retry = ERNEUT VERSUCHEN
 download-needs-newer-app = Die Spieldatenbank braucht ein neueres rigcheck. Aktualisiere die App, um sie zu bekommen.
 stamp-not-checked = NOCH NICHT GEPRÜFT
 why-not-checked = rigcheck hat die Shopseite dieses Spiels noch nicht gelesen.
+catalog-search = Alle Steam-Spiele durchsuchen
+game-back-catalog = ◀ KATALOG

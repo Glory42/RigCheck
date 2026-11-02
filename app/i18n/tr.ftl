@@ -86,3 +86,5 @@ download-retry = TEKRAR DENE
 download-needs-newer-app = Oyun veritabanı rigcheck'in daha yeni bir sürümünü gerektiriyor. Almak için uygulamayı güncelle.
 stamp-not-checked = HENÜZ BAKILMADI
 why-not-checked = rigcheck bu oyunun mağaza sayfasını henüz okumadı.
+catalog-search = Tüm Steam oyunlarında ara
+game-back-catalog = ◀ KATALOG

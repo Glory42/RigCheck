@@ -1,9 +1,10 @@
 //! The Catalog page: every game in games.db, most popular first, searchable.
 //! The list is virtual: only the rows in view are fetched and drawn.
 
+use std::collections::HashMap;
 use std::ops::Range;
 
-use iced::widget::{button, column, container, row, scrollable, space, text};
+use iced::widget::{button, column, container, row, scrollable, space, text, text_input};
 use iced::{Element, Fill};
 use rigcheck_core::Specs;
 use rigcheck_gamedb::{Game, GameDb};
@@ -12,6 +13,10 @@ use crate::i18n::I18n;
 use crate::library::{Status, stamp, status};
 use crate::style::{BOLD, Colors};
 use crate::{Message, Page};
+
+/// The search box's and the list's widget IDs.
+pub const SEARCH: &str = "catalog-search";
+pub const LIST: &str = "catalog-list";
 
 /// Every row is this tall, so a scroll position maps straight to rows.
 pub const ROW_HEIGHT: f32 = 48.0;
@@ -43,23 +48,52 @@ impl Default for List {
 }
 
 impl List {
+    /// Fetches the rows that scrolled into view. The count stays: it
+    /// only changes with the search (and costs ~30 ms on a broad one).
     pub fn scrolled(&mut self, offset: f32, height: f32, db: &GameDb) {
         self.scroll = offset;
         self.viewport = height;
+        self.fetch_rows(db);
+    }
+
+    /// Lists `query`'s matches from the top. The caller scrolls the list
+    /// widget back up too ([`LIST`]).
+    pub fn search(&mut self, query: String, db: &GameDb) {
+        self.query = query;
+        self.scroll = 0.0;
         self.refresh(db);
     }
 
-    /// Fetches the rows now in view.
+    /// Counts the matches and fetches the rows in view, e.g. for a new games.db.
     pub fn refresh(&mut self, db: &GameDb) {
         self.total = db.games_count(&self.query).unwrap_or(0);
+        self.rows.clear();
+        self.fetch_rows(db);
+    }
+
+    fn fetch_rows(&mut self, db: &GameDb) {
         let range = visible_rows(self.scroll, self.viewport, ROW_HEIGHT, self.total);
+        if range.start == self.first && range.len() == self.rows.len() && !self.rows.is_empty() {
+            return; // Same rows as before.
+        }
         let page = db
             .games_page(&self.query, range.start, range.len())
             .unwrap_or_default();
         self.first = range.start;
+        // Scrolling a little keeps most rows: reuse them and only load the
+        // records that came into view (a full record takes ~1.5 ms).
+        let mut loaded: HashMap<u32, Game> = self
+            .rows
+            .drain(..)
+            .map(|game| (game.app_id, game))
+            .collect();
         self.rows = page
             .into_iter()
-            .filter_map(|(app_id, _)| db.game(app_id).ok().flatten())
+            .filter_map(|(app_id, _)| {
+                loaded
+                    .remove(&app_id)
+                    .or_else(|| db.game(app_id).ok().flatten())
+            })
             .collect();
     }
 }
@@ -77,7 +111,12 @@ pub fn view<'a>(
         .rows
         .iter()
         .map(|game| game_row(game, &status(Some(game), specs), i18n, colors));
-    scrollable(
+    let search_box = text_input(&i18n.t("catalog-search"), &list.query)
+        .id(SEARCH)
+        .on_input(Message::CatalogSearch)
+        .padding(10)
+        .font(BOLD);
+    let list_view = scrollable(
         column![space().height(above)]
             .extend(rows)
             .push(space().height(below))
@@ -87,8 +126,9 @@ pub fn view<'a>(
         offset: viewport.absolute_offset().y,
         height: viewport.bounds().height,
     })
-    .height(Fill)
-    .into()
+    .id(LIST)
+    .height(Fill);
+    column![search_box, list_view].spacing(16).into()
 }
 
 fn game_row<'a>(

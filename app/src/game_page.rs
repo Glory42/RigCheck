@@ -7,7 +7,6 @@ use iced::widget::{Column, button, column, container, image, row, scrollable, te
 use iced::{Center, ContentFit, Element, Fill};
 use rigcheck_core::{Blocker, Component, Level};
 use rigcheck_gamedb::{Game, Tier};
-use rigcheck_steam::InstalledGame;
 
 use crate::i18n::I18n;
 use crate::library::{Status, stamp};
@@ -23,12 +22,15 @@ pub struct Rig {
     pub api: String,
 }
 
+/// `back` is the tab the page was opened from.
+#[allow(clippy::too_many_arguments)]
 pub fn view<'a>(
-    game: &'a InstalledGame,
+    name: String,
     record: Option<&'a Game>,
     status: &Status,
     rig: &Rig,
     cover: Option<&PathBuf>,
+    back: Page,
     i18n: &I18n,
     colors: Colors,
 ) -> Element<'a, Message> {
@@ -39,10 +41,14 @@ pub fn view<'a>(
             text_color: Some(colors.line),
             ..container::Style::default().background(color)
         });
-    let back = button(text(i18n.t("game-back")).font(BOLD).size(13))
+    let back_label = match back {
+        Page::Catalog => i18n.t("game-back-catalog"),
+        _ => i18n.t("game-back"),
+    };
+    let back = button(text(back_label).font(BOLD).size(13))
         .padding([7, 12])
         .style(colors.button(false))
-        .on_press(Message::Open(Page::Library));
+        .on_press(Message::Open(back));
     let mut header = row![].spacing(18).align_y(Center);
     if let Some(cover) = cover {
         header = header.push(
@@ -54,7 +60,7 @@ pub fn view<'a>(
     }
     header = header.push(
         column![
-            text(game.name.clone()).font(BOLD).size(24),
+            text(name).font(BOLD).size(24),
             stamp,
             text(reason(status, record, i18n)),
         ]

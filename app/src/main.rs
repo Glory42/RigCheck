@@ -128,6 +128,9 @@ struct App {
     covers: HashMap<u32, PathBuf>,
     search: String,
     catalog_list: catalog::List,
+    /// The open game page's games.db record, and the tab it was opened from.
+    opened: Option<Game>,
+    opened_from: Page,
     override_choices: overrides::Choices,
 }
 
@@ -135,7 +138,7 @@ struct App {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Page {
     Library,
-    /// An installed game, by app ID.
+    /// A game, by app ID: installed, or picked in the Catalog.
     Game(u32),
     Catalog,
     MyRig,
@@ -156,6 +159,7 @@ enum Message {
     /// `None` picks "System default".
     LanguageSelected(Option<Language>),
     Download(download::Event),
+    CatalogSearch(String),
     /// The Catalog list's scroll position and height, in pixels.
     CatalogScrolled {
         offset: f32,
@@ -204,6 +208,8 @@ impl App {
             covers: HashMap::new(),
             search: String::new(),
             catalog_list: catalog::List::default(),
+            opened: None,
+            opened_from: Page::Library,
         };
         if let Some(db) = db {
             app.use_db(db);
@@ -321,6 +327,12 @@ impl App {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Open(page) => {
+                if let Page::Game(app_id) = page {
+                    if !matches!(self.page, Page::Game(_)) {
+                        self.opened_from = self.page;
+                    }
+                    self.opened = self.db.as_ref().and_then(|db| db.game(app_id).ok()?);
+                }
                 self.page = page;
                 Task::none()
             }
@@ -381,6 +393,16 @@ impl App {
                 }
                 Task::none()
             }
+            Message::CatalogSearch(query) => match &self.db {
+                Some(db) => {
+                    self.catalog_list.search(query, db);
+                    iced::widget::operation::snap_to(
+                        catalog::LIST,
+                        iced::widget::operation::RelativeOffset::START,
+                    )
+                }
+                None => Task::none(),
+            },
             Message::CatalogScrolled { offset, height } => {
                 if let Some(db) = &self.db {
                     self.catalog_list.scrolled(offset, height, db);
@@ -421,23 +443,32 @@ impl App {
                 });
                 library::view(entries, &self.search, i18n, colors)
             }
-            Page::Game(app_id) => match self
-                .games
-                .iter()
-                .flatten()
-                .find(|game| game.app_id == app_id)
-            {
-                Some(game) => game_page::view(
-                    game,
-                    self.records.get(&app_id),
-                    &self.status(app_id),
-                    &self.rig(),
-                    self.covers.get(&app_id),
-                    i18n,
-                    colors,
-                ),
-                None => coming_soon(i18n.t("tab-library"), i18n, colors),
-            },
+            Page::Game(app_id) => {
+                // Installed games that aren't in games.db have only Steam's name.
+                let installed = self
+                    .games
+                    .iter()
+                    .flatten()
+                    .find(|game| game.app_id == app_id);
+                let name = self
+                    .opened
+                    .as_ref()
+                    .map(|game| game.name.clone())
+                    .or_else(|| installed.map(|game| game.name.clone()));
+                match name {
+                    Some(name) => game_page::view(
+                        name,
+                        self.opened.as_ref(),
+                        &library::status(self.opened.as_ref(), self.specs().as_ref()),
+                        &self.rig(),
+                        self.covers.get(&app_id),
+                        self.opened_from,
+                        i18n,
+                        colors,
+                    ),
+                    None => coming_soon(i18n.t("tab-library"), i18n, colors),
+                }
+            }
             Page::Catalog => catalog::view(&self.catalog_list, self.specs().as_ref(), i18n, colors),
             Page::MyRig => match &self.hardware {
                 Some(hardware) => {
@@ -484,7 +515,7 @@ impl App {
                 .padding([7, 12])
                 .style(colors.button(
                     self.page == page
-                        || (page == Page::Library && matches!(self.page, Page::Game(_))),
+                        || (page == self.opened_from && matches!(self.page, Page::Game(_))),
                 ))
                 .on_press(Message::Open(page))
         };
@@ -819,6 +850,47 @@ mod tests {
 
         assert!(shows(&app, "Day of Defeat"));
         assert!(shows(&app, "NOT CHECKED YET"));
+    }
+
+    #[test]
+    fn searching_the_catalog_starts_its_matches_from_the_top() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+        let _ = app.update(Message::CatalogScrolled {
+            offset: row,
+            height: row,
+        });
+
+        let mut ui = iced_test::simulator(app.view());
+        ui.click(iced::widget::Id::new(catalog::SEARCH)).unwrap();
+        ui.typewrite("cyber");
+        for message in ui.into_messages() {
+            let _ = app.update(message);
+        }
+
+        assert!(shows(&app, "Cyberpunk 2077"));
+        assert!(!shows(&app, "OMORI"));
+    }
+
+    #[test]
+    fn a_catalog_game_opens_its_page_and_leads_back_to_the_catalog() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+        let _ = app.update(Message::CatalogScrolled {
+            offset: 2.0 * row,
+            height: row,
+        });
+
+        click(&mut app, "Day of Defeat");
+        assert!(shows(
+            &app,
+            "rigcheck hasn't read this game's store page yet."
+        ));
+
+        click(&mut app, "◀ CATALOG");
+        assert!(shows(&app, "Search every Steam game"));
     }
 
     #[test]
