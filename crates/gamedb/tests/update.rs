@@ -122,3 +122,41 @@ fn a_download_that_isnt_a_games_db_keeps_the_old_db() {
 
     assert!(still_old(&dest));
 }
+
+#[test]
+fn an_installed_db_knows_which_build_it_is() {
+    let dir = TempDir::new().unwrap();
+    let (zst, manifest) = published(dir.path());
+
+    let db = install(&zst, &manifest, &dir.path().join("data/games.db")).unwrap();
+
+    assert_eq!(
+        db.meta("db_version").unwrap().as_deref(),
+        Some("2026-11-01.1")
+    );
+}
+
+#[test]
+fn only_a_different_build_is_an_update() {
+    let manifest = Manifest::from_json(PUBLISHED).unwrap();
+
+    assert!(manifest.is_update_for(None));
+    assert!(manifest.is_update_for(Some("2026-10-31.1")));
+    assert!(!manifest.is_update_for(Some("2026-11-01.1")));
+}
+
+/// The app was killed mid-update: a half-downloaded file and a
+/// half-unpacked one are left next to games.db.
+#[test]
+fn an_update_killed_halfway_leaves_the_db_working_and_the_next_one_succeeds() {
+    let dir = TempDir::new().unwrap();
+    let dest = dir.path().join("data/games.db");
+    old_db(&dest);
+    std::fs::write(dest.with_extension("db.zst.part"), b"half a downl").unwrap();
+    std::fs::write(dest.with_extension("db.new"), b"half an unpa").unwrap();
+
+    assert!(still_old(&dest));
+    let (zst, manifest) = published(dir.path());
+    let db = install(&zst, &manifest, &dest).unwrap();
+    assert!(db.game(1086940).unwrap().is_some());
+}

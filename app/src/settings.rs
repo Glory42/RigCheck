@@ -18,6 +18,11 @@ pub struct Settings {
     /// Hardware-table names the user picked instead of what was detected.
     pub gpu_override: Option<String>,
     pub cpu_override: Option<String>,
+    /// Only check for a new games.db when asked, not at every start.
+    /// `default`: files saved before this existed would otherwise fail to
+    /// load, and every setting would reset.
+    #[serde(default)]
+    pub manual_updates: bool,
 }
 
 /// The app's color theme, picked under Settings > Appearance.
@@ -99,5 +104,19 @@ mod tests {
                 "{broken}"
             );
         }
+    }
+
+    /// Written by v0.5, before `manual_updates` existed.
+    #[test]
+    fn settings_from_an_older_version_keep_their_choices() {
+        let dir = TempDir::new().unwrap();
+        let old = r#"{"appearance": "ink", "language": "tr", "gpu_override": "GeForce RTX 3060", "cpu_override": null}"#;
+        fs::write(dir.path().join("settings.json"), old).unwrap();
+
+        let settings = Settings::load(dir.path());
+
+        assert_eq!(settings.appearance, Appearance::Ink);
+        assert_eq!(settings.gpu_override.as_deref(), Some("GeForce RTX 3060"));
+        assert!(!settings.manual_updates);
     }
 }
