@@ -266,6 +266,7 @@ fn game_row<'a>(
             space::horizontal(),
             stamp
         ]
+        .height(Fill)
         .align_y(iced::Center),
     )
     .height(ROW_HEIGHT)

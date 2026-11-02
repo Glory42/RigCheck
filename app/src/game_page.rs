@@ -10,7 +10,7 @@ use rigcheck_gamedb::{Game, Tier};
 
 use crate::i18n::I18n;
 use crate::library::{Status, stamp};
-use crate::style::{BOLD, Colors};
+use crate::style::{BOLD, Colors, level_color};
 use crate::{Message, Page};
 
 /// The user's machine as the page shows it.
@@ -196,6 +196,11 @@ fn requirements<'a>(
     );
     for (component, yours, pick) in rows {
         let highlight = bottleneck == Some(component);
+        // The bottleneck in its level's color (red below the minimum), not
+        // the accent, which is green in some themes and reads as "fine".
+        let level = verdict
+            .and_then(|verdict| verdict.components.iter().find(|(c, _)| *c == component))
+            .map_or(Level::Below, |(_, level)| *level);
         let line = row![
             cell(i18n.t(row_id(component)), true, 2.0),
             cell(yours, highlight, 3.0),
@@ -206,16 +211,12 @@ fn requirements<'a>(
         .width(Fill);
         table = table.push(container(line).style(move |_| {
             let background = if highlight {
-                colors.accent
+                level_color(level)
             } else {
                 colors.panel
             };
             container::Style {
-                text_color: Some(if highlight {
-                    colors.on_accent
-                } else {
-                    colors.text
-                }),
+                text_color: Some(if highlight { colors.line } else { colors.text }),
                 ..container::Style::default().background(background)
             }
         }));

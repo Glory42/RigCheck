@@ -468,7 +468,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 - [ ] Flathub submission (manifest, permissions: read-only access to Steam folders and network). The manifest is in `packaging/flatpak/`; generating `cargo-sources.json`, a local `flatpak-builder` run and the submission are left (packaging/README.md)
 - [x] Desktop integration in `packaging/`: a `.desktop` file named after the app ID (`dev.gorkemkaryol.rigcheck`), AppStream metainfo, and hicolor icons (`128`, `256`, `512` from `assets/brand/`). On Wayland, the window icon comes from this `.desktop` file. CI validates both files
 - [x] About page in the app: version, license, links, data-source credits (§9)
-- [ ] README with screenshots, privacy section and credits
+- [x] README with screenshots, privacy section and credits (screenshots rendered offscreen by `app/src/screenshots.rs`)
 
 **Done when:** a stranger can install the app from Flathub or AUR and it works.
 
