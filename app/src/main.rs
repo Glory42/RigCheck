@@ -1,6 +1,7 @@
 //! The rigcheck desktop app: an iced UI on top of the workspace crates.
 
 mod catalog;
+mod covers;
 mod download;
 mod game_page;
 mod i18n;
@@ -132,6 +133,8 @@ struct App {
     /// games.db records and cover art for the installed games.
     records: HashMap<u32, Game>,
     covers: HashMap<u32, PathBuf>,
+    /// Where covers come from: Steam's cache, or downloads.
+    art: covers::Covers,
     search: String,
     catalog_list: catalog::List,
     /// Live lookups of games games.db hasn't checked; `None` if the cache
@@ -185,6 +188,8 @@ enum Message {
     /// Steam's `appdetails` answer for an app ID, or why there's none.
     SteamLookup(u32, Result<String, String>),
     RetryLookup(u32),
+    /// A cover downloaded from Steam's CDN, or why it couldn't be.
+    CoverFetched(u32, Result<Vec<u8>, String>),
 }
 
 impl App {
@@ -212,6 +217,7 @@ impl App {
         };
         let settings = Settings::load(&paths.config);
         let fetched = open_fetched(&paths.cache);
+        let art = covers::Covers::new(paths.home.clone(), paths.cache.join("images"));
         let mut app = App {
             override_choices: overrides::Choices::default(),
             i18n: I18n::new(settings.language.unwrap_or(system_language)),
@@ -226,6 +232,7 @@ impl App {
             games: None,
             records: HashMap::new(),
             covers: HashMap::new(),
+            art,
             search: String::new(),
             catalog_list: catalog::List::default(),
             fetched,
@@ -364,6 +371,18 @@ impl App {
                 self.looked_up(app_id, answer);
                 Task::none()
             }
+            Message::CoverFetched(app_id, jpeg) => {
+                // A game without art is normal; only a failed save is worth a line.
+                if let Ok(jpeg) = jpeg {
+                    match self.art.save(app_id, &jpeg) {
+                        Ok(path) => {
+                            self.covers.insert(app_id, path);
+                        }
+                        Err(error) => eprintln!("couldn't keep the cover of {app_id}: {error}"),
+                    }
+                }
+                Task::none()
+            }
             Message::RetryLookup(app_id) => {
                 self.lookup = lookup::State::Checking(app_id);
                 self.steam.ask(app_id)
@@ -385,14 +404,10 @@ impl App {
                 Task::none()
             }
             Message::GamesFound(games) => {
-                for game in &games {
-                    if let Some(cover) = rigcheck_steam::cover_art(&self.paths.home, game.app_id) {
-                        self.covers.insert(game.app_id, cover);
-                    }
-                }
+                let downloads: Vec<_> = games.iter().map(|game| self.cover(game.app_id)).collect();
                 self.games = Some(games);
                 self.load_records();
-                Task::none()
+                Task::batch(downloads)
             }
             Message::Search(query) => {
                 self.search = query;
@@ -475,9 +490,29 @@ impl App {
         }
     }
 
-    /// Loads a game for its page: games.db, then a recent lookup in
-    /// fetched.db, else asks Steam (ROADMAP §7.1).
+    /// Opens a game's page: its cover and its record.
     fn open_game(&mut self, app_id: u32) -> Task<Message> {
+        let cover = self.cover(app_id);
+        Task::batch([cover, self.look_up(app_id)])
+    }
+
+    /// Shows `app_id`'s cover if one is on disk, else downloads it.
+    fn cover(&mut self, app_id: u32) -> Task<Message> {
+        if self.covers.contains_key(&app_id) {
+            return Task::none();
+        }
+        match self.art.path(app_id) {
+            Some(path) => {
+                self.covers.insert(app_id, path);
+                Task::none()
+            }
+            None => self.art.fetch(app_id),
+        }
+    }
+
+    /// The record for the game page: games.db, then a recent lookup in
+    /// fetched.db, else asks Steam (ROADMAP §7.1).
+    fn look_up(&mut self, app_id: u32) -> Task<Message> {
         self.opened = self.db.as_ref().and_then(|db| db.game(app_id).ok()?);
         if self.opened.as_ref().is_some_and(|game| game.crawled) {
             return Task::none();
