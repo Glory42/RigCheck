@@ -122,6 +122,14 @@ impl Covers {
         )
     }
 
+    /// Downloads and keeps `app_id`'s cover now, blocking: for the README
+    /// screenshots, which don't run iced's tasks.
+    #[cfg(test)]
+    pub fn download_now(&self, app_id: u32) -> Option<PathBuf> {
+        let jpeg = download(&self.cdn, app_id).ok()?;
+        self.save(app_id, &jpeg).ok()
+    }
+
     fn file(&self, app_id: u32) -> PathBuf {
         self.dir.join(format!("{app_id}.jpg"))
     }
