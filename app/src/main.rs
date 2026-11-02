@@ -1,5 +1,6 @@
 //! The rigcheck desktop app: an iced UI on top of the workspace crates.
 
+mod about;
 mod catalog;
 mod covers;
 mod download;
@@ -159,6 +160,7 @@ enum Page {
     Catalog,
     MyRig,
     Settings,
+    About,
 }
 
 #[derive(Debug, Clone)]
@@ -723,6 +725,7 @@ impl App {
                 }
                 None => center(text(i18n.t("detecting-hardware"))).into(),
             },
+            Page::About => about::view(i18n, colors),
             Page::Settings => settings_page::view(&self.settings, self.storage, i18n, colors),
         };
         let mut body = column![].spacing(18);
@@ -762,6 +765,7 @@ impl App {
             tab("tab-catalog", Page::Catalog),
             tab("tab-my-rig", Page::MyRig),
             tab("tab-settings", Page::Settings),
+            tab("tab-about", Page::About),
         ]
         .spacing(10)
         .align_y(iced::Center);
@@ -1509,6 +1513,59 @@ mod tests {
         ] {
             assert!(shows(&app, destination), "{destination} not listed");
         }
+    }
+
+    #[test]
+    fn the_about_page_credits_every_data_source_with_its_license() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        click(&mut app, "ABOUT");
+
+        // ROADMAP §9.
+        for line in [
+            format!("Version {}", env!("CARGO_PKG_VERSION")),
+            "rigcheck: MIT License".to_owned(),
+            "The game database: Open Database License (ODbL 1.0)".to_owned(),
+            "Steam store data: © Valve Corporation".to_owned(),
+            "ProtonDB reports: ODbL 1.0, via bdefore/protondb-data".to_owned(),
+            "AreWeAntiCheatYet: MIT, © AreWeAntiCheatYet contributors".to_owned(),
+            "Blender Open Data: CC0".to_owned(),
+            "pci.ids: BSD-3-Clause or GPL-2.0".to_owned(),
+        ] {
+            assert!(shows(&app, &line), "{line} not shown");
+        }
+    }
+
+    #[test]
+    fn the_about_page_links_to_the_code_and_the_bug_tracker() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        click(&mut app, "ABOUT");
+
+        for (button, url) in [
+            ("SOURCE CODE", "https://github.com/Glory42/rigcheck"),
+            ("REPORT A BUG", "https://github.com/Glory42/rigcheck/issues"),
+        ] {
+            let mut ui = iced_test::simulator(app.view());
+            ui.click(button).unwrap();
+            let messages: Vec<Message> = ui.into_messages().collect();
+            assert!(
+                matches!(messages.as_slice(), [Message::OpenUrl(opened)] if opened == url),
+                "{button}: {messages:?}"
+            );
+        }
+    }
+
+    /// Wayland finds the window's icon through the .desktop file named
+    /// after the app ID.
+    #[test]
+    fn the_desktop_file_is_named_after_the_app_id() {
+        let path = format!("../packaging/{APP_ID}.desktop");
+        let desktop = std::fs::read_to_string(&path).expect("packaging/<app id>.desktop");
+
+        assert!(desktop.lines().any(|line| line == format!("Icon={APP_ID}")));
+        assert!(desktop.lines().any(|line| line == "Exec=rigcheck"));
     }
 
     #[test]

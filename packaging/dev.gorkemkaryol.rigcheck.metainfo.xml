@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metadata: what software centers (GNOME Software, KDE Discover, Flathub) show. -->
+<component type="desktop-application">
+  <id>dev.gorkemkaryol.rigcheck</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>rigcheck</name>
+  <summary>Check which Steam games your PC can run on Linux</summary>
+  <developer id="io.github.glory42">
+    <name>Glory42</name>
+  </developer>
+  <description>
+    <p>
+      rigcheck compares your hardware with the system requirements of every Steam game and tells you,
+      game by game, whether your Linux PC can run it: ready, at low settings, too weak or blocked.
+    </p>
+    <p>It also shows what matters on Linux:</p>
+    <ul>
+      <li>ProtonDB ratings and native Linux builds</li>
+      <li>Anti-cheat that blocks Linux, from AreWeAntiCheatYet</li>
+      <li>Steam Deck compatibility</li>
+      <li>Which part of your PC holds a game back</li>
+    </ul>
+    <p>
+      Local-first: the game database is downloaded once and updated in the background. No accounts,
+      no telemetry; the app only talks to GitHub (the database) and Steam (games and cover art).
+    </p>
+  </description>
+  <launchable type="desktop-id">dev.gorkemkaryol.rigcheck.desktop</launchable>
+  <url type="homepage">https://github.com/Glory42/rigcheck</url>
+  <url type="bugtracker">https://github.com/Glory42/rigcheck/issues</url>
+  <url type="vcs-browser">https://github.com/Glory42/rigcheck</url>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Your Steam library with a verdict for every game</caption>
+      <image>https://raw.githubusercontent.com/Glory42/rigcheck/master/assets/screenshots/library.webp</image>
+    </screenshot>
+    <screenshot>
+      <caption>A game's requirements next to your PC</caption>
+      <image>https://raw.githubusercontent.com/Glory42/rigcheck/master/assets/screenshots/game.webp</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <categories>
+    <category>Game</category>
+  </categories>
+  <keywords>
+    <keyword>steam</keyword>
+    <keyword>proton</keyword>
+    <keyword>requirements</keyword>
+    <keyword>hardware</keyword>
+  </keywords>
+  <requires>
+    <display_length compare="ge">640</display_length>
+  </requires>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <releases>
+    <release version="0.7.0" date="2026-11-02">
+      <description>
+        <p>First packaged release: Library, Catalog of every Steam game, live lookups, background database updates.</p>
+      </description>
+    </release>
+  </releases>
+</component>

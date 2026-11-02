@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=rigcheck
+GenericName=Game Requirements Checker
+Comment=Check which Steam games your PC can run on Linux
+Exec=rigcheck
+Icon=dev.gorkemkaryol.rigcheck
+Terminal=false
+Categories=Game;
+Keywords=steam;proton;requirements;hardware;linux;gaming;
+StartupWMClass=dev.gorkemkaryol.rigcheck
