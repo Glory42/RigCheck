@@ -45,7 +45,8 @@ jobs:
 
       - run: cargo build --release --locked -p rigcheck
       - run: cargo deb -p rigcheck --no-build --output dist-deb/
-      - run: cargo generate-rpm -p app --output dist-rpm/
+      # --output is only taken as a directory if it exists.
+      - run: mkdir -p dist-rpm && cargo generate-rpm -p app --output dist-rpm/
       - name: AppImage and tarball
         run: |
           curl -sSLo appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
