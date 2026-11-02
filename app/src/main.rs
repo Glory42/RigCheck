@@ -144,6 +144,7 @@ struct App {
     /// Sizes for Settings > Storage, refreshed when they can change.
     storage: settings_page::Storage,
     search: String,
+    library_order: library::Order,
     catalog_list: catalog::List,
     /// Live lookups of games games.db hasn't checked; `None` if the cache
     /// directory can't be written.
@@ -174,6 +175,7 @@ enum Message {
     HardwareDetected(Hardware),
     GamesFound(Vec<InstalledGame>),
     Search(String),
+    LibraryOrder(library::Order),
     /// A hardware-table name, or `None` to go back to what was detected.
     OverrideGpu(Option<String>),
     OverrideCpu(Option<String>),
@@ -266,6 +268,7 @@ impl App {
             storage: settings_page::Storage::default(),
             newer_release: None,
             search: String::new(),
+            library_order: library::Order::default(),
             catalog_list: catalog::List::default(),
             fetched,
             steam: lookup::Steam::default(),
@@ -498,6 +501,10 @@ impl App {
                 self.load_records();
                 Task::batch(downloads)
             }
+            Message::LibraryOrder(order) => {
+                self.library_order = order;
+                Task::none()
+            }
             Message::Search(query) => {
                 self.search = query;
                 Task::none()
@@ -694,7 +701,7 @@ impl App {
                         })
                         .collect()
                 });
-                library::view(entries, &self.search, i18n, colors)
+                library::view(entries, &self.search, self.library_order, i18n, colors)
             }
             Page::Game(app_id) => {
                 // Installed games that aren't in games.db have only Steam's name.
@@ -1630,6 +1637,39 @@ mod tests {
             let _ = app.update(Message::LatestRelease(answer));
             assert!(!shows(&app, "GET IT"));
         }
+    }
+
+    #[test]
+    fn the_library_says_how_many_games_meet_the_recommended_specs() {
+        let dir = TempDir::new().unwrap();
+        let app = library_app(&dir);
+
+        // OMORI is READY, Cyberpunk 2077 TOO WEAK on the AMD laptop.
+        assert!(shows(
+            &app,
+            "1 of 2 installed games meet the recommended specs."
+        ));
+    }
+
+    /// Where `text` is drawn.
+    fn bounds(app: &App, text: &str) -> iced::Rectangle {
+        iced_test::simulator(app.view())
+            .find(text)
+            .unwrap()
+            .bounds()
+    }
+
+    #[test]
+    fn the_library_can_be_grouped_by_verdict() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        // A–Z by default: Cyberpunk 2077 first, on the same row as OMORI.
+        assert!(bounds(&app, "Cyberpunk 2077").x < bounds(&app, "OMORI").x);
+
+        click(&mut app, "BY VERDICT");
+
+        // READY comes before TOO WEAK.
+        assert!(bounds(&app, "OMORI").y < bounds(&app, "Cyberpunk 2077").y);
     }
 
     #[test]

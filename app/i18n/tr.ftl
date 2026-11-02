@@ -133,3 +133,6 @@ about-database-license = Oyun veritabanı: Open Database License (ODbL 1.0)
 about-credits = VERİ KAYNAKLARI
 release-out = rigcheck { $version } çıktı.
 release-get = İNDİR
+library-by-name = A–Z
+library-by-verdict = SONUCA GÖRE
+library-summary = Yüklü { $total } oyunun { $ready } tanesi önerilen gereksinimleri karşılıyor.
