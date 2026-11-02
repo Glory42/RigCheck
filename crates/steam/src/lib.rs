@@ -24,6 +24,48 @@ const INSTALL_DIRS: &[&str] = &[
     ".var/app/com.valvesoftware.Steam/.local/share/Steam", // Flatpak
 ];
 
+/// The SteamID64 of the account Steam last signed in with, from its
+/// `config/loginusers.vdf`: for looking up every game the account owns.
+pub fn account_id(home: &Path) -> Option<u64> {
+    INSTALL_DIRS.iter().find_map(|dir| {
+        let vdf = std::fs::read_to_string(home.join(dir).join("config/loginusers.vdf")).ok()?;
+        most_recent_user(&vdf)
+    })
+}
+
+/// The account marked `MostRecent`, else the one with the latest
+/// `Timestamp`. Each account is a quoted 17-digit SteamID64 line, then
+/// `"Key" "Value"` lines in braces.
+fn most_recent_user(vdf: &str) -> Option<u64> {
+    // (SteamID64, marked most recent, last sign-in)
+    let mut users: Vec<(u64, bool, u64)> = Vec::new();
+    for line in vdf.lines() {
+        let quoted: Vec<&str> = line.split('"').skip(1).step_by(2).collect();
+        match quoted.as_slice() {
+            [id] if id.len() == 17 && id.bytes().all(|b| b.is_ascii_digit()) => {
+                if let Ok(id) = id.parse() {
+                    users.push((id, false, 0));
+                }
+            }
+            [key, value] => {
+                let Some(user) = users.last_mut() else {
+                    continue;
+                };
+                if key.eq_ignore_ascii_case("MostRecent") {
+                    user.1 = *value == "1";
+                } else if key.eq_ignore_ascii_case("Timestamp") {
+                    user.2 = value.parse().unwrap_or(0);
+                }
+            }
+            _ => {}
+        }
+    }
+    users
+        .iter()
+        .max_by_key(|(_, recent, time)| (*recent, *time))
+        .map(|(id, ..)| *id)
+}
+
 /// Lists the games installed by every Steam install under `home`.
 pub fn installed_games(home: &Path) -> Vec<InstalledGame> {
     libraries(home).iter().flat_map(games_in).collect()
