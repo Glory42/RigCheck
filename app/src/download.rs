@@ -26,7 +26,16 @@ pub enum Event {
         done: u64,
         total: u64,
     },
-    Finished(Result<(), Failure>),
+    Finished(Result<Fetched, Failure>),
+}
+
+/// How a download ended well.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Fetched {
+    /// A new games.db is in place.
+    Installed,
+    /// The published games.db is the one already installed.
+    UpToDate,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,20 +51,27 @@ pub enum Failure {
 pub enum Status {
     /// games.db is there; nothing to show.
     Done,
+    /// The first download: there's no games.db yet.
     Running {
+        done: u64,
+        total: u64,
+    },
+    /// A newer games.db is downloading; the current one stays in use.
+    Updating {
         done: u64,
         total: u64,
     },
     Failed(Failure),
 }
 
-/// Downloads games.db to `dest`. The requests block, so they run on their
-/// own thread and send their progress back through the stream.
-pub fn games_db(dest: PathBuf) -> impl Stream<Item = Event> {
+/// Downloads games.db to `dest`, unless `installed` (its `db_version`) is
+/// already the published one. The requests block, so they run on their own
+/// thread and send their progress back through the stream.
+pub fn games_db(dest: PathBuf, installed: Option<String>) -> impl Stream<Item = Event> {
     iced::stream::channel(8, async move |events| {
         std::thread::spawn(move || {
             let mut events = events;
-            let result = fetch(&dest, |done, total| {
+            let result = fetch(&dest, installed.as_deref(), |done, total| {
                 let _ = block_on(events.send(Event::Progress { done, total }));
             });
             let _ = block_on(events.send(Event::Finished(result)));
@@ -63,7 +79,11 @@ pub fn games_db(dest: PathBuf) -> impl Stream<Item = Event> {
     })
 }
 
-fn fetch(dest: &Path, mut progress: impl FnMut(u64, u64)) -> Result<(), Failure> {
+fn fetch(
+    dest: &Path,
+    installed: Option<&str>,
+    mut progress: impl FnMut(u64, u64),
+) -> Result<Fetched, Failure> {
     let failed = |error: Error| Failure::Failed(error.to_string());
     // Two requests in all, so pacing barely matters; retries cover a
     // GitHub hiccup.
@@ -74,6 +94,9 @@ fn fetch(dest: &Path, mut progress: impl FnMut(u64, u64)) -> Result<(), Failure>
         Manifest::from_json(&client.get_text(MANIFEST_URL).map_err(failed)?).map_err(failed)?;
     if manifest.needs_newer_app() {
         return Err(Failure::NeedsNewerApp);
+    }
+    if !manifest.is_update_for(installed) {
+        return Ok(Fetched::UpToDate);
     }
     let part = dest.with_extension("db.zst.part");
     let result = (|| {
@@ -87,15 +110,20 @@ fn fetch(dest: &Path, mut progress: impl FnMut(u64, u64)) -> Result<(), Failure>
         install(&part, &manifest, dest)
     })();
     let _ = fs::remove_file(&part);
-    result.map(drop).map_err(failed)
+    result.map(|_| Fetched::Installed).map_err(failed)
 }
 
 /// The banner shown while games.db is missing, or `None` once it's there.
 pub fn view(status: &Status, i18n: &I18n, colors: Colors) -> Option<Element<'static, Message>> {
     let content = match *status {
         Status::Done => return None,
-        Status::Running { done, total } => column![
-            text(i18n.t("download-title")).font(BOLD),
+        Status::Running { done, total } | Status::Updating { done, total } => column![
+            text(i18n.t(if matches!(status, Status::Running { .. }) {
+                "download-title"
+            } else {
+                "download-updating"
+            }))
+            .font(BOLD),
             progress_bar(0.0..=total.max(1) as f32, done as f32).girth(10),
             text(i18n.t_with(
                 "download-progress",

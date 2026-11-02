@@ -211,11 +211,15 @@ impl App {
             .exists()
             .then(|| GameDb::open(&db_path).ok())
             .flatten();
-        let fetch = match db {
-            Some(_) => Task::none(),
-            None => download_db(&paths.data),
-        };
         let settings = Settings::load(&paths.config);
+        let fetch = match &db {
+            // A background update check (ROADMAP §7.3), unless turned off.
+            Some(db) if !settings.manual_updates => {
+                download_db(&paths.data, db.meta("db_version").ok().flatten())
+            }
+            Some(_) => Task::none(),
+            None => download_db(&paths.data, None),
+        };
         let fetched = open_fetched(&paths.cache);
         let art = covers::Covers::new(paths.home.clone(), paths.cache.join("images"));
         let mut app = App {
@@ -426,19 +430,30 @@ impl App {
                 Task::none()
             }
             Message::Download(download::Event::Progress { done, total }) => {
-                self.download = download::Status::Running { done, total };
+                self.download = match self.db {
+                    Some(_) => download::Status::Updating { done, total },
+                    None => download::Status::Running { done, total },
+                };
                 Task::none()
             }
             Message::Download(download::Event::Finished(result)) => {
-                let opened = result.and_then(|()| {
-                    GameDb::open(&self.paths.data.join("games.db"))
-                        .map_err(|error| download::Failure::Failed(error.to_string()))
+                let opened = result.and_then(|fetched| match fetched {
+                    download::Fetched::UpToDate => Ok(None),
+                    download::Fetched::Installed => GameDb::open(&self.paths.data.join("games.db"))
+                        .map(Some)
+                        .map_err(|error| download::Failure::Failed(error.to_string())),
                 });
+                self.download = download::Status::Done;
                 match opened {
-                    Ok(db) => self.use_db(db),
+                    Ok(Some(db)) => self.use_db(db),
+                    Ok(None) => {}
                     Err(failure) => {
                         eprintln!("couldn't download games.db: {failure:?}");
-                        self.download = download::Status::Failed(failure);
+                        // A failed update keeps the current games.db in use;
+                        // only say so if there's none, or the app is too old.
+                        if self.db.is_none() || failure == download::Failure::NeedsNewerApp {
+                            self.download = download::Status::Failed(failure);
+                        }
                     }
                 }
                 Task::none()
@@ -481,7 +496,7 @@ impl App {
             }
             Message::RetryDownload => {
                 self.download = download::Status::Running { done: 0, total: 0 };
-                download_db(&self.paths.data)
+                download_db(&self.paths.data, None)
             }
             Message::CopyHardwareReport => match &self.hardware {
                 Some(hardware) => clipboard::write(hardware.report()),
@@ -725,8 +740,13 @@ fn catalog_to_top() -> Task<Message> {
 }
 
 /// Downloads games.db into `data`, reporting progress as messages.
-fn download_db(data: &Path) -> Task<Message> {
-    Task::run(download::games_db(data.join("games.db")), Message::Download)
+/// Downloads games.db into `data` unless `installed` is the published
+/// build, reporting progress as messages.
+fn download_db(data: &Path, installed: Option<String>) -> Task<Message> {
+    Task::run(
+        download::games_db(data.join("games.db"), installed),
+        Message::Download,
+    )
 }
 
 /// Placeholder for pages that later phases build.
@@ -930,7 +950,9 @@ mod tests {
         // What a finished download leaves behind: games.db in the data dir.
         std::fs::create_dir_all(&paths.data).unwrap();
         GameDb::create_seed(&paths.data.join("games.db")).unwrap();
-        let _ = app.update(Message::Download(download::Event::Finished(Ok(()))));
+        let _ = app.update(Message::Download(download::Event::Finished(Ok(
+            download::Fetched::Installed,
+        ))));
 
         assert!(shows(&app, "TOO WEAK"));
         assert!(!shows(&app, "Downloading the game database…"));
@@ -1257,6 +1279,69 @@ mod tests {
 
         assert!(shows(&app, "Steam lists no system requirements for this."));
         assert!(!shows(&app, "Checking Steam…"));
+    }
+
+    #[test]
+    fn an_update_is_swapped_in_without_a_restart() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        assert!(shows(&app, "READY")); // OMORI
+        assert!(!shows(&app, "Downloading the game database…"));
+
+        let _ = app.update(Message::Download(download::Event::Progress {
+            done: 1_000_000,
+            total: 6_400_000,
+        }));
+        assert!(shows(&app, "Updating the game database…"));
+
+        // The new build rates OMORI Borked: Proton can't run it.
+        let paths = Paths::under(dir.path());
+        let new = GameDb::create_seed(&paths.data.join("games.db")).unwrap();
+        new.set_protondb(&[(1150690, Some(rigcheck_core::ProtonTier::Borked), 10)])
+            .unwrap();
+        let _ = app.update(Message::Download(download::Event::Finished(Ok(
+            download::Fetched::Installed,
+        ))));
+
+        assert!(shows(&app, "BLOCKED"));
+        assert!(!shows(&app, "Updating the game database…"));
+    }
+
+    #[test]
+    fn a_failed_update_keeps_the_current_database_quietly() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        let _ = app.update(Message::Download(download::Event::Progress {
+            done: 1_000_000,
+            total: 6_400_000,
+        }));
+
+        let _ = app.update(Message::Download(download::Event::Finished(Err(
+            download::Failure::Failed("offline".to_owned()),
+        ))));
+
+        assert!(shows(&app, "READY"));
+        assert!(!shows(
+            &app,
+            "Couldn't download the game database. Check your connection."
+        ));
+        assert!(!shows(&app, "Updating the game database…"));
+    }
+
+    #[test]
+    fn an_update_needing_a_newer_app_keeps_the_current_database() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        let _ = app.update(Message::Download(download::Event::Finished(Err(
+            download::Failure::NeedsNewerApp,
+        ))));
+
+        assert!(shows(
+            &app,
+            "The game database needs a newer rigcheck. Update the app to get it."
+        ));
+        assert!(shows(&app, "READY"));
     }
 
     #[test]

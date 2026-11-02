@@ -39,6 +39,14 @@ impl Manifest {
     pub fn needs_newer_app(&self) -> bool {
         self.schema_version > SCHEMA_VERSION
     }
+
+    /// Whether this build replaces the `installed` one (its `db_version`
+    /// meta row; `None` if there's none). Any other build counts: the
+    /// published one is the one to have, and "2026-11-01.10" sorts before
+    /// "2026-11-01.9" as text.
+    pub fn is_update_for(&self, installed: Option<&str>) -> bool {
+        installed != Some(self.db_version.as_str())
+    }
 }
 
 /// Replaces the games.db at `dest` with the downloaded `zst`, but only once
@@ -59,7 +67,8 @@ pub fn install(zst: &Path, manifest: &Manifest, dest: &Path) -> Result<GameDb, E
     let unpacked = zstd::stream::copy_decode(bytes.as_slice(), File::create(&new)?)
         .map_err(Error::from)
         .and_then(|()| check(&new, manifest))
-        .and_then(|()| add_indexes(&new));
+        .and_then(|()| add_indexes(&new))
+        .and_then(|()| GameDb::open(&new)?.set_meta("db_version", &manifest.db_version));
     if let Err(error) = unpacked {
         let _ = fs::remove_file(&new);
         return Err(error);
