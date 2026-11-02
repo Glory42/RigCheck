@@ -1,11 +1,10 @@
 //! One game from Steam's store API (`appdetails`) → a record for games.db.
 
 use rigcheck_core::{parse, requirement_text};
-use rigcheck_gamedb::GameRecord;
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::Error;
+use crate::{Error, GameRecord};
 
 /// What an `appdetails` response turned out to be.
 #[derive(Debug, Clone, PartialEq, Eq)]

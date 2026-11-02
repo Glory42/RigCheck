@@ -1,6 +1,6 @@
 # appdetails fixtures
 
-Real responses from `https://store.steampowered.com/api/appdetails?appids=<id>&l=english&cc=us`, saved once (2026-11-01) for the pipeline's ingest tests.
+Real responses from `https://store.steampowered.com/api/appdetails?appids=<id>&l=english&cc=us`, saved once (2026-11-01) for the ingest tests (crates/gamedb), which the pipeline and the app's live lookups share.
 
 | File | App | Why it's here |
 |---|---|---|

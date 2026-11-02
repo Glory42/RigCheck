@@ -16,6 +16,7 @@ use rigcheck_hardware::{Hardware, Vram};
 use rusqlite::{Connection, OptionalExtension, params, params_from_iter};
 use serde::Deserialize;
 
+pub mod ingest;
 mod update;
 
 pub use update::{Manifest, SCHEMA_VERSION, install};
