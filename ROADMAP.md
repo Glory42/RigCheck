@@ -453,9 +453,9 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 ### Phase 6: Updates & storage (v0.6)
 - [x] Updater: manifest check → download → verify → atomic swap (§7.3). At every start unless turned off (`manual_updates`); installs record their `db_version`, and any other published build counts as an update. Killed by hand at 2.5 of 6.8 MB: the old games.db kept working and the next start installed cleanly
 - [x] Schema version check and a "please update the app" message (the current games.db stays in use)
-- [ ] Settings → Storage: sizes, Check for updates, Re-download database, Clear fetched games, Clear images, image cache limit
-- [ ] Settings → Privacy: auto-update toggle and the list of network destinations (§6)
-- [ ] LRU image cache eviction
+- [x] Settings → Storage: sizes, Check for updates, Re-download database, Clear fetched games, Clear images, image cache limit (100 MB, 250 MB, 500 MB default, 1 GB)
+- [x] Settings → Privacy: auto-update toggle and the list of network destinations (§6)
+- [x] LRU image cache eviction: showing a downloaded cover marks it used; the least recently used go first, at start and after every download. Steam's own cache is never touched
 
 **Done when:** the database updates in the background with no broken states, even if you kill the app mid-download (test that).
 

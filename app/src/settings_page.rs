@@ -1,7 +1,7 @@
-//! The Settings page: Appearance and Language.
+//! The Settings page: Appearance, Language, Storage and Privacy.
 
 use iced::border::Border;
-use iced::widget::{Space, button, column, container, row, text};
+use iced::widget::{Space, button, column, container, row, scrollable, space, text};
 use iced::{Color, Element};
 
 use crate::Message;
@@ -9,7 +9,23 @@ use crate::i18n::{I18n, Language};
 use crate::settings::{Appearance, Settings};
 use crate::style::{BOLD, Colors};
 
-pub fn view(settings: &Settings, i18n: &I18n, colors: Colors) -> Element<'static, Message> {
+/// What the app keeps on disk, in bytes (ROADMAP §7.1).
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Storage {
+    pub games_db: u64,
+    pub fetched_db: u64,
+    pub images: u64,
+}
+
+/// The image cache limits to pick from, in MB.
+const IMAGE_LIMITS: [u32; 4] = [100, 250, 500, 1000];
+
+pub fn view(
+    settings: &Settings,
+    storage: Storage,
+    i18n: &I18n,
+    colors: Colors,
+) -> Element<'static, Message> {
     let appearances = Appearance::ALL.map(|appearance| {
         appearance_option(appearance, appearance == settings.appearance, i18n, colors)
     });
@@ -18,7 +34,7 @@ pub fn view(settings: &Settings, i18n: &I18n, colors: Colors) -> Element<'static
         .chain(Language::ALL.map(Some))
         .map(|language| language_option(language, settings.language == language, i18n, colors));
 
-    column![
+    let page = column![
         section(
             i18n.t("appearance-title"),
             i18n.t("appearance-description"),
@@ -31,9 +47,123 @@ pub fn view(settings: &Settings, i18n: &I18n, colors: Colors) -> Element<'static
             colors
         ),
         row(languages).spacing(18),
+        section(
+            i18n.t("storage-title"),
+            i18n.t("storage-description"),
+            colors
+        ),
+        storage_rows(settings, storage, i18n, colors),
+        section(
+            i18n.t("privacy-title"),
+            i18n.t("privacy-description"),
+            colors
+        ),
+        privacy(settings, i18n, colors),
+    ]
+    .spacing(12);
+    // Room on the right and bottom so hard shadows aren't clipped.
+    scrollable(page.padding([0, 6])).into()
+}
+
+/// Sizes and what can be done about them.
+fn storage_rows(
+    settings: &Settings,
+    storage: Storage,
+    i18n: &I18n,
+    colors: Colors,
+) -> Element<'static, Message> {
+    let action = |id: &str, message: Message| {
+        button(text(i18n.t(id)).font(BOLD).size(12))
+            .padding([6, 10])
+            .style(colors.button(false))
+            .on_press(message)
+    };
+    let line = |id: &str, bytes: u64, actions: Vec<Element<'static, Message>>| {
+        row![
+            text(i18n.t(id)).font(BOLD).width(180),
+            text(megabytes(bytes)).width(90),
+            row(actions).spacing(8),
+        ]
+        .spacing(12)
+        .align_y(iced::Center)
+    };
+    let limits = IMAGE_LIMITS.map(|mb| {
+        let label = if mb >= 1000 {
+            format!("{} GB", mb / 1000)
+        } else {
+            format!("{mb} MB")
+        };
+        let on = settings.image_cache_bytes() == u64::from(mb) * 1_000_000;
+        button(text(label).font(BOLD).size(12))
+            .padding([6, 10])
+            .style(colors.button(on))
+            .on_press(Message::ImageCacheLimit(mb))
+            .into()
+    });
+    column![
+        line(
+            "storage-games-db",
+            storage.games_db,
+            vec![
+                action("storage-check", Message::CheckForUpdates).into(),
+                action("storage-redownload", Message::Redownload).into(),
+            ],
+        ),
+        line(
+            "storage-fetched",
+            storage.fetched_db,
+            vec![action("storage-clear-fetched", Message::ClearFetched).into()],
+        ),
+        line(
+            "storage-images",
+            storage.images,
+            vec![action("storage-clear-images", Message::ClearImages).into()],
+        ),
+        row![
+            text(i18n.t("storage-image-limit")).font(BOLD).width(180),
+            space::horizontal().width(90),
+            row(limits).spacing(8),
+        ]
+        .spacing(12)
+        .align_y(iced::Center),
+    ]
+    .spacing(10)
+    .into()
+}
+
+/// The update choice and every place the app sends requests (ROADMAP §6).
+fn privacy(settings: &Settings, i18n: &I18n, colors: Colors) -> Element<'static, Message> {
+    let choice = |id: &str, manual: bool| {
+        button(
+            column![
+                text(i18n.t(id)).font(BOLD),
+                status(settings.manual_updates == manual, i18n)
+            ]
+            .spacing(8)
+            .padding(6),
+        )
+        .style(colors.button(settings.manual_updates == manual))
+        .on_press(Message::SetManualUpdates(manual))
+    };
+    let destinations = ["privacy-github", "privacy-steam-store", "privacy-steam-cdn"]
+        .map(|id| text(i18n.t(id)).into());
+    column![
+        text(i18n.t("privacy-updates")).font(BOLD),
+        row![
+            choice("privacy-automatic", false),
+            choice("privacy-manual", true)
+        ]
+        .spacing(18),
+        text(i18n.t("privacy-destinations")).font(BOLD),
+        column(destinations).spacing(4),
     ]
     .spacing(12)
     .into()
+}
+
+/// `bytes` in megabytes with one decimal, e.g. "18.3 MB".
+fn megabytes(bytes: u64) -> String {
+    format!("{:.1} MB", bytes as f64 / 1_000_000.0)
 }
 
 fn section(title: String, description: String, colors: Colors) -> Element<'static, Message> {
