@@ -58,7 +58,7 @@
 
 Local-first: no accounts, no telemetry, no servers. Everything stays on your machine.
 
-Today the app makes one kind of request: on first launch it downloads the game database from this repo's GitHub Releases. Cover art comes from Steam's own cache on disk. In all, it will only ever talk to three read-only places, listed in [ROADMAP §6](ROADMAP.md#6-privacy--network): GitHub Releases for the game database, Steam's store API for games missing from it, and Steam's image CDN. A build rule (`deny.toml`) keeps HTTP clients out of every crate except one.
+Today the app makes two kinds of request: on first launch it downloads the game database from this repo's GitHub Releases, and when you open a game the database hasn't checked yet, it asks Steam's store for that one game. Cover art comes from Steam's own cache on disk. In all, it will only ever talk to three read-only places, listed in [ROADMAP §6](ROADMAP.md#6-privacy--network): GitHub Releases for the game database, Steam's store API for games missing from it, and Steam's image CDN. A build rule (`deny.toml`) keeps HTTP clients out of every crate except one.
 
 ## Build from source
 
