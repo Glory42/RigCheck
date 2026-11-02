@@ -479,7 +479,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 - [x] Compare two games side by side (COMPARE on one game page, COMPARE WITH … on another: verdicts, each part's minimum and result, Linux facts)
 - [x] Keyboard navigation and accessibility pass: Ctrl+1…5 tabs, Ctrl+F search, Enter opens, ↑/↓/Page keys walk the Catalog, Esc goes back (listed on About); every appearance passes WCAG AA contrast (tested). Not possible yet: screen readers, since iced 0.14 has no accessibility tree (AccessKit)
 - [x] Light/dark theme following the system (SYSTEM, the default: Paper when light, Ink when dark, switching live)
-- [ ] Performance pass: cold start under 1 s, search under 50 ms on 100k games
+- [x] Performance pass: cold start under 1 s, search under 50 ms on 100k games. Measured on ~198k games (`app/src/perf.rs`, Ryzen 5 7530U): start-up work, hardware detection, Steam scan and first view 163 ms (the window and GPU setup aren't included); "s" (50k matches) 29 ms, from 88 ms. Install builds a name search with 1–3 letter prefix indexes (~6 s, +13 MB on disk); broad queries walk the popularity index; a plain search counts on the search table alone
 - [ ] Tune the parser against the `report` output until ≥ 95% of the top 5k games parse fully
 
 **Done when:** v1.0 is tagged, and a post on r/linux_gaming doesn't surface show-stopping bugs.

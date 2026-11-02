@@ -93,11 +93,19 @@ fn check(path: &Path, manifest: &Manifest) -> Result<(), Error> {
 /// - A game's required CPUs and GPUs, read for every game page and Catalog
 ///   row: without it each lookup scans the whole table (~200k rows after a
 ///   month of crawling).
+/// - `games_search`: the name search again, with indexes for 1–3 letter
+///   prefixes. Typing "s" matches ~50k names; this takes it from ~90 ms to
+///   ~40 ms. About 6 s to build, on the download's thread.
 fn add_indexes(path: &Path) -> Result<(), Error> {
     GameDb::open(path)?.conn.execute_batch(
         "CREATE INDEX IF NOT EXISTS games_by_popularity ON games (popularity DESC, name);
          CREATE INDEX IF NOT EXISTS requirement_hardware_by_game
-             ON requirement_hardware (app_id, tier, kind, position);",
+             ON requirement_hardware (app_id, tier, kind, position);
+         CREATE VIRTUAL TABLE IF NOT EXISTS games_search USING fts5(
+             name, content='games', content_rowid='app_id',
+             tokenize='unicode61 remove_diacritics 2', prefix='1 2 3'
+         );
+         INSERT INTO games_search(games_search) VALUES ('rebuild');",
     )?;
     Ok(())
 }
