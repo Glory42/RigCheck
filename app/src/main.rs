@@ -11,6 +11,7 @@ mod i18n;
 mod keys;
 mod library;
 mod lookup;
+mod motion;
 mod my_hardware;
 mod overrides;
 #[cfg(test)]
@@ -148,6 +149,11 @@ struct App {
     covers: HashMap<u32, PathBuf>,
     /// Where covers come from: Steam's cache, or downloads.
     art: covers::Covers,
+    /// When the app started (the pulse's phase) and the latest frame time.
+    started: std::time::Instant,
+    now: std::time::Instant,
+    /// When each downloaded cover arrived, for its fade-in.
+    arrived: HashMap<u32, std::time::Instant>,
     /// A newer rigcheck release's version, if one is out.
     newer_release: Option<String>,
     /// Sizes for Settings > Storage, refreshed when they can change.
@@ -236,6 +242,8 @@ enum Message {
     AppearanceSelected(Appearance),
     /// `None` picks "System default".
     LanguageSelected(Option<Language>),
+    /// A frame is drawn while something animates.
+    Frame(std::time::Instant),
     /// The system switched between light and dark (or said which it is).
     SystemTheme(iced::theme::Mode),
     Download(download::Event),
@@ -330,6 +338,9 @@ impl App {
             art,
             storage: settings_page::Storage::default(),
             newer_release: None,
+            started: std::time::Instant::now(),
+            now: std::time::Instant::now(),
+            arrived: HashMap::new(),
             search: String::new(),
             library_order: library::Order::default(),
             library_scope: library::Scope::default(),
@@ -557,10 +568,40 @@ impl App {
     /// Follows the system switching between light and dark, and listens for
     /// shortcuts (keys no widget used).
     fn subscription(&self) -> iced::Subscription<Message> {
-        iced::Subscription::batch([
+        let mut subscriptions = vec![
             iced::system::theme_changes().map(Message::SystemTheme),
             iced::keyboard::listen().filter_map(key_shortcut),
-        ])
+        ];
+        // Frames only while something moves: idle, the app doesn't redraw.
+        if self.animating() {
+            subscriptions.push(iced::window::frames().map(Message::Frame));
+        }
+        iced::Subscription::batch(subscriptions)
+    }
+
+    /// Whether a cover is loading (pulsing) or has just arrived (fading in).
+    fn animating(&self) -> bool {
+        let now = std::time::Instant::now();
+        self.art.any_loading()
+            || self
+                .arrived
+                .values()
+                .any(|at| now.saturating_duration_since(*at) < motion::FADE_IN)
+    }
+
+    /// `app_id`'s cover as drawn right now.
+    fn cover_of(&self, app_id: u32) -> library::Cover<'_> {
+        if let Some(path) = self.covers.get(&app_id) {
+            let opacity = self.arrived.get(&app_id).map_or(1.0, |at| {
+                motion::fade_in(self.now.saturating_duration_since(*at))
+            });
+            library::Cover::Ready { path, opacity }
+        } else if self.art.is_loading(app_id) {
+            let pulse = motion::pulse(self.now.saturating_duration_since(self.started));
+            library::Cover::Loading { pulse }
+        } else {
+            library::Cover::Missing
+        }
     }
 
     fn shortcut(&mut self, shortcut: keys::Shortcut) -> Task<Message> {
@@ -703,14 +744,19 @@ impl App {
             }
             Message::CoverFetched(app_id, jpeg) => {
                 // A game without art is normal; only a failed save is worth a line.
-                if let Ok(jpeg) = jpeg {
-                    match self.art.save(app_id, &jpeg) {
-                        Ok(path) => {
-                            self.covers.insert(app_id, path);
-                            self.art.evict(self.settings.image_cache_bytes());
-                        }
-                        Err(error) => eprintln!("couldn't keep the cover of {app_id}: {error}"),
-                    }
+                let saved = jpeg.ok().and_then(|jpeg| {
+                    self.art
+                        .save(app_id, &jpeg)
+                        .inspect_err(|error| {
+                            eprintln!("couldn't keep the cover of {app_id}: {error}")
+                        })
+                        .ok()
+                });
+                self.art.settled(app_id);
+                if let Some(path) = saved {
+                    self.covers.insert(app_id, path);
+                    self.arrived.insert(app_id, std::time::Instant::now());
+                    self.art.evict(self.settings.image_cache_bytes());
                 }
                 Task::none()
             }
@@ -721,6 +767,10 @@ impl App {
             Message::RetryLookup(app_id) => {
                 self.lookup = lookup::State::Checking(app_id);
                 self.steam.ask(app_id)
+            }
+            Message::Frame(now) => {
+                self.now = now;
+                Task::none()
             }
             Message::SystemTheme(mode) => {
                 self.system_mode = mode;
@@ -1072,7 +1122,7 @@ impl App {
                             app_id,
                             name,
                             status: self.status(app_id),
-                            cover: self.covers.get(&app_id),
+                            cover: self.cover_of(app_id),
                         })
                         .collect()
                 });
@@ -1106,7 +1156,7 @@ impl App {
                         self.opened.as_ref(),
                         &library::status(self.opened.as_ref(), self.specs().as_ref()),
                         &self.rig(),
-                        self.covers.get(&app_id),
+                        self.cover_of(app_id),
                         self.opened_from,
                         self.compare_pick
                             .map(|other| (other, self.game_name(other))),
@@ -1119,7 +1169,7 @@ impl App {
             Page::Catalog => catalog::view(
                 &self.catalog_list,
                 self.specs().as_ref(),
-                &self.covers,
+                &|app_id| self.cover_of(app_id),
                 i18n,
                 colors,
             ),
@@ -2492,6 +2542,25 @@ mod tests {
             &app,
             "Steam didn't accept the key. Check it in Settings, or get a new one."
         ));
+    }
+
+    #[test]
+    fn the_app_redraws_for_animations_only_while_covers_load_or_fade_in() {
+        let dir = TempDir::new().unwrap();
+        // Cyberpunk 2077 and OMORI have no art on disk: both download.
+        let mut app = library_app(&dir);
+        let loading = app.subscription().units();
+
+        let _ = app.update(Message::CoverFetched(1091500, Err("404".to_owned())));
+        let _ = app.update(Message::CoverFetched(1150690, Err("404".to_owned())));
+        let idle = app.subscription().units();
+        assert_eq!(idle, loading - 1, "no frames once nothing is loading");
+
+        // A cover that arrives fades in, then everything is still again.
+        let _ = app.update(Message::CoverFetched(1086940, Ok(b"jpeg".to_vec())));
+        assert_eq!(app.subscription().units(), loading);
+        std::thread::sleep(motion::FADE_IN + std::time::Duration::from_millis(50));
+        assert_eq!(app.subscription().units(), idle);
     }
 
     #[test]

@@ -43,6 +43,8 @@ fn screenshots() {
         height: rows,
         width: SIZE.0 - 40.0,
     });
+    // Asked for, not arrived: the tiles' skeletons pulse.
+    shoot(&mut app, &out, "catalog-loading");
     // The tiles in view with their covers, as the app downloads them.
     for app_id in app.catalog_list.visible_ids() {
         if let Some(path) = app.art.download_now(app_id) {

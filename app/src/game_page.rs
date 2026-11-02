@@ -1,15 +1,12 @@
 //! The game page: the verdict, why, and the requirements next to your PC.
 
-use std::path::PathBuf;
-
-use iced::widget::image::Handle;
-use iced::widget::{Column, button, column, container, image, row, scrollable, text};
-use iced::{Center, ContentFit, Element, Fill};
+use iced::widget::{Column, button, column, container, row, scrollable, text};
+use iced::{Center, Element, Fill};
 use rigcheck_core::{Blocker, Component, Level};
 use rigcheck_gamedb::{Game, Tier};
 
 use crate::i18n::I18n;
-use crate::library::{Status, stamp};
+use crate::library::{Cover, Status, cover_box, stamp};
 use crate::style::{BOLD, Colors, level_color};
 use crate::{Message, Page};
 
@@ -32,7 +29,7 @@ pub fn view<'a>(
     record: Option<&'a Game>,
     status: &Status,
     rig: &Rig,
-    cover: Option<&PathBuf>,
+    cover: Cover,
     back: Page,
     // The game picked to compare with, if any: its app ID and name.
     compare: Option<(u32, String)>,
@@ -74,14 +71,7 @@ pub fn view<'a>(
         .style(colors.button(false))
         .on_press(Message::Open(back));
     let mut header = row![].spacing(18).align_y(Center);
-    if let Some(cover) = cover {
-        header = header.push(
-            image(Handle::from_path(cover))
-                .width(110)
-                .height(165)
-                .content_fit(ContentFit::Cover),
-        );
-    }
+    header = header.push(cover_box(cover, 110.0, 165.0, colors));
     header = header.push(
         column![
             text(name).font(BOLD).size(24),

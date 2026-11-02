@@ -4,7 +4,6 @@
 
 use std::collections::HashMap;
 use std::ops::Range;
-use std::path::PathBuf;
 
 use iced::widget::{button, column, container, row, scrollable, space, text, text_input};
 use iced::{Element, Fill};
@@ -13,7 +12,7 @@ use rigcheck_gamedb::{Filters, Game, GameDb};
 
 use crate::Message;
 use crate::i18n::I18n;
-use crate::library::{TILE_HEIGHT, TILE_WIDTH, game_tile, status};
+use crate::library::{Cover, TILE_HEIGHT, TILE_WIDTH, game_tile, status};
 use crate::style::{BOLD, Colors};
 
 /// The search box's and the list's widget IDs.
@@ -243,7 +242,7 @@ impl List {
 pub fn view<'a>(
     list: &'a List,
     specs: Option<&Specs>,
-    covers: &HashMap<u32, PathBuf>,
+    cover: &dyn Fn(u32) -> Cover<'a>,
     i18n: &I18n,
     colors: Colors,
 ) -> Element<'a, Message> {
@@ -267,7 +266,7 @@ pub fn view<'a>(
                     game.app_id,
                     &game.name,
                     &status(Some(game), specs),
-                    covers.get(&game.app_id),
+                    cover(game.app_id),
                     list.keyboard && position == list.selected,
                     i18n,
                     colors,
