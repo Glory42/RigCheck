@@ -78,3 +78,9 @@ override-title = ÜBERSCHREIBEN
 override-description = Korrigiere eine falsche Erkennung oder probiere „was wäre, wenn …“. Die Bewertungen nutzen deine Wahl.
 override-placeholder = Tippe, um etwas anderes zu wählen …
 override-reset = ZURÜCKSETZEN
+
+download-title = Die Spieldatenbank wird heruntergeladen…
+download-progress = { $done } von { $total } MB
+download-failed = Die Spieldatenbank konnte nicht heruntergeladen werden. Prüfe deine Verbindung.
+download-retry = ERNEUT VERSUCHEN
+download-needs-newer-app = Die Spieldatenbank braucht ein neueres rigcheck. Aktualisiere die App, um sie zu bekommen.

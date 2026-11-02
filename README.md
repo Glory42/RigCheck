@@ -14,7 +14,7 @@
 </p>
 
 > [!NOTE]
-> **Early development.** The Library, game page and hardware detection work today, using a small built-in database of 22 games. The full Steam catalog arrives with the data pipeline. See the [roadmap](ROADMAP.md).
+> **Early development.** The Library, game page and hardware detection work today. On first launch the app downloads the game database, rebuilt daily from Steam (a few thousand games so far, growing each day). Searching the whole catalog comes next. See the [roadmap](ROADMAP.md).
 
 ## What it does
 
@@ -58,7 +58,7 @@
 
 Local-first: no accounts, no telemetry, no servers. Everything stays on your machine.
 
-Today the app makes **no network requests at all**. Cover art comes from Steam's own cache on disk. Later versions will talk to exactly three read-only places, listed in [ROADMAP §6](ROADMAP.md#6-privacy--network): GitHub Releases for the game database, Steam's store API for games missing from it, and Steam's image CDN. A build rule (`deny.toml`) keeps HTTP clients out of every crate except one.
+Today the app makes one kind of request: on first launch it downloads the game database from this repo's GitHub Releases. Cover art comes from Steam's own cache on disk. In all, it will only ever talk to three read-only places, listed in [ROADMAP §6](ROADMAP.md#6-privacy--network): GitHub Releases for the game database, Steam's store API for games missing from it, and Steam's image CDN. A build rule (`deny.toml`) keeps HTTP clients out of every crate except one.
 
 ## Build from source
 

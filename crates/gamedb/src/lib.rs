@@ -1,7 +1,8 @@
 //! `games.db`: games, their requirements and the hardware table (ROADMAP §7.2).
 //!
-//! Until Phase 4's pipeline publishes the real database, [`GameDb::create_seed`]
-//! builds a small one from `data/seed/`, the hardware table and the corpus.
+//! The app downloads the pipeline's build ([`install`]). [`GameDb::create_seed`]
+//! builds a small one from `data/seed/`, the hardware table and the corpus,
+//! for tests.
 
 use std::path::Path;
 

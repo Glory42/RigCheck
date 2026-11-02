@@ -12,6 +12,7 @@ pub const GPU: &str = "override-gpu";
 pub const CPU: &str = "override-cpu";
 
 /// The hardware-table names to pick from.
+#[derive(Default)]
 pub struct Choices {
     pub gpus: combo_box::State<String>,
     pub cpus: combo_box::State<String>,

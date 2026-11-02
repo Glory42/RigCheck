@@ -80,3 +80,9 @@ override-title = OVERRIDE
 override-description = Correct a detection mistake, or try "what if I had…". Verdicts use your pick.
 override-placeholder = Type to pick another…
 override-reset = RESET
+
+download-title = Downloading the game database…
+download-progress = { $done } of { $total } MB
+download-failed = Couldn't download the game database. Check your connection.
+download-retry = RETRY
+download-needs-newer-app = The game database needs a newer rigcheck. Update the app to get it.
