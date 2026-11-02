@@ -1,0 +1,41 @@
+# Flatpak manifest for Flathub. Built from source, offline: generate
+# cargo-sources.json next to this file from the release's Cargo.lock first
+# (packaging/README.md).
+id: dev.gorkemkaryol.rigcheck
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: rigcheck
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # GitHub (games.db) and Steam (lookups, cover art); ROADMAP §6.
+  - --share=network
+  # Read-only: installed games and Steam's cover cache, for native, Debian
+  # and Flatpak Steam. Libraries on other drives need an extra grant
+  # (e.g. Flatseal).
+  - --filesystem=~/.local/share/Steam:ro
+  - --filesystem=~/.steam:ro
+  - --filesystem=~/.var/app/com.valvesoftware.Steam:ro
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  env:
+    CARGO_HOME: /run/build/rigcheck/cargo
+modules:
+  - name: rigcheck
+    buildsystem: simple
+    build-commands:
+      - cargo --offline build --release --locked -p rigcheck
+      - install -Dm755 target/release/rigcheck /app/bin/rigcheck
+      - install -Dm644 packaging/dev.gorkemkaryol.rigcheck.desktop /app/share/applications/dev.gorkemkaryol.rigcheck.desktop
+      - install -Dm644 packaging/dev.gorkemkaryol.rigcheck.metainfo.xml /app/share/metainfo/dev.gorkemkaryol.rigcheck.metainfo.xml
+      - for size in 128 256 512; do install -Dm644 assets/brand/icon-$size.png /app/share/icons/hicolor/${size}x${size}/apps/dev.gorkemkaryol.rigcheck.png; done
+    sources:
+      - type: git
+        url: https://github.com/Glory42/rigcheck.git
+        tag: v0.7.0
+      - cargo-sources.json

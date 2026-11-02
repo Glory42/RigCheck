@@ -5,17 +5,19 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
+homepage = "https://github.com/Glory42/rigcheck"
+repository = "https://github.com/Glory42/rigcheck"
 
 [dependencies]
 directories = "6.0.0"
 fluent-bundle = "0.16"
 # `image` decodes the PNG window icon now and cover art later.
 iced = { version = "0.14", features = ["image"] }
-rigcheck-core = { version = "0.0.0", path = "../crates/core" }
-rigcheck-gamedb = { version = "0.0.0", path = "../crates/gamedb" }
+rigcheck-core = { version = "0.7.0", path = "../crates/core" }
+rigcheck-gamedb = { version = "0.7.0", path = "../crates/gamedb" }
 rigcheck-hardware = { path = "../crates/hardware" }
-rigcheck-net = { version = "0.0.0", path = "../crates/net" }
-rigcheck-steam = { version = "0.0.0", path = "../crates/steam" }
+rigcheck-net = { version = "0.7.0", path = "../crates/net" }
+rigcheck-steam = { version = "0.7.0", path = "../crates/steam" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 unic-langid = "0.9"
@@ -23,3 +25,32 @@ unic-langid = "0.9"
 [dev-dependencies]
 iced_test = "0.14"
 tempfile = "3.27.0"
+
+# `cargo deb` (packaging/README.md). Paths are relative to this crate;
+# target/release/rigcheck is found in the workspace target dir.
+[package.metadata.deb]
+name = "rigcheck"
+maintainer = "Glory42 <https://github.com/Glory42>"
+section = "games"
+extended-description = "Checks Steam games against your PC's hardware: ProtonDB, anti-cheat, Steam Deck status and which part holds a game back. Local-first, no telemetry."
+depends = "$auto"
+assets = [
+    ["target/release/rigcheck", "usr/bin/", "755"],
+    ["../packaging/dev.gorkemkaryol.rigcheck.desktop", "usr/share/applications/", "644"],
+    ["../packaging/dev.gorkemkaryol.rigcheck.metainfo.xml", "usr/share/metainfo/", "644"],
+    ["../assets/brand/icon-128.png", "usr/share/icons/hicolor/128x128/apps/dev.gorkemkaryol.rigcheck.png", "644"],
+    ["../assets/brand/icon-256.png", "usr/share/icons/hicolor/256x256/apps/dev.gorkemkaryol.rigcheck.png", "644"],
+    ["../assets/brand/icon-512.png", "usr/share/icons/hicolor/512x512/apps/dev.gorkemkaryol.rigcheck.png", "644"],
+]
+
+# `cargo generate-rpm`, the same files.
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/rigcheck", dest = "/usr/bin/rigcheck", mode = "755" },
+    { source = "../packaging/dev.gorkemkaryol.rigcheck.desktop", dest = "/usr/share/applications/dev.gorkemkaryol.rigcheck.desktop", mode = "644" },
+    { source = "../packaging/dev.gorkemkaryol.rigcheck.metainfo.xml", dest = "/usr/share/metainfo/dev.gorkemkaryol.rigcheck.metainfo.xml", mode = "644" },
+    { source = "../assets/brand/icon-128.png", dest = "/usr/share/icons/hicolor/128x128/apps/dev.gorkemkaryol.rigcheck.png", mode = "644" },
+    { source = "../assets/brand/icon-256.png", dest = "/usr/share/icons/hicolor/256x256/apps/dev.gorkemkaryol.rigcheck.png", mode = "644" },
+    { source = "../assets/brand/icon-512.png", dest = "/usr/share/icons/hicolor/512x512/apps/dev.gorkemkaryol.rigcheck.png", mode = "644" },
+]
+
