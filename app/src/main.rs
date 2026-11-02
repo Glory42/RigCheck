@@ -1,5 +1,6 @@
 //! The rigcheck desktop app: an iced UI on top of the workspace crates.
 
+mod catalog;
 mod download;
 mod game_page;
 mod i18n;
@@ -126,6 +127,10 @@ struct App {
     records: HashMap<u32, Game>,
     covers: HashMap<u32, PathBuf>,
     search: String,
+    catalog_list: catalog::List,
+    /// The open game page's games.db record, and the tab it was opened from.
+    opened: Option<Game>,
+    opened_from: Page,
     override_choices: overrides::Choices,
 }
 
@@ -133,7 +138,7 @@ struct App {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Page {
     Library,
-    /// An installed game, by app ID.
+    /// A game, by app ID: installed, or picked in the Catalog.
     Game(u32),
     Catalog,
     MyRig,
@@ -154,6 +159,12 @@ enum Message {
     /// `None` picks "System default".
     LanguageSelected(Option<Language>),
     Download(download::Event),
+    CatalogSearch(String),
+    /// The Catalog list's scroll position and height, in pixels.
+    CatalogScrolled {
+        offset: f32,
+        height: f32,
+    },
     RetryDownload,
 }
 
@@ -196,6 +207,9 @@ impl App {
             records: HashMap::new(),
             covers: HashMap::new(),
             search: String::new(),
+            catalog_list: catalog::List::default(),
+            opened: None,
+            opened_from: Page::Library,
         };
         if let Some(db) = db {
             app.use_db(db);
@@ -214,6 +228,7 @@ impl App {
             gpus: combo_box::State::new(names(self.catalog.gpus())),
             cpus: combo_box::State::new(names(self.catalog.cpus())),
         };
+        self.catalog_list.refresh(&db);
         self.db = Some(db);
         self.download = download::Status::Done;
         self.load_records();
@@ -302,11 +317,7 @@ impl App {
     }
 
     fn status(&self, app_id: u32) -> library::Status {
-        match (self.records.get(&app_id), self.specs()) {
-            (None, _) => library::Status::NoData,
-            (Some(_), None) => library::Status::Checking,
-            (Some(game), Some(specs)) => library::Status::Verdict(game.verdict(&specs)),
-        }
+        library::status(self.records.get(&app_id), self.specs().as_ref())
     }
 
     fn theme(&self) -> Theme {
@@ -316,6 +327,12 @@ impl App {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Open(page) => {
+                if let Page::Game(app_id) = page {
+                    if !matches!(self.page, Page::Game(_)) {
+                        self.opened_from = self.page;
+                    }
+                    self.opened = self.db.as_ref().and_then(|db| db.game(app_id).ok()?);
+                }
                 self.page = page;
                 Task::none()
             }
@@ -376,6 +393,22 @@ impl App {
                 }
                 Task::none()
             }
+            Message::CatalogSearch(query) => match &self.db {
+                Some(db) => {
+                    self.catalog_list.search(query, db);
+                    iced::widget::operation::snap_to(
+                        catalog::LIST,
+                        iced::widget::operation::RelativeOffset::START,
+                    )
+                }
+                None => Task::none(),
+            },
+            Message::CatalogScrolled { offset, height } => {
+                if let Some(db) = &self.db {
+                    self.catalog_list.scrolled(offset, height, db);
+                }
+                Task::none()
+            }
             Message::RetryDownload => {
                 self.download = download::Status::Running { done: 0, total: 0 };
                 download_db(&self.paths.data)
@@ -410,24 +443,33 @@ impl App {
                 });
                 library::view(entries, &self.search, i18n, colors)
             }
-            Page::Game(app_id) => match self
-                .games
-                .iter()
-                .flatten()
-                .find(|game| game.app_id == app_id)
-            {
-                Some(game) => game_page::view(
-                    game,
-                    self.records.get(&app_id),
-                    &self.status(app_id),
-                    &self.rig(),
-                    self.covers.get(&app_id),
-                    i18n,
-                    colors,
-                ),
-                None => coming_soon(i18n.t("tab-library"), i18n, colors),
-            },
-            Page::Catalog => coming_soon(i18n.t("tab-catalog"), i18n, colors),
+            Page::Game(app_id) => {
+                // Installed games that aren't in games.db have only Steam's name.
+                let installed = self
+                    .games
+                    .iter()
+                    .flatten()
+                    .find(|game| game.app_id == app_id);
+                let name = self
+                    .opened
+                    .as_ref()
+                    .map(|game| game.name.clone())
+                    .or_else(|| installed.map(|game| game.name.clone()));
+                match name {
+                    Some(name) => game_page::view(
+                        name,
+                        self.opened.as_ref(),
+                        &library::status(self.opened.as_ref(), self.specs().as_ref()),
+                        &self.rig(),
+                        self.covers.get(&app_id),
+                        self.opened_from,
+                        i18n,
+                        colors,
+                    ),
+                    None => coming_soon(i18n.t("tab-library"), i18n, colors),
+                }
+            }
+            Page::Catalog => catalog::view(&self.catalog_list, self.specs().as_ref(), i18n, colors),
             Page::MyRig => match &self.hardware {
                 Some(hardware) => {
                     let rig = self.rig();
@@ -473,7 +515,7 @@ impl App {
                 .padding([7, 12])
                 .style(colors.button(
                     self.page == page
-                        || (page == Page::Library && matches!(self.page, Page::Game(_))),
+                        || (page == self.opened_from && matches!(self.page, Page::Game(_))),
                 ))
                 .on_press(Message::Open(page))
         };
@@ -750,6 +792,105 @@ mod tests {
             "The game database needs a newer rigcheck. Update the app to get it."
         ));
         assert!(!shows(&app, "RETRY"));
+    }
+
+    /// The seed with popularities (Cyberpunk 2077 most popular, then OMORI),
+    /// plus a game the pipeline only knows the name of.
+    fn catalog_app(dir: &TempDir) -> App {
+        let paths = Paths::under(dir.path());
+        std::fs::create_dir_all(&paths.data).unwrap();
+        let db = GameDb::create_seed(&paths.data.join("games.db")).unwrap();
+        db.store_names(&[(30, "Day of Defeat")]).unwrap();
+        db.set_protondb(&[
+            (1091500, None, 3000),
+            (1150690, None, 2000),
+            (30, None, 1000),
+        ])
+        .unwrap();
+        db.rebuild_search().unwrap();
+        let (mut app, _) = App::new(paths, Language::English);
+        let _ = app.update(Message::HardwareDetected(test_support::amd_laptop()));
+        click(&mut app, "CATALOG");
+        app
+    }
+
+    #[test]
+    fn the_catalog_lists_games_most_popular_first_drawing_only_rows_in_view() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+
+        let _ = app.update(Message::CatalogScrolled {
+            offset: 0.0,
+            height: row,
+        });
+        assert!(shows(&app, "Cyberpunk 2077"));
+        assert!(shows(&app, "TOO WEAK"));
+        assert!(!shows(&app, "OMORI"));
+
+        let _ = app.update(Message::CatalogScrolled {
+            offset: row,
+            height: row,
+        });
+        assert!(shows(&app, "OMORI"));
+        assert!(shows(&app, "READY"));
+        assert!(!shows(&app, "Cyberpunk 2077"));
+    }
+
+    #[test]
+    fn a_game_known_only_by_name_is_marked_not_checked_yet() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+
+        let _ = app.update(Message::CatalogScrolled {
+            offset: 2.0 * row,
+            height: row,
+        });
+
+        assert!(shows(&app, "Day of Defeat"));
+        assert!(shows(&app, "NOT CHECKED YET"));
+    }
+
+    #[test]
+    fn searching_the_catalog_starts_its_matches_from_the_top() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+        let _ = app.update(Message::CatalogScrolled {
+            offset: row,
+            height: row,
+        });
+
+        let mut ui = iced_test::simulator(app.view());
+        ui.click(iced::widget::Id::new(catalog::SEARCH)).unwrap();
+        ui.typewrite("cyber");
+        for message in ui.into_messages() {
+            let _ = app.update(message);
+        }
+
+        assert!(shows(&app, "Cyberpunk 2077"));
+        assert!(!shows(&app, "OMORI"));
+    }
+
+    #[test]
+    fn a_catalog_game_opens_its_page_and_leads_back_to_the_catalog() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+        let _ = app.update(Message::CatalogScrolled {
+            offset: 2.0 * row,
+            height: row,
+        });
+
+        click(&mut app, "Day of Defeat");
+        assert!(shows(
+            &app,
+            "rigcheck hasn't read this game's store page yet."
+        ));
+
+        click(&mut app, "◀ CATALOG");
+        assert!(shows(&app, "Search every Steam game"));
     }
 
     #[test]

@@ -58,7 +58,8 @@ pub fn install(zst: &Path, manifest: &Manifest, dest: &Path) -> Result<GameDb, E
     let new = dest.with_extension("db.new");
     let unpacked = zstd::stream::copy_decode(bytes.as_slice(), File::create(&new)?)
         .map_err(Error::from)
-        .and_then(|()| check(&new, manifest));
+        .and_then(|()| check(&new, manifest))
+        .and_then(|()| index_for_browsing(&new));
     if let Err(error) = unpacked {
         let _ = fs::remove_file(&new);
         return Err(error);
@@ -73,6 +74,17 @@ fn check(path: &Path, manifest: &Manifest) -> Result<(), Error> {
     if schema != Some(manifest.schema_version.to_string()) {
         return Err("the download isn't the games.db the manifest announced".into());
     }
+    Ok(())
+}
+
+/// Lets the Catalog page through all games by popularity quickly (about
+/// 5 ms a page instead of up to a second on 200k games). Built here rather
+/// than shipped, since it would add ~5 MB to every download.
+fn index_for_browsing(path: &Path) -> Result<(), Error> {
+    GameDb::open(path)?.conn.execute(
+        "CREATE INDEX IF NOT EXISTS games_by_popularity ON games (popularity DESC, name)",
+        [],
+    )?;
     Ok(())
 }
 

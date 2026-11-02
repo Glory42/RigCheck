@@ -66,7 +66,7 @@ fn games_are_searchable_by_name_most_popular_first() {
     .unwrap();
 
     let found: Vec<u32> = db
-        .search("witcher", 10)
+        .games_page("witcher", 0, 10)
         .unwrap()
         .into_iter()
         .map(|(id, _)| id)
@@ -162,7 +162,7 @@ fn every_game_in_the_app_list_is_searchable_before_its_crawled() {
     .unwrap();
 
     let found: Vec<u32> = db
-        .search("hollow", 10)
+        .games_page("hollow", 0, 10)
         .unwrap()
         .into_iter()
         .map(|(id, _)| id)

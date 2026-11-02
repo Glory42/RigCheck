@@ -8,7 +8,8 @@ use iced::widget::{
     Space, button, center, column, container, grid, image, scrollable, text, text_input,
 };
 use iced::{ContentFit, Element, Fill};
-use rigcheck_core::{Level, Verdict};
+use rigcheck_core::{Level, Specs, Verdict};
+use rigcheck_gamedb::Game;
 use rigcheck_steam::InstalledGame;
 
 use crate::i18n::I18n;
@@ -29,7 +30,20 @@ pub enum Status {
     Checking,
     /// Not in games.db.
     NoData,
+    /// In games.db by name only: its store page hasn't been read yet.
+    NotChecked,
     Verdict(Verdict),
+}
+
+/// The status of `game` (its games.db record, if any) on a PC with `specs`
+/// (`None` until hardware detection finishes).
+pub fn status(game: Option<&Game>, specs: Option<&Specs>) -> Status {
+    match (game, specs) {
+        (None, _) => Status::NoData,
+        (Some(game), _) if !game.crawled => Status::NotChecked,
+        (Some(_), None) => Status::Checking,
+        (Some(game), Some(specs)) => Status::Verdict(game.verdict(specs)),
+    }
 }
 
 pub struct Entry<'a> {
@@ -126,6 +140,9 @@ pub fn stamp(status: &Status, i18n: &I18n) -> (String, iced::Color) {
     let level = match status {
         Status::Checking => return (i18n.t("stamp-checking"), level_color(Level::Unknown)),
         Status::NoData => return (i18n.t("stamp-no-data"), level_color(Level::Unknown)),
+        Status::NotChecked => {
+            return (i18n.t("stamp-not-checked"), level_color(Level::Unknown));
+        }
         Status::Verdict(verdict) => verdict.overall,
     };
     let id = match level {

@@ -41,6 +41,9 @@ pub struct Game {
     pub deck: Option<String>,
     /// e.g. "BattlEye"
     pub anticheat_name: Option<String>,
+    /// Whether the pipeline has read the store page yet. Most games in
+    /// games.db are only known by name until it does.
+    pub crawled: bool,
 }
 
 /// One requirement tier: Steam's text plus what was parsed and matched from it.
@@ -96,6 +99,16 @@ impl Game {
         };
         evaluate(&requirements, specs, &self.linux)
     }
+}
+
+/// `query` as an FTS5 match: each word quoted (so no FTS syntax leaks in)
+/// and matched as a prefix. `None` for a blank query.
+fn fts_query(query: &str) -> Option<String> {
+    let terms: Vec<String> = query
+        .split_whitespace()
+        .map(|word| format!("\"{}\"*", word.replace('"', "")))
+        .collect();
+    (!terms.is_empty()).then(|| terms.join(" "))
 }
 
 /// Turns detected hardware into what the matcher compares, using the
@@ -400,25 +413,51 @@ impl GameDb {
         Ok(())
     }
 
-    /// Games whose name has words starting with each word of `query`, most
-    /// popular first: "witcher" → The Witcher 3, The Witcher…
-    pub fn search(&self, query: &str, limit: usize) -> Result<Vec<(u32, String)>, Error> {
-        // Each word quoted (so no FTS syntax leaks in) and matched as a prefix.
-        let terms: Vec<String> = query
-            .split_whitespace()
-            .map(|word| format!("\"{}\"*", word.replace('"', "")))
-            .collect();
-        if terms.is_empty() {
-            return Ok(Vec::new());
-        }
-        let mut statement = self.conn.prepare(
-            "SELECT g.app_id, g.name FROM games_fts f JOIN games g ON g.app_id = f.rowid
-             WHERE games_fts MATCH ?1 ORDER BY g.popularity DESC, g.name LIMIT ?2",
-        )?;
-        let rows = statement.query_map(params![terms.join(" "), limit as i64], |row| {
-            Ok((row.get(0)?, row.get(1)?))
-        })?;
-        Ok(rows.collect::<Result<_, _>>()?)
+    /// Games `offset..offset + limit` of the Catalog, most popular first.
+    /// With a `query`, only games whose name has words starting with each of
+    /// its words: "witcher" → The Witcher 3, The Witcher…
+    pub fn games_page(
+        &self,
+        query: &str,
+        offset: usize,
+        limit: usize,
+    ) -> Result<Vec<(u32, String)>, Error> {
+        let game = |row: &rusqlite::Row| Ok((row.get(0)?, row.get(1)?));
+        let page = match fts_query(query) {
+            None => self
+                .conn
+                .prepare(
+                    "SELECT app_id, name FROM games
+                     ORDER BY popularity DESC, name LIMIT ?1 OFFSET ?2",
+                )?
+                .query_map(params![limit as i64, offset as i64], game)?
+                .collect::<Result<_, _>>()?,
+            Some(terms) => self
+                .conn
+                .prepare(
+                    "SELECT g.app_id, g.name FROM games_fts f JOIN games g ON g.app_id = f.rowid
+                     WHERE games_fts MATCH ?3
+                     ORDER BY g.popularity DESC, g.name LIMIT ?1 OFFSET ?2",
+                )?
+                .query_map(params![limit as i64, offset as i64, terms], game)?
+                .collect::<Result<_, _>>()?,
+        };
+        Ok(page)
+    }
+
+    /// How many games the Catalog lists for `query`.
+    pub fn games_count(&self, query: &str) -> Result<usize, Error> {
+        let count: i64 = match fts_query(query) {
+            None => self
+                .conn
+                .query_row("SELECT count(*) FROM games", [], |row| row.get(0))?,
+            Some(terms) => self.conn.query_row(
+                "SELECT count(*) FROM games_fts WHERE games_fts MATCH ?1",
+                [terms],
+                |row| row.get(0),
+            )?,
+        };
+        Ok(count as usize)
     }
 
     /// When each app was last fetched.
@@ -435,7 +474,8 @@ impl GameDb {
         let row = self
             .conn
             .query_row(
-                "SELECT name, linux_native, protondb_tier, deck_status, anticheat_status, anticheat_name
+                "SELECT name, linux_native, protondb_tier, deck_status, anticheat_status, anticheat_name,
+                        requirements_status != 'not_crawled'
                  FROM games WHERE app_id = ?1",
                 [app_id],
                 |row| {
@@ -446,11 +486,12 @@ impl GameDb {
                         row.get::<_, Option<String>>(3)?,
                         row.get::<_, Option<String>>(4)?,
                         row.get::<_, Option<String>>(5)?,
+                        row.get::<_, bool>(6)?,
                     ))
                 },
             )
             .optional()?;
-        let Some((name, native, protondb, deck, anticheat, anticheat_name)) = row else {
+        let Some((name, native, protondb, deck, anticheat, anticheat_name, crawled)) = row else {
             return Ok(None);
         };
         Ok(Some(Game {
@@ -465,6 +506,7 @@ impl GameDb {
             },
             deck,
             anticheat_name,
+            crawled,
         }))
     }
 
