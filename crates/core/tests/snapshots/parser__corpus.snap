@@ -4,22 +4,34 @@ expression: parsed
 ---
 {
     "0000010 Counter-Strike (minimum)": ParsedTier {
-        cpu: None,
-        gpu: None,
+        cpu: Some(
+            "500 mhz processor",
+        ),
+        gpu: Some(
+            "16mb video card",
+        ),
         ram_mb: Some(
             96,
         ),
-        vram_mb: None,
+        vram_mb: Some(
+            16,
+        ),
         storage_mb: None,
         directx: None,
     },
     "0000070 Half-Life (minimum)": ParsedTier {
-        cpu: None,
-        gpu: None,
+        cpu: Some(
+            "500 mhz processor",
+        ),
+        gpu: Some(
+            "16mb video card",
+        ),
         ram_mb: Some(
             96,
         ),
-        vram_mb: None,
+        vram_mb: Some(
+            16,
+        ),
         storage_mb: None,
         directx: None,
     },
@@ -40,8 +52,12 @@ expression: parsed
         directx: None,
     },
     "0000240 Counter-Strike: Source (minimum)": ParsedTier {
-        cpu: None,
-        gpu: None,
+        cpu: Some(
+            "1.7 GHz Processor",
+        ),
+        gpu: Some(
+            "DirectX® 8.1 level Graphics Card (Requires support for SSE)",
+        ),
         ram_mb: Some(
             512,
         ),
@@ -50,8 +66,12 @@ expression: parsed
         directx: None,
     },
     "0000400 Portal (minimum)": ParsedTier {
-        cpu: None,
-        gpu: None,
+        cpu: Some(
+            "1.7 GHz Processor",
+        ),
+        gpu: Some(
+            "DirectX® 8.1 level Graphics Card (Requires support for SSE)",
+        ),
         ram_mb: Some(
             512,
         ),
@@ -259,6 +279,54 @@ expression: parsed
             12,
         ),
     },
+    "0002310 Quake (minimum)": ParsedTier {
+        cpu: Some(
+            "Intel Core i5-3570 @3.4 GHz or AMD Ryzen 3 1300X @3.5 GHz",
+        ),
+        gpu: Some(
+            "NVIDIA GeForce GTX 650 TI (2GB) or AMD HD 7750 (1GB)",
+        ),
+        ram_mb: Some(
+            8192,
+        ),
+        vram_mb: Some(
+            1024,
+        ),
+        storage_mb: None,
+        directx: None,
+    },
+    "0002310 Quake (recommended)": ParsedTier {
+        cpu: Some(
+            "Intel Core i5-6600k @3.5 GHz or AMD Ryzen 5 1600 @3.2 GHz",
+        ),
+        gpu: Some(
+            "NVIDIA GeForce GTX 1070 (8GB) or AMD RX Vega 56 (8GB)",
+        ),
+        ram_mb: Some(
+            8192,
+        ),
+        vram_mb: Some(
+            8192,
+        ),
+        storage_mb: None,
+        directx: None,
+    },
+    "0002990 FlatOut 2 (minimum)": ParsedTier {
+        cpu: Some(
+            "2.0 GHz Pentium® 4 or AMD® 2000+ processor",
+        ),
+        gpu: Some(
+            "64 MB video card",
+        ),
+        ram_mb: Some(
+            256,
+        ),
+        vram_mb: Some(
+            64,
+        ),
+        storage_mb: None,
+        directx: None,
+    },
     "0003590 Plants vs. Zombies GOTY Edition (minimum)": ParsedTier {
         cpu: Some(
             "1.2GHz+ processor",
@@ -320,12 +388,18 @@ expression: parsed
         ),
     },
     "0004700 Total War: MEDIEVAL II – Definitive Edition (minimum)": ParsedTier {
-        cpu: None,
-        gpu: None,
+        cpu: Some(
+            "Celeron 1.5GHz Pentium 4® (1500MHz) or equivalent AMD® processor",
+        ),
+        gpu: Some(
+            "128MB Hardware Accelerated video card with Shader 1 support and the latest drivers. Must be 100% DirectX® 9.0c compatible",
+        ),
         ram_mb: Some(
             512,
         ),
-        vram_mb: None,
+        vram_mb: Some(
+            128,
+        ),
         storage_mb: None,
         directx: None,
     },
@@ -368,6 +442,24 @@ expression: parsed
         directx: Some(
             11,
         ),
+    },
+    "0010090 Call of Duty: World at War (minimum)": ParsedTier {
+        cpu: Some(
+            "Pentium 4 @ 3 GHz/AMD 64 3200+",
+        ),
+        gpu: Some(
+            "256 MB (nVidia GeForce 6600/ATI Radeon X1600)",
+        ),
+        ram_mb: Some(
+            512,
+        ),
+        vram_mb: Some(
+            256,
+        ),
+        storage_mb: Some(
+            8192,
+        ),
+        directx: None,
     },
     "0012100 Grand Theft Auto III (minimum)": ParsedTier {
         cpu: Some(
@@ -454,6 +546,36 @@ expression: parsed
         vram_mb: Some(
             128,
         ),
+        storage_mb: None,
+        directx: None,
+    },
+    "0021130 LEGO® Harry Potter: Years 1-4 (minimum)": ParsedTier {
+        cpu: Some(
+            "Intel P4 1.8 GHz/AMD Athlon XP 2200+",
+        ),
+        gpu: Some(
+            "ATI X1300/NVIDIA GeForce FX 5800 (256 MB RAM)",
+        ),
+        ram_mb: Some(
+            512,
+        ),
+        vram_mb: Some(
+            256,
+        ),
+        storage_mb: None,
+        directx: None,
+    },
+    "0021130 LEGO® Harry Potter: Years 1-4 (recommended)": ParsedTier {
+        cpu: Some(
+            "Intel Core 2 Duo/AMD Athlon 64, 2.8GHz",
+        ),
+        gpu: Some(
+            "ATI HD 2900/NVIDIA GeForce 8800",
+        ),
+        ram_mb: Some(
+            2048,
+        ),
+        vram_mb: None,
         storage_mb: None,
         directx: None,
     },
@@ -599,6 +721,76 @@ expression: parsed
         ),
         directx: Some(
             9,
+        ),
+    },
+    "0200210 Realm of the Mad God Exalt (minimum)": ParsedTier {
+        cpu: Some(
+            "Intel Core i5-3330 or AMD A10 5700",
+        ),
+        gpu: Some(
+            "NVIDIA GeForce GTX 650 / AMD Radeon HD 7750 (1GB VRAM)",
+        ),
+        ram_mb: Some(
+            8192,
+        ),
+        vram_mb: Some(
+            1024,
+        ),
+        storage_mb: Some(
+            350,
+        ),
+        directx: None,
+    },
+    "0200210 Realm of the Mad God Exalt (recommended)": ParsedTier {
+        cpu: Some(
+            "Intel Core i7-9700 or AMD Ryzen 5 3600",
+        ),
+        gpu: Some(
+            "NVIDIA GeForce GTX 1060 / AMD Radeon RX 580 (6GB VRAM)",
+        ),
+        ram_mb: Some(
+            16384,
+        ),
+        vram_mb: Some(
+            6144,
+        ),
+        storage_mb: Some(
+            350,
+        ),
+        directx: None,
+    },
+    "0209160 Call of Duty®: Ghosts (minimum)": ParsedTier {
+        cpu: Some(
+            "Intel® Core™ 2 Duo E8200 2.66 GHZ / AMD Phenom™ X3 8750 2.4 GHZ or better",
+        ),
+        gpu: Some(
+            "NVIDIA® GeForce™ GTS 450 / ATI® Radeon™ HD 5870 or better",
+        ),
+        ram_mb: Some(
+            6144,
+        ),
+        vram_mb: None,
+        storage_mb: None,
+        directx: Some(
+            11,
+        ),
+    },
+    "0209160 Call of Duty®: Ghosts (recommended)": ParsedTier {
+        cpu: Some(
+            "Intel® Core™ i5 – 680 @ 3.6GHz",
+        ),
+        gpu: Some(
+            "NVIDIA® GeForce™ GTX 760 @ 4GB",
+        ),
+        ram_mb: Some(
+            8192,
+        ),
+        vram_mb: Some(
+            4096,
+        ),
+        storage_mb: None,
+        directx: Some(
+            11,
         ),
     },
     "0218620 PAYDAY 2 (minimum)": ParsedTier {
@@ -1238,6 +1430,42 @@ expression: parsed
             1024,
         ),
         directx: None,
+    },
+    "0315210 Suicide Squad: Kill the Justice League (minimum)": ParsedTier {
+        cpu: Some(
+            "Intel i5-8400 or AMD Ryzen 5 1600 3.20 GHz",
+        ),
+        gpu: Some(
+            "NVIDIA GTX 1070 or AMD Radeon RX Vega 56",
+        ),
+        ram_mb: Some(
+            16384,
+        ),
+        vram_mb: None,
+        storage_mb: Some(
+            66560,
+        ),
+        directx: Some(
+            12,
+        ),
+    },
+    "0315210 Suicide Squad: Kill the Justice League (recommended)": ParsedTier {
+        cpu: Some(
+            "Intel i7-10700K or AMD Ryzen 7 5800 X3D",
+        ),
+        gpu: Some(
+            "NVIDIA RTX 2080 or AMD RX 6800-XT (16GiB)",
+        ),
+        ram_mb: Some(
+            16384,
+        ),
+        vram_mb: None,
+        storage_mb: Some(
+            66560,
+        ),
+        directx: Some(
+            12,
+        ),
     },
     "0322330 Don't Starve Together (minimum)": ParsedTier {
         cpu: Some(
@@ -3794,6 +4022,22 @@ expression: parsed
         directx: Some(
             11,
         ),
+    },
+    "1422450 Deadlock (minimum)": ParsedTier {
+        cpu: None,
+        gpu: None,
+        ram_mb: None,
+        vram_mb: None,
+        storage_mb: None,
+        directx: None,
+    },
+    "1422450 Deadlock (recommended)": ParsedTier {
+        cpu: None,
+        gpu: None,
+        ram_mb: None,
+        vram_mb: None,
+        storage_mb: None,
+        directx: None,
     },
     "1426210 It Takes Two (minimum)": ParsedTier {
         cpu: Some(
