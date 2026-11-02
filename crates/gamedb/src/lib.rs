@@ -41,6 +41,9 @@ pub struct Game {
     pub deck: Option<String>,
     /// e.g. "BattlEye"
     pub anticheat_name: Option<String>,
+    /// Whether the pipeline has read the store page yet. Most games in
+    /// games.db are only known by name until it does.
+    pub crawled: bool,
 }
 
 /// One requirement tier: Steam's text plus what was parsed and matched from it.
@@ -471,7 +474,8 @@ impl GameDb {
         let row = self
             .conn
             .query_row(
-                "SELECT name, linux_native, protondb_tier, deck_status, anticheat_status, anticheat_name
+                "SELECT name, linux_native, protondb_tier, deck_status, anticheat_status, anticheat_name,
+                        requirements_status != 'not_crawled'
                  FROM games WHERE app_id = ?1",
                 [app_id],
                 |row| {
@@ -482,11 +486,12 @@ impl GameDb {
                         row.get::<_, Option<String>>(3)?,
                         row.get::<_, Option<String>>(4)?,
                         row.get::<_, Option<String>>(5)?,
+                        row.get::<_, bool>(6)?,
                     ))
                 },
             )
             .optional()?;
-        let Some((name, native, protondb, deck, anticheat, anticheat_name)) = row else {
+        let Some((name, native, protondb, deck, anticheat, anticheat_name, crawled)) = row else {
             return Ok(None);
         };
         Ok(Some(Game {
@@ -501,6 +506,7 @@ impl GameDb {
             },
             deck,
             anticheat_name,
+            crawled,
         }))
     }
 

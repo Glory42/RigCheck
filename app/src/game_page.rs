@@ -74,6 +74,7 @@ fn reason(status: &Status, record: Option<&Game>, i18n: &I18n) -> String {
     let verdict = match status {
         Status::Verdict(verdict) => verdict,
         Status::NoData => return i18n.t("why-no-data"),
+        Status::NotChecked => return i18n.t("why-not-checked"),
         Status::Checking => return i18n.t("detecting-hardware"),
     };
     let part = |component| i18n.t(part_id(component));

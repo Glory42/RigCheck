@@ -1,5 +1,6 @@
 //! The rigcheck desktop app: an iced UI on top of the workspace crates.
 
+mod catalog;
 mod download;
 mod game_page;
 mod i18n;
@@ -126,6 +127,7 @@ struct App {
     records: HashMap<u32, Game>,
     covers: HashMap<u32, PathBuf>,
     search: String,
+    catalog_list: catalog::List,
     override_choices: overrides::Choices,
 }
 
@@ -154,6 +156,11 @@ enum Message {
     /// `None` picks "System default".
     LanguageSelected(Option<Language>),
     Download(download::Event),
+    /// The Catalog list's scroll position and height, in pixels.
+    CatalogScrolled {
+        offset: f32,
+        height: f32,
+    },
     RetryDownload,
 }
 
@@ -196,6 +203,7 @@ impl App {
             records: HashMap::new(),
             covers: HashMap::new(),
             search: String::new(),
+            catalog_list: catalog::List::default(),
         };
         if let Some(db) = db {
             app.use_db(db);
@@ -214,6 +222,7 @@ impl App {
             gpus: combo_box::State::new(names(self.catalog.gpus())),
             cpus: combo_box::State::new(names(self.catalog.cpus())),
         };
+        self.catalog_list.refresh(&db);
         self.db = Some(db);
         self.download = download::Status::Done;
         self.load_records();
@@ -302,11 +311,7 @@ impl App {
     }
 
     fn status(&self, app_id: u32) -> library::Status {
-        match (self.records.get(&app_id), self.specs()) {
-            (None, _) => library::Status::NoData,
-            (Some(_), None) => library::Status::Checking,
-            (Some(game), Some(specs)) => library::Status::Verdict(game.verdict(&specs)),
-        }
+        library::status(self.records.get(&app_id), self.specs().as_ref())
     }
 
     fn theme(&self) -> Theme {
@@ -376,6 +381,12 @@ impl App {
                 }
                 Task::none()
             }
+            Message::CatalogScrolled { offset, height } => {
+                if let Some(db) = &self.db {
+                    self.catalog_list.scrolled(offset, height, db);
+                }
+                Task::none()
+            }
             Message::RetryDownload => {
                 self.download = download::Status::Running { done: 0, total: 0 };
                 download_db(&self.paths.data)
@@ -427,7 +438,7 @@ impl App {
                 ),
                 None => coming_soon(i18n.t("tab-library"), i18n, colors),
             },
-            Page::Catalog => coming_soon(i18n.t("tab-catalog"), i18n, colors),
+            Page::Catalog => catalog::view(&self.catalog_list, self.specs().as_ref(), i18n, colors),
             Page::MyRig => match &self.hardware {
                 Some(hardware) => {
                     let rig = self.rig();
@@ -750,6 +761,64 @@ mod tests {
             "The game database needs a newer rigcheck. Update the app to get it."
         ));
         assert!(!shows(&app, "RETRY"));
+    }
+
+    /// The seed with popularities (Cyberpunk 2077 most popular, then OMORI),
+    /// plus a game the pipeline only knows the name of.
+    fn catalog_app(dir: &TempDir) -> App {
+        let paths = Paths::under(dir.path());
+        std::fs::create_dir_all(&paths.data).unwrap();
+        let db = GameDb::create_seed(&paths.data.join("games.db")).unwrap();
+        db.store_names(&[(30, "Day of Defeat")]).unwrap();
+        db.set_protondb(&[
+            (1091500, None, 3000),
+            (1150690, None, 2000),
+            (30, None, 1000),
+        ])
+        .unwrap();
+        db.rebuild_search().unwrap();
+        let (mut app, _) = App::new(paths, Language::English);
+        let _ = app.update(Message::HardwareDetected(test_support::amd_laptop()));
+        click(&mut app, "CATALOG");
+        app
+    }
+
+    #[test]
+    fn the_catalog_lists_games_most_popular_first_drawing_only_rows_in_view() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+
+        let _ = app.update(Message::CatalogScrolled {
+            offset: 0.0,
+            height: row,
+        });
+        assert!(shows(&app, "Cyberpunk 2077"));
+        assert!(shows(&app, "TOO WEAK"));
+        assert!(!shows(&app, "OMORI"));
+
+        let _ = app.update(Message::CatalogScrolled {
+            offset: row,
+            height: row,
+        });
+        assert!(shows(&app, "OMORI"));
+        assert!(shows(&app, "READY"));
+        assert!(!shows(&app, "Cyberpunk 2077"));
+    }
+
+    #[test]
+    fn a_game_known_only_by_name_is_marked_not_checked_yet() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+
+        let _ = app.update(Message::CatalogScrolled {
+            offset: 2.0 * row,
+            height: row,
+        });
+
+        assert!(shows(&app, "Day of Defeat"));
+        assert!(shows(&app, "NOT CHECKED YET"));
     }
 
     #[test]
