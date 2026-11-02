@@ -44,18 +44,36 @@ pub fn parse(html: &str) -> ParsedTier {
 
 /// `("label", "value")` for each `Label: value` line, labels lowercased.
 fn fields(html: &str) -> Vec<(String, String)> {
+    plain_lines(html)
+        .into_iter()
+        .filter_map(|line| {
+            let (label, value) = line.split_once(':')?;
+            Some((label.trim().to_lowercase(), value.trim().to_owned()))
+        })
+        .collect()
+}
+
+/// Steam's requirement HTML as plain text, one line per item, the way the
+/// store page reads: what the game page shows next to the parsed values.
+pub fn requirement_text(html: &str) -> String {
+    plain_lines(html).join("\n")
+}
+
+/// The HTML's lines with tags removed and entities decoded, blank ones dropped.
+fn plain_lines(html: &str) -> Vec<String> {
     static TAG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<[^>]*>").unwrap());
     static BREAK: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r"(?i)<(br|li|/li|p|/p)\b[^>]*>").unwrap());
 
-    let lines = BREAK.replace_all(html, "\n");
-    lines
+    BREAK
+        .replace_all(html, "\n")
         .lines()
-        .filter_map(|line| {
-            let text = decode_entities(&TAG.replace_all(line, ""));
-            let (label, value) = text.split_once(':')?;
-            Some((label.trim().to_lowercase(), value.trim().to_owned()))
+        .map(|line| {
+            decode_entities(&TAG.replace_all(line, ""))
+                .trim()
+                .to_owned()
         })
+        .filter(|line| !line.is_empty())
         .collect()
 }
 

@@ -6,7 +6,8 @@
 
 use std::collections::HashMap;
 
-use rigcheck_gamedb::GameDb;
+use rigcheck_core::{Catalog, ParsedTier};
+use rigcheck_gamedb::{GameDb, GameRecord};
 use rigcheck_pipeline::applist::App;
 use rigcheck_pipeline::crawl::plan;
 use tempfile::TempDir;
@@ -81,4 +82,38 @@ fn each_run_continues_where_the_last_one_stopped() {
     }
 
     assert_eq!(runs, [vec![4, 1], vec![2, 5], vec![3], vec![]]);
+}
+
+#[test]
+fn a_game_stored_without_its_requirement_text_is_fetched_again() {
+    let dir = TempDir::new().unwrap();
+    let db = GameDb::create(&dir.path().join("games.db")).unwrap();
+    let tier = || {
+        Some(ParsedTier {
+            ram_mb: Some(2048),
+            ..ParsedTier::default()
+        })
+    };
+    // Crawled before the text was kept.
+    let old = GameRecord {
+        app_id: 1,
+        name: "Old".to_owned(),
+        minimum: tier(),
+        ..GameRecord::default()
+    };
+    let new = GameRecord {
+        app_id: 2,
+        name: "New".to_owned(),
+        minimum: tier(),
+        minimum_text: Some("Memory: 2 GB RAM".to_owned()),
+        ..GameRecord::default()
+    };
+    for record in [&old, &new] {
+        db.store(record, &Catalog::default()).unwrap();
+        db.record_fetch(record.app_id, 600).unwrap(); // after the last change
+    }
+
+    let next = plan(&[app(1, 100), app(2, 100)], &db, &HashMap::new(), 10).unwrap();
+
+    assert_eq!(next, [1]);
 }

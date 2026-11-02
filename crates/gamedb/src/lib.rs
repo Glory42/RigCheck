@@ -10,7 +10,7 @@ use std::path::Path;
 
 use rigcheck_core::{
     AntiCheat, Catalog, CatalogEntry, GameRequirements, Level, LinuxInfo, ParsedTier, ProtonTier,
-    Requirement, Specs, Vendor, Verdict, evaluate, parse,
+    Requirement, Specs, Vendor, Verdict, evaluate, parse, requirement_text,
 };
 use rigcheck_hardware::{Hardware, Vram};
 use rusqlite::{Connection, OptionalExtension, params, params_from_iter};
@@ -63,6 +63,8 @@ pub struct Tier {
     pub vram_mb: Option<u32>,
     pub storage_mb: Option<u32>,
     pub directx: Option<u8>,
+    /// The whole tier as Steam's store page writes it, one line per item.
+    pub text: Option<String>,
 }
 
 /// One requirement tier's CPU and GPU text, as the store page wrote them.
@@ -91,6 +93,9 @@ pub struct GameRecord {
     pub anticheat_name: Option<String>,
     pub minimum: Option<ParsedTier>,
     pub recommended: Option<ParsedTier>,
+    /// Each tier as plain text ([`rigcheck_core::requirement_text`]).
+    pub minimum_text: Option<String>,
+    pub recommended_text: Option<String>,
     /// When this was fetched, as a Unix timestamp.
     pub updated_at: i64,
 }
@@ -120,6 +125,19 @@ pub struct Filters {
     pub no_anticheat_issues: bool,
     /// Only games that reach at least their minimum on these specs.
     pub runs_on: Option<Specs>,
+}
+
+/// Brings a games.db written by an older build up to the current schema.
+/// Only additions, so older apps can still read the result.
+fn upgrade(conn: &Connection) -> Result<(), Error> {
+    // requirements.text: added in Phase 5 for the game page.
+    if conn
+        .prepare("SELECT text FROM requirements LIMIT 0")
+        .is_err()
+    {
+        conn.execute("ALTER TABLE requirements ADD COLUMN text TEXT", [])?;
+    }
+    Ok(())
 }
 
 /// A game's Linux facts from its games.db columns.
@@ -226,7 +244,9 @@ impl Tier {
 
 impl GameDb {
     pub fn open(path: &Path) -> Result<GameDb, Error> {
-        Ok(GameDb::with(Connection::open(path)?))
+        let conn = Connection::open(path)?;
+        upgrade(&conn)?;
+        Ok(GameDb::with(conn))
     }
 
     /// An empty games.db at `path` with the schema, replacing any file there.
@@ -335,14 +355,14 @@ impl GameDb {
             ],
         )?;
         let tiers = [
-            ("minimum", &record.minimum),
-            ("recommended", &record.recommended),
+            ("minimum", &record.minimum, &record.minimum_text),
+            ("recommended", &record.recommended, &record.recommended_text),
         ];
-        for (tier, parsed) in tiers {
+        for (tier, parsed, text) in tiers {
             let Some(parsed) = parsed else { continue };
             tx.execute(
-                "INSERT INTO requirements (app_id, tier, ram_mb, vram_mb, storage_mb, directx, cpu_raw, gpu_raw)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                "INSERT INTO requirements (app_id, tier, ram_mb, vram_mb, storage_mb, directx, cpu_raw, gpu_raw, text)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
                 params![
                     record.app_id,
                     tier,
@@ -351,7 +371,8 @@ impl GameDb {
                     parsed.storage_mb,
                     parsed.directx,
                     parsed.cpu,
-                    parsed.gpu
+                    parsed.gpu,
+                    text
                 ],
             )?;
             insert_matches(
@@ -654,6 +675,16 @@ impl GameDb {
         Ok(games.into_values().collect())
     }
 
+    /// Games with a requirement tier but not its text: crawled before
+    /// games.db kept the text, so their store page is worth fetching again.
+    pub fn without_requirement_text(&self) -> Result<std::collections::HashSet<u32>, Error> {
+        let mut statement = self
+            .conn
+            .prepare("SELECT DISTINCT app_id FROM requirements WHERE text IS NULL")?;
+        let rows = statement.query_map([], |row| row.get(0))?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
     /// When each app was last fetched.
     pub fn fetched(&self) -> Result<std::collections::HashMap<u32, i64>, Error> {
         let mut statement = self
@@ -747,7 +778,7 @@ impl GameDb {
         let row = self
             .conn
             .query_row(
-                "SELECT cpu_raw, gpu_raw, ram_mb, vram_mb, storage_mb, directx
+                "SELECT cpu_raw, gpu_raw, ram_mb, vram_mb, storage_mb, directx, text
                  FROM requirements WHERE app_id = ?1 AND tier = ?2",
                 params![app_id, tier],
                 |row| {
@@ -758,6 +789,7 @@ impl GameDb {
                         vram_mb: row.get(3)?,
                         storage_mb: row.get(4)?,
                         directx: row.get(5)?,
+                        text: row.get(6)?,
                         ..Tier::default()
                     })
                 },
@@ -926,6 +958,12 @@ fn seed_records() -> Result<Vec<GameRecord>, Error> {
                 anticheat_name: game.anticheat_name,
                 minimum: pages.and_then(|p| p.minimum.as_deref()).map(parse),
                 recommended: pages.and_then(|p| p.recommended.as_deref()).map(parse),
+                minimum_text: pages
+                    .and_then(|p| p.minimum.as_deref())
+                    .map(requirement_text),
+                recommended_text: pages
+                    .and_then(|p| p.recommended.as_deref())
+                    .map(requirement_text),
                 updated_at: 0,
             }
         })

@@ -31,6 +31,7 @@ CREATE TABLE requirements (
   directx    INTEGER,
   cpu_raw    TEXT,
   gpu_raw    TEXT,
+  text       TEXT,               -- the tier as Steam writes it, for the game page
   PRIMARY KEY (app_id, tier)
 );
 

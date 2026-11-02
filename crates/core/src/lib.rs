@@ -9,4 +9,4 @@ pub use matcher::{
     AntiCheat, Blocker, Component, Confidence, GameRequirements, HardwareRef, Level, LinuxInfo,
     ProtonTier, Requirement, Specs, Vendor, Verdict, Warning, evaluate,
 };
-pub use parser::{ParsedTier, parse};
+pub use parser::{ParsedTier, parse, requirement_text};
