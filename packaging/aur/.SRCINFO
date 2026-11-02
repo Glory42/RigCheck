@@ -1,0 +1,22 @@
+pkgbase = rigcheck-bin
+	pkgdesc = Check which Steam games your PC can run on Linux
+	pkgver = 0.7.0
+	pkgrel = 1
+	url = https://github.com/Glory42/rigcheck
+	arch = x86_64
+	license = MIT
+	depends = gcc-libs
+	depends = glibc
+	depends = libxkbcommon
+	optdepends = wayland: Wayland sessions
+	optdepends = libxcursor: X11 sessions
+	optdepends = libxrandr: X11 sessions
+	optdepends = libxi: X11 sessions
+	optdepends = vulkan-icd-loader: GPU rendering (falls back to software without it)
+	optdepends = vulkan-tools: vulkaninfo, for Vulkan version and VRAM detection
+	provides = rigcheck
+	conflicts = rigcheck
+	source = https://github.com/Glory42/rigcheck/releases/download/v0.7.0/rigcheck-0.7.0-x86_64-linux.tar.gz
+	sha256sums = SKIP
+
+pkgname = rigcheck-bin

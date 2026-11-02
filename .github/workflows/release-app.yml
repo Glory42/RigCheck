@@ -1,0 +1,78 @@
+name: Release app
+
+# Builds the AppImage, .deb, .rpm and tarball. A pushed `v*` tag publishes
+# them as a GitHub Release; pull requests that touch packaging only build
+# them, so a broken package shows up before a release does.
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - .github/workflows/release-app.yml
+      - packaging/**
+      - app/Cargo.toml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  package:
+    # The oldest supported Ubuntu: the binary links the glibc it's built
+    # against, so building on an old one runs on more distros.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deb,cargo-generate-rpm
+
+      - name: Version
+        id: version
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "rigcheck") | .version')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF" == refs/tags/v* && "${GITHUB_REF#refs/tags/v}" != "$version" ]]; then
+            echo "::error::tag ${GITHUB_REF#refs/tags/} doesn't match the app version $version"
+            exit 1
+          fi
+
+      - run: cargo build --release --locked -p rigcheck
+      - run: cargo deb -p rigcheck --no-build --output dist-deb/
+      # --output is only taken as a directory if it exists.
+      - run: mkdir -p dist-rpm && cargo generate-rpm -p app --output dist-rpm/
+      - name: AppImage and tarball
+        run: |
+          curl -sSLo appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+          packaging/package.sh "${{ steps.version.outputs.version }}" "$PWD/appimagetool"
+          mv dist-deb/*.deb dist-rpm/*.rpm dist/
+
+      - name: Check the packages
+        run: |
+          dpkg-deb --contents dist/*.deb
+          sudo apt-get install -y rpm >/dev/null
+          rpm -qlp dist/*.rpm
+          tar -tzf dist/*.tar.gz
+          APPIMAGE_EXTRACT_AND_RUN=1 dist/*.AppImage --appimage-extract >/dev/null
+          test -x squashfs-root/usr/bin/rigcheck
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rigcheck-${{ steps.version.outputs.version }}
+          path: dist/*
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "rigcheck ${{ steps.version.outputs.version }}" \
+            --notes "Install the AppImage, the .deb (Debian, Ubuntu), the .rpm (Fedora, openSUSE) or the tarball. See the README."

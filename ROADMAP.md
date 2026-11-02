@@ -460,12 +460,12 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 **Done when:** the database updates in the background with no broken states, even if you kill the app mid-download (test that).
 
 ### Phase 7: Packaging & release (v0.7)
-- [ ] `release-app.yml`: on tag → build AppImage and `.deb` (`cargo-packager`) and `.rpm` (`cargo-generate-rpm`) → attach to a GitHub Release
+- [x] `release-app.yml`: on tag → build AppImage, `.deb`, `.rpm` and a tarball → attach to a GitHub Release. Uses `cargo-deb`, `cargo-generate-rpm` and `appimagetool` on a hand-made AppDir instead of `cargo-packager`, so every package installs our own `.desktop` file, metainfo and icons. Pull requests touching packaging build them too
 - [ ] Update notice: compare the running version with the latest GitHub Release and link to it. Flathub and AUR users get updates from their package manager, so the app never replaces its own binary
 - [ ] Test on at least Arch, Ubuntu/Debian, Fedora and SteamOS (Deck desktop mode)
 - [ ] Test on NVIDIA proprietary drivers and on a machine without working Vulkan. iced should fall back to its software renderer (tiny-skia); check that it does
-- [ ] AUR package (`rigcheck-bin`)
-- [ ] Flathub submission (manifest, permissions: read-only access to Steam folders and network).
+- [ ] AUR package (`rigcheck-bin`): `packaging/aur/PKGBUILD` is ready and builds with `makepkg`; publishing needs the maintainer's AUR account
+- [ ] Flathub submission (manifest, permissions: read-only access to Steam folders and network). The manifest is in `packaging/flatpak/`; generating `cargo-sources.json`, a local `flatpak-builder` run and the submission are left (packaging/README.md)
 - [x] Desktop integration in `packaging/`: a `.desktop` file named after the app ID (`dev.gorkemkaryol.rigcheck`), AppStream metainfo, and hicolor icons (`128`, `256`, `512` from `assets/brand/`). On Wayland, the window icon comes from this `.desktop` file. CI validates both files
 - [x] About page in the app: version, license, links, data-source credits (§9)
 - [ ] README with screenshots, privacy section and credits

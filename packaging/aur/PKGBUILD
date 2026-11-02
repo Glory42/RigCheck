@@ -1,0 +1,30 @@
+# Maintainer: Glory42 <https://github.com/Glory42>
+#
+# rigcheck-bin: the prebuilt binary from a GitHub Release. After a new
+# release: bump pkgver, run `updpkgsums` and `makepkg --printsrcinfo > .SRCINFO`.
+pkgname=rigcheck-bin
+pkgver=0.7.0
+pkgrel=1
+pkgdesc="Check which Steam games your PC can run on Linux"
+arch=('x86_64')
+url="https://github.com/Glory42/rigcheck"
+license=('MIT')
+# The binary links only glibc and libgcc; the windowing and GPU libraries
+# are loaded at runtime.
+depends=('gcc-libs' 'glibc' 'libxkbcommon')
+optdepends=(
+  'wayland: Wayland sessions'
+  'libxcursor: X11 sessions'
+  'libxrandr: X11 sessions'
+  'libxi: X11 sessions'
+  'vulkan-icd-loader: GPU rendering (falls back to software without it)'
+  'vulkan-tools: vulkaninfo, for Vulkan version and VRAM detection'
+)
+provides=('rigcheck')
+conflicts=('rigcheck')
+source=("$url/releases/download/v$pkgver/rigcheck-$pkgver-x86_64-linux.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  cp -a "rigcheck-$pkgver-x86_64-linux/usr" "$pkgdir/"
+}
