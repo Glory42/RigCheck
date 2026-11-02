@@ -441,7 +441,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 
 ### Phase 5: Catalog & live lookups (v0.5)
 - [x] App downloads `games.db` on first launch, with a progress bar. The download is checked (SHA-256, then a sanity query) before it replaces anything; offline, the app says so and offers Retry. The built-in seed is now test data only
-- [ ] Catalog page: FTS5 search, ranked by popularity, with a virtualized list
+- [x] Catalog page: FTS5 search, ranked by popularity, with a virtualized list (only the rows in view are fetched and drawn; the popularity index is built on install instead of shipped). Rows open the game page; games known only by name say NOT CHECKED YET
 - [ ] Filters: "Only games I can run", ProtonDB tier, native Linux, Deck verified, no anti-cheat issues
 - [ ] Full game page: per-component table, bottleneck, Linux status, raw requirement text and a link to the Steam store page
 - [ ] `fetch` module: live `appdetails` lookup for games missing from `games.db` or with `not_crawled` status → parse with `core` → store in `fetched.db`

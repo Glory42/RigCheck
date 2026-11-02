@@ -14,7 +14,7 @@
 </p>
 
 > [!NOTE]
-> **Early development.** The Library, game page and hardware detection work today. On first launch the app downloads the game database, rebuilt daily from Steam (a few thousand games so far, growing each day). Searching the whole catalog comes next. See the [roadmap](ROADMAP.md).
+> **Early development.** The Library, game page and hardware detection work today. On first launch the app downloads the game database, rebuilt daily from Steam (a few thousand games so far, growing each day). The Catalog tab searches all of Steam's ~200k games, most popular first. See the [roadmap](ROADMAP.md).
 
 ## What it does
 
