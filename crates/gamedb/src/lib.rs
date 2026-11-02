@@ -11,7 +11,7 @@ use rigcheck_core::{
     Requirement, Specs, Vendor, Verdict, evaluate, parse,
 };
 use rigcheck_hardware::{Hardware, Vram};
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{Connection, OptionalExtension, params, params_from_iter};
 use serde::Deserialize;
 
 mod update;
@@ -99,6 +99,68 @@ impl Game {
         };
         evaluate(&requirements, specs, &self.linux)
     }
+}
+
+/// What the Catalog lists besides a search. The default lists everything.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Filters {
+    /// Only games with a Linux build.
+    pub native_linux: bool,
+    /// Only games Valve verified for the Steam Deck.
+    pub deck_verified: bool,
+    /// Only games ProtonDB rates this or better: Gold keeps Gold and Platinum.
+    pub protondb_at_least: Option<ProtonTier>,
+    /// Hides games whose anti-cheat doesn't work on Linux today: denied,
+    /// broken, or support only planned.
+    pub no_anticheat_issues: bool,
+}
+
+/// The `FROM … WHERE …` of a Catalog query, and the values for its `?`s.
+fn catalog_from(query: &str, filters: &Filters) -> (String, Vec<String>) {
+    let mut from = "FROM games g".to_owned();
+    let mut conditions = Vec::new();
+    let mut values = Vec::new();
+    if let Some(terms) = fts_query(query) {
+        from.push_str(" JOIN games_fts ON games_fts.rowid = g.app_id");
+        conditions.push("games_fts MATCH ?");
+        values.push(terms);
+    }
+    if filters.native_linux {
+        conditions.push("g.linux_native = 1");
+    }
+    if filters.deck_verified {
+        conditions.push("g.deck_status = 'verified'");
+    }
+    let tiers;
+    if let Some(lowest) = filters.protondb_at_least {
+        // Best first, down to `lowest`. The names are ours, so no `?` needed.
+        let best_first = [
+            ProtonTier::Platinum,
+            ProtonTier::Gold,
+            ProtonTier::Silver,
+            ProtonTier::Bronze,
+            ProtonTier::Borked,
+        ];
+        let kept = best_first
+            .iter()
+            .position(|&tier| tier == lowest)
+            .map_or(&best_first[..], |end| &best_first[..=end]);
+        let names: Vec<String> = kept
+            .iter()
+            .map(|&tier| format!("'{}'", proton_tier_name(tier)))
+            .collect();
+        tiers = format!("g.protondb_tier IN ({})", names.join(", "));
+        conditions.push(&tiers);
+    }
+    if filters.no_anticheat_issues {
+        conditions.push(
+            "(g.anticheat_status IS NULL OR g.anticheat_status NOT IN ('denied', 'broken', 'planned'))",
+        );
+    }
+    if !conditions.is_empty() {
+        from = format!("{from} WHERE {}", conditions.join(" AND "));
+    }
+    (from, values)
 }
 
 /// `query` as an FTS5 match: each word quoted (so no FTS syntax leaks in)
@@ -419,44 +481,32 @@ impl GameDb {
     pub fn games_page(
         &self,
         query: &str,
+        filters: &Filters,
         offset: usize,
         limit: usize,
     ) -> Result<Vec<(u32, String)>, Error> {
-        let game = |row: &rusqlite::Row| Ok((row.get(0)?, row.get(1)?));
-        let page = match fts_query(query) {
-            None => self
-                .conn
-                .prepare(
-                    "SELECT app_id, name FROM games
-                     ORDER BY popularity DESC, name LIMIT ?1 OFFSET ?2",
-                )?
-                .query_map(params![limit as i64, offset as i64], game)?
-                .collect::<Result<_, _>>()?,
-            Some(terms) => self
-                .conn
-                .prepare(
-                    "SELECT g.app_id, g.name FROM games_fts f JOIN games g ON g.app_id = f.rowid
-                     WHERE games_fts MATCH ?3
-                     ORDER BY g.popularity DESC, g.name LIMIT ?1 OFFSET ?2",
-                )?
-                .query_map(params![limit as i64, offset as i64, terms], game)?
-                .collect::<Result<_, _>>()?,
-        };
+        let (from, values) = catalog_from(query, filters);
+        let sql = format!(
+            "SELECT g.app_id, g.name {from} ORDER BY g.popularity DESC, g.name LIMIT {limit} OFFSET {offset}"
+        );
+        let page = self
+            .conn
+            .prepare(&sql)?
+            .query_map(params_from_iter(values), |row| {
+                Ok((row.get(0)?, row.get(1)?))
+            })?
+            .collect::<Result<_, _>>()?;
         Ok(page)
     }
 
-    /// How many games the Catalog lists for `query`.
-    pub fn games_count(&self, query: &str) -> Result<usize, Error> {
-        let count: i64 = match fts_query(query) {
-            None => self
-                .conn
-                .query_row("SELECT count(*) FROM games", [], |row| row.get(0))?,
-            Some(terms) => self.conn.query_row(
-                "SELECT count(*) FROM games_fts WHERE games_fts MATCH ?1",
-                [terms],
-                |row| row.get(0),
-            )?,
-        };
+    /// How many games the Catalog lists for `query` and `filters`.
+    pub fn games_count(&self, query: &str, filters: &Filters) -> Result<usize, Error> {
+        let (from, values) = catalog_from(query, filters);
+        let count: i64 = self.conn.query_row(
+            &format!("SELECT count(*) {from}"),
+            params_from_iter(values),
+            |row| row.get(0),
+        )?;
         Ok(count as usize)
     }
 

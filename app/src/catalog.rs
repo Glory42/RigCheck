@@ -7,7 +7,7 @@ use std::ops::Range;
 use iced::widget::{button, column, container, row, scrollable, space, text, text_input};
 use iced::{Element, Fill};
 use rigcheck_core::Specs;
-use rigcheck_gamedb::{Game, GameDb};
+use rigcheck_gamedb::{Filters, Game, GameDb};
 
 use crate::i18n::I18n;
 use crate::library::{Status, stamp, status};
@@ -25,6 +25,7 @@ pub const ROW_HEIGHT: f32 = 48.0;
 /// view (fetched from games.db as they come into view).
 pub struct List {
     query: String,
+    filters: Filters,
     scroll: f32,
     viewport: f32,
     total: usize,
@@ -37,6 +38,7 @@ impl Default for List {
     fn default() -> List {
         List {
             query: String::new(),
+            filters: Filters::default(),
             scroll: 0.0,
             // Until the list reports its size: enough for a tall window.
             viewport: 1200.0,
@@ -66,7 +68,7 @@ impl List {
 
     /// Counts the matches and fetches the rows in view, e.g. for a new games.db.
     pub fn refresh(&mut self, db: &GameDb) {
-        self.total = db.games_count(&self.query).unwrap_or(0);
+        self.total = db.games_count(&self.query, &self.filters).unwrap_or(0);
         self.rows.clear();
         self.fetch_rows(db);
     }
@@ -77,7 +79,7 @@ impl List {
             return; // Same rows as before.
         }
         let page = db
-            .games_page(&self.query, range.start, range.len())
+            .games_page(&self.query, &self.filters, range.start, range.len())
             .unwrap_or_default();
         self.first = range.start;
         // Scrolling a little keeps most rows: reuse them and only load the
