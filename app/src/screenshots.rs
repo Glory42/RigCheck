@@ -51,6 +51,9 @@ fn screenshots() {
     shoot(&mut app, &out, "catalog-can-run");
     let _ = app.update(Message::Open(Page::Game(1086940))); // Baldur's Gate 3
     shoot(&mut app, &out, "game");
+    let _ = app.update(Message::PickToCompare(1086940));
+    let _ = app.update(Message::Open(Page::Compare(1086940, 1091500))); // vs Cyberpunk 2077
+    shoot(&mut app, &out, "compare");
     let _ = app.update(Message::Open(Page::Settings));
     shoot(&mut app, &out, "settings");
     let _ = app.update(Message::Open(Page::About));

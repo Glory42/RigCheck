@@ -34,9 +34,30 @@ pub fn view<'a>(
     rig: &Rig,
     cover: Option<&PathBuf>,
     back: Page,
+    // The game picked to compare with, if any: its app ID and name.
+    compare: Option<(u32, String)>,
     i18n: &I18n,
     colors: Colors,
 ) -> Element<'a, Message> {
+    let mut compare_buttons = row![
+        button(text(i18n.t("compare")).font(BOLD).size(13))
+            .padding([7, 12])
+            .style(colors.button(compare.as_ref().is_some_and(|(id, _)| *id == app_id)))
+            .on_press(Message::PickToCompare(app_id))
+    ]
+    .spacing(12);
+    if let Some((other, other_name)) = compare.filter(|(id, _)| *id != app_id) {
+        compare_buttons = compare_buttons.push(
+            button(
+                text(i18n.t_with("compare-with", &[("name", &other_name)]))
+                    .font(BOLD)
+                    .size(13),
+            )
+            .padding([7, 12])
+            .style(colors.button(false))
+            .on_press(Message::Open(Page::Compare(other, app_id))),
+        );
+    }
     let (label, color) = stamp(status, i18n);
     let stamp = container(text(label).font(BOLD).size(18))
         .padding([4, 10])
@@ -72,6 +93,7 @@ pub fn view<'a>(
                     .on_press(Message::OpenUrl(format!(
                         "https://store.steampowered.com/app/{app_id}/"
                     ))),
+                compare_buttons,
             ]
             .spacing(12)
             .align_y(Center),
@@ -131,8 +153,71 @@ fn size(mb: u32) -> String {
     }
 }
 
-/// Reads one field of a tier as display text.
-type TierField = fn(&Tier) -> Option<String>;
+/// The requirement rows, in order.
+pub const ROWS: [Component; 5] = [
+    Component::Cpu,
+    Component::Gpu,
+    Component::Ram,
+    Component::Vram,
+    Component::GraphicsApi,
+];
+
+/// What `tier` asks of `component`, as Steam writes it; "—" if nothing.
+pub fn requirement(tier: Option<&Tier>, component: Component) -> String {
+    let text = tier.and_then(|tier| match component {
+        Component::Cpu => tier.cpu_text.clone(),
+        Component::Gpu => tier.gpu_text.clone(),
+        Component::Ram => tier.ram_mb.map(size),
+        Component::Vram => tier.vram_mb.map(size),
+        Component::Storage => tier.storage_mb.map(size),
+        Component::GraphicsApi => tier.directx.map(|dx| format!("DirectX {dx}")),
+    });
+    text.unwrap_or_else(|| "—".to_owned())
+}
+
+/// How this PC did on one row; "—" until there's a verdict.
+pub fn result(status: &Status, component: Component, i18n: &I18n) -> String {
+    let Status::Verdict(verdict) = status else {
+        return "—".to_owned();
+    };
+    let level = verdict
+        .components
+        .iter()
+        .find(|(compared, _)| *compared == component)
+        .map(|(_, level)| *level);
+    i18n.t(match level {
+        Some(Level::Recommended) => "row-meets-recommended",
+        Some(Level::Minimum) => "row-meets-minimum",
+        Some(Level::Below) => "row-below-minimum",
+        _ => "row-not-compared",
+    })
+}
+
+/// ProtonDB, anti-cheat and Steam Deck: label and value.
+pub fn linux_facts(game: &Game, i18n: &I18n) -> [(String, String); 3] {
+    let proton = if game.linux.native {
+        i18n.t("game-native-linux")
+    } else {
+        game.linux
+            .protondb
+            .map(|tier| format!("{tier:?}").to_uppercase())
+            .unwrap_or_else(|| "—".to_owned())
+    };
+    let anticheat = match (&game.anticheat_name, game.linux.anticheat) {
+        (Some(name), Some(status)) => format!("{name}: {}", format!("{status:?}").to_uppercase()),
+        _ => i18n.t("game-none"),
+    };
+    let deck = game
+        .deck
+        .clone()
+        .map(|deck| deck.to_uppercase())
+        .unwrap_or_else(|| "—".to_owned());
+    [
+        (i18n.t("game-protondb"), proton),
+        (i18n.t("game-anticheat"), anticheat),
+        (i18n.t("game-deck"), deck),
+    ]
+}
 
 /// Your PC next to each tier, with the bottleneck row highlighted.
 fn requirements<'a>(
@@ -147,36 +232,17 @@ fn requirements<'a>(
         _ => None,
     };
     let bottleneck = verdict.and_then(|verdict| verdict.bottleneck);
-    // How this PC did on one row; "—" until there's a verdict.
-    let result = |component: Component| {
-        let Some(verdict) = verdict else {
-            return "—".to_owned();
-        };
-        let level = verdict
-            .components
-            .iter()
-            .find(|(compared, _)| *compared == component)
-            .map(|(_, level)| *level);
-        i18n.t(match level {
-            Some(Level::Recommended) => "row-meets-recommended",
-            Some(Level::Minimum) => "row-meets-minimum",
-            Some(Level::Below) => "row-below-minimum",
-            _ => "row-not-compared",
-        })
-    };
     let (minimum, recommended) = (game.minimum.as_ref(), game.recommended.as_ref());
-    let tier_text = |tier: Option<&Tier>, pick: TierField| {
-        tier.and_then(pick).unwrap_or_else(|| "—".to_owned())
-    };
-    let rows: [(Component, String, TierField); 5] = [
-        (Component::Cpu, rig.cpu.clone(), |t| t.cpu_text.clone()),
-        (Component::Gpu, rig.gpu.clone(), |t| t.gpu_text.clone()),
-        (Component::Ram, rig.ram.clone(), |t| t.ram_mb.map(size)),
-        (Component::Vram, rig.vram.clone(), |t| t.vram_mb.map(size)),
-        (Component::GraphicsApi, rig.api.clone(), |t| {
-            t.directx.map(|dx| format!("DirectX {dx}"))
-        }),
-    ];
+    let rows = ROWS.map(|component| {
+        let yours = match component {
+            Component::Cpu => rig.cpu.clone(),
+            Component::Gpu => rig.gpu.clone(),
+            Component::Ram => rig.ram.clone(),
+            Component::Vram => rig.vram.clone(),
+            _ => rig.api.clone(),
+        };
+        (component, yours)
+    });
 
     let cell = |content: String, bold: bool, width: f32| {
         let label = text(content).size(13);
@@ -194,7 +260,7 @@ fn requirements<'a>(
         ]
         .width(Fill),
     );
-    for (component, yours, pick) in rows {
+    for (component, yours) in rows {
         let highlight = bottleneck == Some(component);
         // The bottleneck in its level's color (red below the minimum), not
         // the accent, which is green in some themes and reads as "fine".
@@ -204,9 +270,9 @@ fn requirements<'a>(
         let line = row![
             cell(i18n.t(row_id(component)), true, 2.0),
             cell(yours, highlight, 3.0),
-            cell(tier_text(minimum, pick), false, 4.0),
-            cell(tier_text(recommended, pick), false, 4.0),
-            cell(result(component), true, 3.0),
+            cell(requirement(minimum, component), false, 4.0),
+            cell(requirement(recommended, component), false, 4.0),
+            cell(result(status, component, i18n), true, 3.0),
         ]
         .width(Fill);
         table = table.push(container(line).style(move |_| {
@@ -262,23 +328,7 @@ fn steam_text<'a>(game: &'a Game, i18n: &I18n, colors: Colors) -> Option<Element
 
 /// ProtonDB, anti-cheat and Steam Deck boxes.
 fn linux<'a>(game: &'a Game, i18n: &I18n, colors: Colors) -> Element<'a, Message> {
-    let proton = if game.linux.native {
-        i18n.t("game-native-linux")
-    } else {
-        game.linux
-            .protondb
-            .map(|tier| format!("{tier:?}").to_uppercase())
-            .unwrap_or_else(|| "—".to_owned())
-    };
-    let anticheat = match (&game.anticheat_name, game.linux.anticheat) {
-        (Some(name), Some(status)) => format!("{name}: {}", format!("{status:?}").to_uppercase()),
-        _ => i18n.t("game-none"),
-    };
-    let deck = game
-        .deck
-        .clone()
-        .map(|deck| deck.to_uppercase())
-        .unwrap_or_else(|| "—".to_owned());
+    let [proton, anticheat, deck] = linux_facts(game, i18n);
     let tile = |label: String, value: String| {
         container(column![text(label).size(11).font(BOLD), text(value).font(BOLD)].spacing(4))
             .padding(12)
@@ -286,9 +336,9 @@ fn linux<'a>(game: &'a Game, i18n: &I18n, colors: Colors) -> Element<'a, Message
             .style(move |_| colors.boxed(colors.panel))
     };
     row![
-        tile(i18n.t("game-protondb"), proton),
-        tile(i18n.t("game-anticheat"), anticheat),
-        tile(i18n.t("game-deck"), deck),
+        tile(proton.0, proton.1),
+        tile(anticheat.0, anticheat.1),
+        tile(deck.0, deck.1),
     ]
     .spacing(16)
     .into()
@@ -305,7 +355,7 @@ fn part_id(component: Component) -> &'static str {
     }
 }
 
-fn row_id(component: Component) -> &'static str {
+pub fn row_id(component: Component) -> &'static str {
     match component {
         Component::Cpu => "row-cpu",
         Component::Gpu => "row-gpu",
