@@ -6,6 +6,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+rigcheck-core = { version = "0.7.0", path = "../core" }
 rustix = { version = "1", default-features = false, features = ["fs", "std"] }
 
 [dev-dependencies]

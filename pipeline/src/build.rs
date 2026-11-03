@@ -78,7 +78,6 @@ pub fn build(db: &GameDb, sources: &Sources) -> Result<(), Error> {
         .map(|(&app_id, info)| (app_id, info.status, info.name.clone()))
         .collect();
     db.set_anticheat(&anticheat)?;
-    db.rebuild_search()?;
     db.set_meta("license", LICENSE)?;
     db.set_meta("sources", SOURCES)?;
     Ok(())

@@ -17,7 +17,7 @@ CREATE TABLE games (
 );
 
 -- Search by any word of a game's name ("witcher" → The Witcher 3). An index
--- over games.name; rebuilt after the pipeline writes (GameDb::rebuild_search).
+-- over games.name, kept current by triggers (SEARCH_TRIGGERS in lib.rs).
 CREATE VIRTUAL TABLE games_fts USING fts5(
   name, content='games', content_rowid='app_id', tokenize='unicode61 remove_diacritics 2'
 );

@@ -8,6 +8,30 @@ use crate::{Allowlist, RateLimiter, Retry};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
+/// A request the server answered with an error status, after any retries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct HttpStatus(pub u16);
+
+impl std::fmt::Display for HttpStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let reason = reqwest::StatusCode::from_u16(self.0)
+            .ok()
+            .and_then(|status| status.canonical_reason());
+        match reason {
+            Some(reason) => write!(f, "HTTP {} {reason}", self.0),
+            None => write!(f, "HTTP {}", self.0),
+        }
+    }
+}
+
+impl std::error::Error for HttpStatus {}
+
+/// The status of a request that failed with one; `None` if it failed some
+/// other way (offline, a timeout, a host off the allowlist…).
+pub fn status(error: &Error) -> Option<u16> {
+    error.downcast_ref::<HttpStatus>().map(|status| status.0)
+}
+
 const USER_AGENT: &str = concat!(
     "rigcheck/",
     env!("CARGO_PKG_VERSION"),
@@ -102,7 +126,7 @@ impl Client {
             }
             match self.retry.after(status.as_u16(), attempt) {
                 Some(wait) => std::thread::sleep(wait),
-                None => return Err(format!("HTTP {status}").into()),
+                None => return Err(HttpStatus(status.as_u16()).into()),
             }
         }
         unreachable!("the loop only ends by returning")

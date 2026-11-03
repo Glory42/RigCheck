@@ -8,7 +8,7 @@ use std::ops::Range;
 use iced::widget::{button, column, container, row, scrollable, space, text, text_input};
 use iced::{Element, Fill};
 use rigcheck_core::{ProtonTier, Specs};
-use rigcheck_gamedb::{Filters, Game, GameDb};
+use rigcheck_gamedb::{Filters, Game, Records};
 
 use crate::Message;
 use crate::i18n::I18n;
@@ -63,7 +63,7 @@ impl Chip {
 }
 
 /// The list's state: what's searched, where it's scrolled, and the rows in
-/// view (fetched from games.db as they come into view).
+/// view (read as they come into view: games.db, or a lookup of the game).
 pub struct List {
     query: String,
     filters: Filters,
@@ -106,22 +106,22 @@ impl Default for List {
 impl List {
     /// Fetches the rows that scrolled into view. The count stays: it
     /// only changes with the search (and costs ~30 ms on a broad one).
-    pub fn scrolled(&mut self, offset: f32, height: f32, width: f32, db: &GameDb) {
+    pub fn scrolled(&mut self, offset: f32, height: f32, width: f32, records: &Records) {
         self.scroll = offset;
         self.viewport = height;
         self.width = width;
-        self.fetch_rows(db);
+        self.fetch_rows(records);
     }
 
     /// Lists `query`'s matches from the top. The caller scrolls the list
     /// widget back up too ([`LIST`]), as for every change of what's listed.
-    pub fn search(&mut self, query: String, db: &GameDb) {
+    pub fn search(&mut self, query: String, records: &Records) {
         self.query = query;
-        self.restart(db);
+        self.restart(records);
     }
 
     /// Turns `chip` on or off. `specs` are this PC's, for CAN RUN.
-    pub fn toggle(&mut self, chip: Chip, specs: Option<Specs>, db: &GameDb) {
+    pub fn toggle(&mut self, chip: Chip, specs: Option<Specs>, records: &Records) {
         let on = !chip.is_on(self);
         match chip {
             Chip::CanRun => {
@@ -132,37 +132,50 @@ impl List {
             Chip::DeckVerified => self.filters.deck_verified = on,
             Chip::NoAntiCheatIssues => self.filters.no_anticheat_issues = on,
         }
-        self.restart(db);
+        self.restart(records);
     }
 
     /// Keeps games ProtonDB rates `lowest` or better; `None` keeps all.
-    pub fn protondb(&mut self, lowest: Option<ProtonTier>, db: &GameDb) {
+    pub fn protondb(&mut self, lowest: Option<ProtonTier>, records: &Records) {
         self.filters.protondb_at_least = lowest;
-        self.restart(db);
+        self.restart(records);
     }
 
     /// Uses new specs (detection finished, or an override changed) for
     /// CAN RUN, if it's on.
-    pub fn use_specs(&mut self, specs: Option<Specs>, db: &GameDb) {
+    pub fn use_specs(&mut self, specs: Option<Specs>, records: &Records) {
         if self.can_run && self.filters.runs_on != specs {
             self.filters.runs_on = specs;
-            self.restart(db);
+            self.restart(records);
         }
     }
 
     /// Lists from the first row again, after what's listed changed.
-    fn restart(&mut self, db: &GameDb) {
+    fn restart(&mut self, records: &Records) {
         self.scroll = 0.0;
         self.selected = 0;
         self.keyboard = false;
-        self.refresh(db);
+        self.refresh(records);
     }
 
     /// Counts the matches and fetches the rows in view, e.g. for a new games.db.
-    pub fn refresh(&mut self, db: &GameDb) {
-        self.total = db.games_count(&self.query, &self.filters).unwrap_or(0);
+    pub fn refresh(&mut self, records: &Records) {
+        self.total = records
+            .games()
+            .games_count(&self.query, &self.filters)
+            .unwrap_or(0);
         self.rows.clear();
-        self.fetch_rows(db);
+        self.fetch_rows(records);
+    }
+
+    /// Reads `app_id`'s row again if it's in view, e.g. once Steam was
+    /// asked about it.
+    pub fn reload(&mut self, app_id: u32, records: &Records) {
+        let before = self.rows.len();
+        self.rows.retain(|game| game.app_id != app_id);
+        if self.rows.len() != before {
+            self.fetch_rows(records);
+        }
     }
 
     /// Tiles in a row.
@@ -182,7 +195,7 @@ impl List {
 
     /// Moves the highlight `by` tiles and scrolls its row into view.
     /// Returns the new scroll offset, for the caller to move the grid too.
-    pub fn move_selection(&mut self, by: i64, db: &GameDb) -> f32 {
+    pub fn move_selection(&mut self, by: i64, records: &Records) -> f32 {
         if self.total == 0 {
             return self.scroll;
         }
@@ -195,15 +208,16 @@ impl List {
         } else if top + ROW_HEIGHT > self.scroll + self.viewport {
             self.scroll = top + ROW_HEIGHT - self.viewport;
         }
-        self.fetch_rows(db);
+        self.fetch_rows(records);
         self.scroll
     }
 
     /// The highlighted game's app ID.
-    pub fn selected_game(&self, db: &GameDb) -> Option<u32> {
+    pub fn selected_game(&self, records: &Records) -> Option<u32> {
         match self.selected.checked_sub(self.first) {
             Some(index) if index < self.rows.len() => Some(self.rows[index].app_id),
-            _ => db
+            _ => records
+                .games()
                 .games_page(&self.query, &self.filters, self.selected, 1)
                 .ok()?
                 .first()
@@ -211,12 +225,13 @@ impl List {
         }
     }
 
-    fn fetch_rows(&mut self, db: &GameDb) {
+    fn fetch_rows(&mut self, records: &Records) {
         let range = visible_tiles(self.scroll, self.viewport, self.width, self.total);
         if range.start == self.first && range.len() == self.rows.len() && !self.rows.is_empty() {
             return; // Same rows as before.
         }
-        let page = db
+        let page = records
+            .games()
             .games_page(&self.query, &self.filters, range.start, range.len())
             .unwrap_or_default();
         self.first = range.start;
@@ -232,7 +247,7 @@ impl List {
             .filter_map(|(app_id, _)| {
                 loaded
                     .remove(&app_id)
-                    .or_else(|| db.game(app_id).ok().flatten())
+                    .or_else(|| records.get(app_id).ok().flatten())
             })
             .collect();
     }

@@ -7,7 +7,7 @@ mod limit;
 
 use url::Url;
 
-pub use client::{Client, Error};
+pub use client::{Client, Error, HttpStatus, status};
 pub use limit::{RateLimiter, Retry};
 
 /// The hosts a program may send requests to, over HTTPS only.

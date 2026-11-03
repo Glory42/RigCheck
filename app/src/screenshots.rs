@@ -11,7 +11,7 @@
 
 use std::path::PathBuf;
 
-use crate::{App, Language, Message, Page, Paths, catalog, test_support};
+use crate::{App, Language, Message, Page, Paths, account, catalog, test_support};
 
 const SIZE: (f32, f32) = (1100.0, 720.0);
 
@@ -66,12 +66,20 @@ fn screenshots() {
     shoot(&mut app, &out, "compare");
     let _ = app.update(Message::Open(Page::Settings));
     shoot(&mut app, &out, "settings");
-    // The Library's ALL MY GAMES, from a saved Steam answer (no key needed).
+    // The Library's ALL MY GAMES, from a saved Steam answer to a made-up key
+    // (saved in the temp config; nothing is sent).
     let owned = std::fs::read_to_string(
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../data/fixtures/steam/owned_games.json"),
     )
     .unwrap();
-    let _ = app.update(Message::OwnedGames(Ok(owned)));
+    let key = "0123456789ABCDEF0123456789ABCDEF".to_owned();
+    for message in [
+        account::Message::Input(key),
+        account::Message::Save,
+        account::Message::Owned(Ok(owned)),
+    ] {
+        let _ = app.update(Message::Account(message));
+    }
     let _ = app.update(Message::Open(Page::Library));
     let _ = app.update(Message::LibraryScope(crate::library::Scope::Owned));
     shoot(&mut app, &out, "library-owned");

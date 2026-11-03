@@ -2,53 +2,22 @@
 //! compared with the running one (ROADMAP Phase 7). The app never replaces
 //! itself; Flathub and AUR users update through their package manager.
 
-use std::time::Duration;
-
-use iced::futures::channel::oneshot;
 use iced::widget::{button, container, row, space, text};
 use iced::{Element, Fill, Task};
-use rigcheck_net::{Allowlist, Client, RateLimiter, Retry};
 
 use crate::Message;
 use crate::i18n::I18n;
 use crate::style::{BOLD, Colors};
+use crate::web::{Web, background};
 
-/// Uploaded with every release (packaging/package.sh). `latest` skips
-/// prereleases, so the daily `db-latest` games.db release never counts.
-/// github.com redirects to its asset host, both in ROADMAP §6.
-const VERSION_URL: &str =
-    "https://github.com/Glory42/rigcheck/releases/latest/download/version.txt";
 /// Where the notice links to.
 pub const PAGE: &str = "https://github.com/Glory42/rigcheck/releases/latest";
 
 /// Asks GitHub for the latest release's version; the answer comes back as
-/// [`Message::LatestRelease`]. Nothing is sent until iced runs the task.
-pub fn check() -> Task<Message> {
-    Task::perform(
-        async {
-            let (sender, receiver) = oneshot::channel();
-            std::thread::spawn(move || {
-                let _ = sender.send(fetch());
-            });
-            receiver
-                .await
-                .unwrap_or_else(|_| Err("the check stopped".to_owned()))
-        },
-        Message::LatestRelease,
-    )
-}
-
-fn fetch() -> Result<String, String> {
-    let limiter = RateLimiter::new(5, Duration::from_secs(1));
-    let mut client = Client::new(
-        Allowlist::app(),
-        limiter,
-        Retry::new(1, Duration::from_secs(2)),
-    )
-    .map_err(|error| error.to_string())?;
-    client
-        .get_text(VERSION_URL)
-        .map_err(|error| error.to_string())
+/// [`Message::LatestRelease`].
+pub fn check(web: &Web) -> Task<Message> {
+    let web = web.clone();
+    background(move || web.latest_version()).map(Message::LatestRelease)
 }
 
 /// The notice for a newer `version`, under the top bar.

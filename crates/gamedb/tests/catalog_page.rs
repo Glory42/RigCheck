@@ -25,7 +25,6 @@ fn db() -> (TempDir, GameDb) {
         (2012840, None, 40),
     ])
     .unwrap();
-    db.rebuild_search().unwrap();
     (dir, db)
 }
 
@@ -64,4 +63,23 @@ fn a_search_lists_matching_games_a_page_at_a_time() {
     assert_eq!(names(second), ["Portal with RTX"]);
     assert_eq!(db.games_count("port", &Filters::default()).unwrap(), 3);
     assert_eq!(db.games_count("half 2", &Filters::default()).unwrap(), 1);
+}
+
+#[test]
+fn the_search_follows_names_as_they_are_written_and_changed() {
+    let (_dir, db) = db();
+    db.store_names(&[(1145360, "Hades")]).unwrap();
+    let search = |query: &str| names(db.games_page(query, &Filters::default(), 0, 10).unwrap());
+    assert_eq!(search("hades"), ["Hades"]);
+
+    let renamed = rigcheck_gamedb::GameRecord {
+        app_id: 1145360,
+        name: "Hades II".to_owned(),
+        ..Default::default()
+    };
+    db.store(&renamed, &rigcheck_core::Catalog::default())
+        .unwrap();
+
+    assert_eq!(search("hades"), ["Hades II"]);
+    assert_eq!(search("ii"), ["Hades II"]);
 }

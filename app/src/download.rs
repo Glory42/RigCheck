@@ -4,20 +4,16 @@
 
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use iced::futures::{SinkExt, Stream, executor::block_on};
 use iced::widget::{button, column, container, progress_bar, row, space, text};
 use iced::{Element, Fill};
 use rigcheck_gamedb::{Manifest, install};
-use rigcheck_net::{Allowlist, Client, Error, RateLimiter, Retry};
 
 use crate::Message;
 use crate::i18n::I18n;
 use crate::style::{BOLD, Colors};
-
-const MANIFEST_URL: &str =
-    "https://github.com/Glory42/RigCheck/releases/download/db-latest/manifest.json";
+use crate::web::Web;
 
 #[derive(Debug, Clone)]
 pub enum Event {
@@ -67,11 +63,11 @@ pub enum Status {
 /// Downloads games.db to `dest`, unless `installed` (its `db_version`) is
 /// already the published one. The requests block, so they run on their own
 /// thread and send their progress back through the stream.
-pub fn games_db(dest: PathBuf, installed: Option<String>) -> impl Stream<Item = Event> {
+pub fn games_db(web: Web, dest: PathBuf, installed: Option<String>) -> impl Stream<Item = Event> {
     iced::stream::channel(8, async move |events| {
         std::thread::spawn(move || {
             let mut events = events;
-            let result = fetch(&dest, installed.as_deref(), |done, total| {
+            let result = fetch(&web, &dest, installed.as_deref(), |done, total| {
                 let _ = block_on(events.send(Event::Progress { done, total }));
             });
             let _ = block_on(events.send(Event::Finished(result)));
@@ -80,18 +76,16 @@ pub fn games_db(dest: PathBuf, installed: Option<String>) -> impl Stream<Item = 
 }
 
 fn fetch(
+    web: &Web,
     dest: &Path,
     installed: Option<&str>,
     mut progress: impl FnMut(u64, u64),
 ) -> Result<Fetched, Failure> {
-    let failed = |error: Error| Failure::Failed(error.to_string());
-    // Two requests in all, so pacing barely matters; retries cover a
-    // GitHub hiccup.
-    let limiter = RateLimiter::new(10, Duration::from_secs(1));
-    let retry = Retry::new(2, Duration::from_secs(2));
-    let mut client = Client::new(Allowlist::app(), limiter, retry).map_err(failed)?;
-    let manifest =
-        Manifest::from_json(&client.get_text(MANIFEST_URL).map_err(failed)?).map_err(failed)?;
+    let failed = |error: rigcheck_gamedb::Error| Failure::Failed(error.to_string());
+    let manifest = web
+        .manifest()
+        .map_err(|failure| Failure::Failed(failure.to_string()))?;
+    let manifest = Manifest::from_json(&manifest).map_err(failed)?;
     if manifest.needs_newer_app() {
         return Err(Failure::NeedsNewerApp);
     }
@@ -104,9 +98,10 @@ fn fetch(
             fs::create_dir_all(dir)?;
         }
         let mut file = File::create(&part)?;
-        client.download(&manifest.url, &mut file, |done| {
+        web.download(&manifest.url, &mut file, &mut |done| {
             progress(done, manifest.size_bytes)
-        })?;
+        })
+        .map_err(|failure| failure.to_string())?;
         install(&part, &manifest, dest)
     })();
     let _ = fs::remove_file(&part);
