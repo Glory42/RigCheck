@@ -3,7 +3,7 @@
 # rigcheck-bin: the prebuilt binary from a GitHub Release. After a new
 # release: bump pkgver, run `updpkgsums` and `makepkg --printsrcinfo > .SRCINFO`.
 pkgname=rigcheck-bin
-pkgver=0.7.0
+pkgver=0.8.0
 pkgrel=1
 pkgdesc="Check which Steam games your PC can run on Linux"
 arch=('x86_64')
