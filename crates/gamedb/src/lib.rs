@@ -158,10 +158,11 @@ fn upgrade(conn: &Connection) -> Result<(), Error> {
     {
         conn.execute("ALTER TABLE requirements ADD COLUMN text TEXT", [])?;
     }
-    // The search triggers: added in Phase 8. Before them the pipeline
-    // rebuilt the index after writing, so it may be behind; a file the app
-    // installed was published with a fresh one (and the app never writes
-    // names to it).
+    // The search triggers: added in Phase 8, for files that get written to
+    // (the pipeline's games.db, fetched.db). Before them the pipeline
+    // rebuilt the index after writing, so it may be behind. A file the app
+    // installed (it has `games_search`) is left alone: the app never writes
+    // names to it, and opening it shouldn't write at all.
     let has = |name: &str| {
         conn.query_row(
             "SELECT 1 FROM sqlite_master WHERE name = ?1",
@@ -170,11 +171,9 @@ fn upgrade(conn: &Connection) -> Result<(), Error> {
         )
         .is_ok()
     };
-    if !has("games_fts_insert") {
+    if !has("games_fts_insert") && !has("games_search") {
         conn.execute_batch(SEARCH_TRIGGERS)?;
-        if !has("games_search") {
-            conn.execute("INSERT INTO games_fts(games_fts) VALUES ('rebuild')", [])?;
-        }
+        conn.execute("INSERT INTO games_fts(games_fts) VALUES ('rebuild')", [])?;
     }
     Ok(())
 }
@@ -1171,5 +1170,28 @@ mod tests {
 
         let found = db.games_page("portal", &Filters::default(), 0, 10).unwrap();
         assert_eq!(found.len(), 2);
+    }
+
+    #[test]
+    fn opening_an_installed_file_writes_nothing_to_it() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let path = dir.path().join("games.db");
+        let db = GameDb::create(&path).unwrap();
+        db.conn
+            .execute_batch(
+                "DROP TRIGGER games_fts_insert; DROP TRIGGER games_fts_delete;
+                 DROP TRIGGER games_fts_update;
+                 CREATE VIRTUAL TABLE games_search USING fts5(name, content='games',
+                     content_rowid='app_id');",
+            )
+            .unwrap();
+        drop(db);
+        let mut readonly = std::fs::metadata(&path).unwrap().permissions();
+        readonly.set_readonly(true);
+        std::fs::set_permissions(&path, readonly).unwrap();
+
+        let db = GameDb::open(&path).expect("opens without writing");
+
+        assert!(db.meta("schema_version").unwrap().is_some());
     }
 }
