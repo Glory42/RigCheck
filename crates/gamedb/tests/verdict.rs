@@ -6,8 +6,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use rigcheck_core::{Blocker, Component, Level, Verdict};
-use rigcheck_gamedb::{GameDb, specs};
-use rigcheck_hardware::{Commands, Hardware, detect};
+use rigcheck_gamedb::GameDb;
+use rigcheck_hardware::{Commands, Hardware, Rig, detect};
 use tempfile::TempDir;
 
 /// Replays a fixture's captured command output.
@@ -27,10 +27,11 @@ fn machine(name: &str) -> Hardware {
 }
 
 fn verdict(db: &GameDb, hardware: &Hardware, app_id: u32) -> Verdict {
-    let specs = specs(&db.catalog().unwrap(), hardware);
-    db.verdict(app_id, &specs)
+    let rig = Rig::new(&db.catalog().unwrap(), hardware);
+    db.game(app_id)
         .unwrap()
         .expect("game is in the seed")
+        .verdict(rig.specs())
 }
 
 #[test]

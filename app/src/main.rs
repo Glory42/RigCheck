@@ -24,6 +24,7 @@ mod settings_page;
 mod style;
 #[cfg(test)]
 mod test_support;
+mod web;
 mod whatif;
 
 use std::collections::HashMap;
@@ -31,17 +32,16 @@ use std::path::{Path, PathBuf};
 
 use i18n::{I18n, Language};
 use iced::widget::image::{FilterMethod, Handle};
-use iced::widget::{
-    button, center, column, combo_box, container, image, row, scrollable, space, text,
-};
+use iced::widget::{button, center, column, container, image, row, scrollable, space, text};
 use iced::{Element, Fill, Size, Task, Theme, clipboard, window};
 use rigcheck_core::{Catalog, Specs};
 use rigcheck_gamedb::ingest::{Ingested, ingest};
-use rigcheck_gamedb::{Game, GameDb};
-use rigcheck_hardware::Hardware;
+use rigcheck_gamedb::{Fetched, Game, GameDb, Records};
+use rigcheck_hardware::{Hardware, Rig, Swap};
 use rigcheck_steam::InstalledGame;
 use settings::{Appearance, Settings};
 use style::{BOLD, Colors};
+use web::Web;
 
 /// Reverse-DNS app ID. Wayland uses it to match the window with its .desktop file
 /// (and so its icon); Flatpak uses it as the app ID.
@@ -138,13 +138,17 @@ struct App {
     page: Page,
     /// `None` until detection finishes.
     hardware: Option<Hardware>,
+    /// The detected hardware read against the hardware table, with any
+    /// override. `None` until detection finishes.
+    rig: Option<Rig>,
     /// `None` until games.db is downloaded; the Library then shows NO DATA.
     db: Option<GameDb>,
     download: download::Status,
     catalog: Catalog,
     /// `None` until Steam has been scanned.
     games: Option<Vec<InstalledGame>>,
-    /// games.db records and cover art for the installed games.
+    /// The records of the Library's games (installed and owned), and
+    /// cover art.
     records: HashMap<u32, Game>,
     covers: HashMap<u32, PathBuf>,
     /// Where covers come from: Steam's cache, or downloads.
@@ -161,25 +165,14 @@ struct App {
     search: String,
     library_order: library::Order,
     library_scope: library::Scope,
-    /// What's typed in the Steam key box; never shown (a secure input) and
-    /// only written to disk by SAVE KEY.
-    steam_key_input: String,
-    has_steam_key: bool,
-    /// The signed-in Steam account, from Steam's own files.
-    steam_id: Option<u64>,
-    /// Every game the account owns, once Steam has said (or from the cache).
-    owned: Option<rigcheck_steam::Owned>,
-    /// The last GetOwnedGames request failed.
-    owned_failed: bool,
-    /// Steam answered 401/403: it doesn't accept the saved key.
-    key_rejected: bool,
-    /// Why the typed key wasn't saved, if it wasn't.
-    bad_key: Option<account::BadKey>,
+    /// The user's Steam account, for ALL MY GAMES.
+    account: account::Account,
     catalog_list: catalog::List,
-    /// Live lookups of games games.db hasn't checked; `None` if the cache
-    /// directory can't be written.
-    fetched: Option<GameDb>,
-    steam: lookup::Steam,
+    /// Live lookups of games games.db hasn't checked; in memory if the
+    /// cache directory can't be written.
+    fetched: Fetched,
+    /// Every request goes through here.
+    web: Web,
     lookup: lookup::State,
     /// The open game page's record, and the tab it was opened from.
     opened: Option<Game>,
@@ -213,13 +206,8 @@ enum Message {
     Search(String),
     LibraryOrder(library::Order),
     LibraryScope(library::Scope),
-    /// Settings > Steam account: the key box, saving, removing, refreshing.
-    SteamKeyInput(String),
-    SaveSteamKey,
-    RemoveSteamKey,
-    RefreshOwned,
-    /// Steam's `GetOwnedGames` answer, or why there's none.
-    OwnedGames(Result<String, String>),
+    /// Settings > Steam account, and Steam's answers about it.
+    Account(account::Message),
     /// Enter in the Library's search: open the first game listed.
     LibraryOpenFirst,
     Shortcut(keys::Shortcut),
@@ -261,14 +249,14 @@ enum Message {
     /// Opens a web page in the user's browser.
     OpenUrl(String),
     /// The latest release's version (`version.txt`), or why there's none.
-    LatestRelease(Result<String, String>),
+    LatestRelease(Result<String, web::Failure>),
     /// Steam's `appdetails` answer for an app ID, or why there's none.
-    SteamLookup(u32, Result<String, String>),
+    SteamLookup(u32, Result<String, web::Failure>),
     RetryLookup(u32),
     /// A game page's COMPARE: remember this game (again: forget it).
     PickToCompare(u32),
     /// A cover downloaded from Steam's CDN, or why it couldn't be.
-    CoverFetched(u32, Result<Vec<u8>, String>),
+    CoverFetched(u32, Result<Vec<u8>, web::Failure>),
 }
 
 impl App {
@@ -291,31 +279,29 @@ impl App {
             .then(|| GameDb::open(&db_path).ok())
             .flatten();
         let settings = Settings::load(&paths.config);
+        let web = Web::net();
         let fetch = match &db {
             // A background update check (ROADMAP §7.3), unless turned off.
-            Some(db) if !settings.manual_updates => {
-                download_db(&paths.data, db.meta("db_version").ok().flatten())
-            }
+            Some(db) if !settings.manual_updates => download_db(&web, &paths.data, db.db_version()),
             Some(_) => Task::none(),
-            None => download_db(&paths.data, None),
+            None => download_db(&web, &paths.data, None),
         };
         // Same setting: is there a newer rigcheck?
         let release_check = if settings.manual_updates {
             Task::none()
         } else {
-            release::check()
+            release::check(&web)
         };
         let fetched = open_fetched(&paths.cache);
-        let steam_key = account::load_key(&paths.config);
-        let has_steam_key = steam_key.is_some();
-        let steam_id = rigcheck_steam::account_id(&paths.home);
-        let owned = account::load_owned(&paths.cache);
         // Same setting as the other start-up checks.
-        let owned_check = match (steam_key, steam_id) {
-            (Some(key), Some(id)) if !settings.manual_updates => account::fetch(key, id),
-            _ => Task::none(),
-        };
-        let art = covers::Covers::new(paths.home.clone(), paths.cache.join("images"));
+        let (account, owned_check) = account::Account::new(
+            paths.config.clone(),
+            paths.cache.clone(),
+            &paths.home,
+            web.clone(),
+            !settings.manual_updates,
+        );
+        let art = covers::Covers::new(paths.home.clone(), paths.cache.join("images"), web.clone());
         art.evict(settings.image_cache_bytes());
         let mut app = App {
             override_choices: overrides::Choices::default(),
@@ -329,6 +315,7 @@ impl App {
             paths,
             page: Page::Library,
             hardware: None,
+            rig: None,
             db: None,
             download: download::Status::Running { done: 0, total: 0 },
             catalog: Catalog::default(),
@@ -344,16 +331,10 @@ impl App {
             search: String::new(),
             library_order: library::Order::default(),
             library_scope: library::Scope::default(),
-            steam_key_input: String::new(),
-            has_steam_key,
-            steam_id,
-            owned,
-            owned_failed: false,
-            key_rejected: false,
-            bad_key: None,
+            account,
             catalog_list: catalog::List::default(),
             fetched,
-            steam: lookup::Steam::default(),
+            web,
             lookup: lookup::State::Idle,
             opened: None,
             opened_from: Page::Library,
@@ -369,45 +350,42 @@ impl App {
     }
 
     /// Switches to `db`: its hardware table, and its records for the
-    /// installed games found so far.
+    /// Library's games found so far.
     fn use_db(&mut self, db: GameDb) {
         self.catalog = db.catalog().unwrap_or_default();
-        let names = |entries: &[rigcheck_core::CatalogEntry]| {
-            entries.iter().map(|entry| entry.name.clone()).collect()
-        };
-        self.override_choices = overrides::Choices {
-            gpus: combo_box::State::new(names(self.catalog.gpus())),
-            cpus: combo_box::State::new(names(self.catalog.cpus())),
-        };
-        self.whatif_choices = overrides::Choices {
-            gpus: combo_box::State::new(names(self.catalog.gpus())),
-            cpus: combo_box::State::new(names(self.catalog.cpus())),
-        };
-        self.catalog_list.refresh(&db);
+        self.override_choices = overrides::Choices::of(&self.catalog);
+        self.whatif_choices = overrides::Choices::of(&self.catalog);
+        // Lookups this games.db has caught up with, or that went stale.
+        if let Err(error) = self.fetched.prune(&db, now()) {
+            eprintln!("couldn't prune fetched.db: {error}");
+        }
+        self.catalog_list
+            .refresh(&Records::new(&db, &self.fetched, now()));
         self.db = Some(db);
         self.download = download::Status::Done;
         self.load_records();
+        // A new hardware table can score the same parts differently.
+        self.rig_changed();
     }
 
-    /// Looks up each installed game in games.db.
+    /// Where every page reads a game's record from (ROADMAP §7.1). `None`
+    /// until there's a games.db.
+    fn records(&self) -> Option<Records<'_>> {
+        Some(Records::new(self.db.as_ref()?, &self.fetched, now()))
+    }
+
+    /// Reads the record of each of the Library's games.
     fn load_records(&mut self) {
-        let Some(db) = &self.db else {
+        let Some(records) = self.records() else {
             return;
         };
         let installed = self.games.iter().flatten().map(|game| game.app_id);
-        let owned = self.owned_games().iter().map(|game| game.app_id);
-        self.records = installed
+        let owned = self.account.owned_games().iter().map(|game| game.app_id);
+        let loaded = installed
             .chain(owned)
-            .filter_map(|app_id| Some((app_id, db.game(app_id).ok()??)))
+            .filter_map(|app_id| Some((app_id, records.get(app_id).ok()??)))
             .collect();
-    }
-
-    /// Every game the account owns, if Steam has listed them.
-    fn owned_games(&self) -> &[rigcheck_steam::OwnedGame] {
-        match &self.owned {
-            Some(rigcheck_steam::Owned::Games(games)) => games,
-            _ => &[],
-        }
+        self.records = loaded;
     }
 
     /// The Library's games for the current scope, as (app ID, name).
@@ -420,7 +398,8 @@ impl App {
                     .collect()
             }),
             library::Scope::Owned => Some(
-                self.owned_games()
+                self.account
+                    .owned_games()
                     .iter()
                     .map(|game| (game.app_id, game.name.as_str()))
                     .collect(),
@@ -433,86 +412,46 @@ impl App {
         if self.library_scope != library::Scope::Owned {
             return None;
         }
-        let id = match (&self.owned, self.has_steam_key) {
-            // A saved list still shows, even if a later refresh failed.
-            (Some(rigcheck_steam::Owned::Games(_)), _) => return None,
-            (_, _) if self.key_rejected => "library-owned-key-rejected",
-            (Some(rigcheck_steam::Owned::Hidden), _) => "library-owned-private",
-            (None, false) => "library-owned-no-key",
-            (None, true) if self.steam_id.is_none() => "library-owned-no-account",
-            (None, true) if self.owned_failed => "library-owned-failed",
-            (None, true) => "library-owned-loading",
+        self.account.note().map(|id| self.i18n.t(id))
+    }
+
+    /// What verdicts compare against. `None` until detection finishes.
+    fn specs(&self) -> Option<&Specs> {
+        self.rig.as_ref().map(Rig::specs)
+    }
+
+    /// Your rig with the What if picks in place of your parts.
+    fn what_if_rig(&self) -> Option<Rig> {
+        let swap = Swap {
+            gpu: self.whatif.gpu.as_deref(),
+            cpu: self.whatif.cpu.as_deref(),
+            ram_gb: self.whatif.ram_gb,
         };
-        Some(self.i18n.t(id))
-    }
-
-    /// What verdicts compare against: detected hardware scored with the
-    /// hardware table. `None` until detection finishes.
-    fn specs(&self) -> Option<Specs> {
-        let mut specs = rigcheck_gamedb::specs(&self.catalog, self.hardware.as_ref()?);
-        if let Some(gpu) = self.override_gpu() {
-            specs.gpu = Some(gpu.to_ref());
-            specs.vram_mb = gpu.vram_mb;
-        }
-        if let Some(cpu) = self.override_cpu() {
-            specs.cpu = Some(cpu.to_ref());
-        }
-        Some(specs)
-    }
-
-    fn override_gpu(&self) -> Option<&rigcheck_core::CatalogEntry> {
-        let name = self.settings.gpu_override.as_ref()?;
-        self.catalog.gpus().iter().find(|entry| &entry.name == name)
-    }
-
-    fn override_cpu(&self) -> Option<&rigcheck_core::CatalogEntry> {
-        let name = self.settings.cpu_override.as_ref()?;
-        self.catalog.cpus().iter().find(|entry| &entry.name == name)
-    }
-
-    /// [`App::specs`] with the What if picks in place of your parts.
-    fn what_if_specs(&self) -> Option<Specs> {
-        let mut specs = self.specs()?;
-        let find = |entries: &[rigcheck_core::CatalogEntry], name: &Option<String>| {
-            let name = name.as_ref()?;
-            entries.iter().find(|entry| &entry.name == name).cloned()
-        };
-        if let Some(gpu) = find(self.catalog.gpus(), &self.whatif.gpu) {
-            specs.gpu = Some(gpu.to_ref());
-            specs.vram_mb = gpu.vram_mb;
-        }
-        if let Some(cpu) = find(self.catalog.cpus(), &self.whatif.cpu) {
-            specs.cpu = Some(cpu.to_ref());
-        }
-        if let Some(gb) = self.whatif.ram_gb {
-            specs.ram_mb = Some(gb * 1024);
-        }
-        Some(specs)
+        Some(self.rig.as_ref()?.swapped(&self.catalog, swap))
     }
 
     /// "Cyberpunk 2077: TOO WEAK → LOW" for each installed game the What
     /// if picks would move to another stamp, by name.
     fn what_if_changes(&self) -> Vec<String> {
-        let (now, then) = (self.specs(), self.what_if_specs());
+        let (now, then) = (self.specs(), self.what_if_rig());
+        let then = then.as_ref().map(Rig::specs);
         let mut games: Vec<&InstalledGame> = self.games.iter().flatten().collect();
         games.sort_by_key(|game| game.name.to_lowercase());
         games
             .into_iter()
             .filter_map(|game| {
                 let record = self.records.get(&game.app_id);
-                let (before, _) =
-                    library::stamp(&library::status(record, now.as_ref()), &self.i18n);
-                let (after, _) =
-                    library::stamp(&library::status(record, then.as_ref()), &self.i18n);
+                let (before, _) = library::stamp(&library::status(record, now), &self.i18n);
+                let (after, _) = library::stamp(&library::status(record, then), &self.i18n);
                 (before != after).then(|| format!("{}: {before} → {after}", game.name))
             })
             .collect()
     }
 
-    /// Your PC as the game page shows it, named by the hardware table when possible.
-    fn rig(&self) -> game_page::Rig {
+    /// Your PC as the game page shows it, named as verdicts score it.
+    fn rig_view(&self) -> game_page::Rig {
         let unknown = || self.i18n.t("unknown");
-        let Some(hardware) = &self.hardware else {
+        let (Some(hardware), Some(rig)) = (&self.hardware, &self.rig) else {
             return game_page::Rig {
                 cpu: unknown(),
                 gpu: unknown(),
@@ -523,26 +462,9 @@ impl App {
         };
         let gpu = hardware.gaming_gpu();
         let vulkan = gpu.and_then(|gpu| gpu.vulkan.as_ref());
-        let cpu = hardware.cpu.as_deref().map(|model| {
-            self.catalog
-                .match_cpus(model)
-                .first()
-                .map_or_else(|| model.to_owned(), |entry| entry.name.clone())
-        });
-        let gpu_name = gpu.and_then(|gpu| {
-            self.catalog
-                .gpu_by_pci(gpu.vendor_id, gpu.device_id)
-                .map(|entry| entry.name.clone())
-                .or_else(|| vulkan.map(|vulkan| vulkan.name.clone()))
-        });
-        let cpu = self.override_cpu().map(|entry| entry.name.clone()).or(cpu);
-        let gpu_name = self
-            .override_gpu()
-            .map(|entry| entry.name.clone())
-            .or(gpu_name);
         game_page::Rig {
-            cpu: cpu.unwrap_or_else(unknown),
-            gpu: gpu_name.unwrap_or_else(unknown),
+            cpu: rig.cpu_name().map_or_else(unknown, str::to_owned),
+            gpu: rig.gpu_name().map_or_else(unknown, str::to_owned),
             ram: hardware
                 .ram_bytes
                 .map(rigcheck_hardware::gib)
@@ -557,7 +479,7 @@ impl App {
     }
 
     fn status(&self, app_id: u32) -> library::Status {
-        library::status(self.records.get(&app_id), self.specs().as_ref())
+        library::status(self.records.get(&app_id), self.specs())
     }
 
     /// The appearance to draw with: the picked one, or the system's.
@@ -627,6 +549,7 @@ impl App {
             (Shortcut::Move(_) | Shortcut::Step(_) | Shortcut::Page(_), Page::Catalog) => {
                 match &self.db {
                     Some(db) => {
+                        let records = Records::new(db, &self.fetched, now());
                         let list = &self.catalog_list;
                         let (columns, rows) = (list.columns() as i64, list.rows_in_view() as i64);
                         let tiles = match shortcut {
@@ -635,7 +558,7 @@ impl App {
                             Shortcut::Step(by) => i64::from(by),
                             _ => 0,
                         };
-                        let offset = self.catalog_list.move_selection(tiles, db);
+                        let offset = self.catalog_list.move_selection(tiles, &records);
                         iced::widget::operation::scroll_to(
                             catalog::LIST,
                             iced::widget::operation::AbsoluteOffset {
@@ -649,9 +572,8 @@ impl App {
             }
             (Shortcut::Open, Page::Catalog) => {
                 match self
-                    .db
-                    .as_ref()
-                    .and_then(|db| self.catalog_list.selected_game(db))
+                    .records()
+                    .and_then(|records| self.catalog_list.selected_game(&records))
                 {
                     Some(app_id) => self.update(Message::Open(Page::Game(app_id))),
                     None => Task::none(),
@@ -686,25 +608,21 @@ impl App {
             }
             Message::CheckForUpdates | Message::Redownload => {
                 let installed = match message {
-                    Message::CheckForUpdates => self
-                        .db
-                        .as_ref()
-                        .and_then(|db| db.meta("db_version").ok().flatten()),
+                    Message::CheckForUpdates => self.db.as_ref().and_then(GameDb::db_version),
                     _ => None,
                 };
                 self.download = match self.db {
                     Some(_) => download::Status::Updating { done: 0, total: 0 },
                     None => download::Status::Running { done: 0, total: 0 },
                 };
-                download_db(&self.paths.data, installed)
+                download_db(&self.web, &self.paths.data, installed)
             }
             Message::ClearFetched => {
-                // Closed first: the file is replaced by an empty one.
-                self.fetched = None;
-                let path = self.paths.cache.join("fetched.db");
-                let _ = std::fs::remove_file(&path);
-                self.fetched = open_fetched(&self.paths.cache);
+                if let Err(error) = self.fetched.clear() {
+                    eprintln!("couldn't clear fetched.db: {error}");
+                }
                 self.lookup = lookup::State::Idle;
+                self.load_records();
                 self.refresh_storage();
                 Task::none()
             }
@@ -766,7 +684,7 @@ impl App {
             }
             Message::RetryLookup(app_id) => {
                 self.lookup = lookup::State::Checking(app_id);
-                self.steam.ask(app_id)
+                lookup::ask(&self.web, app_id)
             }
             Message::Frame(now) => {
                 self.now = now;
@@ -789,7 +707,7 @@ impl App {
             }
             Message::HardwareDetected(hardware) => {
                 self.hardware = Some(hardware);
-                self.specs_changed();
+                self.rig_changed();
                 Task::none()
             }
             Message::GamesFound(games) => {
@@ -816,64 +734,21 @@ impl App {
             Message::LibraryScope(scope) => {
                 self.library_scope = scope;
                 // The owned games' covers: Steam's cache, else downloaded.
-                let ids: Vec<u32> = self.owned_games().iter().map(|game| game.app_id).collect();
+                let ids: Vec<u32> = self
+                    .account
+                    .owned_games()
+                    .iter()
+                    .map(|game| game.app_id)
+                    .collect();
                 Task::batch(ids.into_iter().map(|app_id| self.cover(app_id)))
             }
-            Message::SteamKeyInput(key) => {
-                self.steam_key_input = key;
-                Task::none()
-            }
-            Message::SaveSteamKey => {
-                let key = self.steam_key_input.trim().to_owned();
-                if let Err(bad) = account::check_key(&key) {
-                    self.bad_key = Some(bad);
-                    return Task::none();
+            Message::Account(message) => {
+                let answer = matches!(message, account::Message::Owned(_));
+                let task = self.account.update(message);
+                if answer {
+                    self.load_records();
                 }
-                self.steam_key_input.clear();
-                self.bad_key = None;
-                self.key_rejected = false;
-                if let Err(error) = account::save_key(&self.paths.config, &key) {
-                    eprintln!("couldn't save the Steam key: {error}");
-                    return Task::none();
-                }
-                self.has_steam_key = true;
-                match self.steam_id {
-                    Some(id) => account::fetch(key, id),
-                    None => Task::none(),
-                }
-            }
-            Message::RemoveSteamKey => {
-                account::remove_key(&self.paths.config, &self.paths.cache);
-                self.has_steam_key = false;
-                self.owned = None;
-                self.owned_failed = false;
-                Task::none()
-            }
-            Message::RefreshOwned => match (account::load_key(&self.paths.config), self.steam_id) {
-                (Some(key), Some(id)) => account::fetch(key, id),
-                _ => Task::none(),
-            },
-            Message::OwnedGames(answer) => {
-                match answer.and_then(|json| {
-                    let owned = rigcheck_steam::owned_games(&json).map_err(|e| e.to_string())?;
-                    account::save_owned(&self.paths.cache, &json);
-                    Ok(owned)
-                }) {
-                    Ok(owned) => {
-                        self.owned = Some(owned);
-                        self.owned_failed = false;
-                        self.key_rejected = false;
-                        self.load_records();
-                    }
-                    Err(error) => {
-                        // Never the URL (it holds the key): the net client keeps it out.
-                        eprintln!("couldn't list the owned games: {error}");
-                        self.owned_failed = true;
-                        self.key_rejected =
-                            error.contains("HTTP 401") || error.contains("HTTP 403");
-                    }
-                }
-                Task::none()
+                task
             }
             Message::LibraryOrder(order) => {
                 self.library_order = order;
@@ -886,13 +761,13 @@ impl App {
             Message::OverrideGpu(name) => {
                 self.settings.gpu_override = name;
                 self.save_settings();
-                self.specs_changed();
+                self.rig_changed();
                 Task::none()
             }
             Message::OverrideCpu(name) => {
                 self.settings.cpu_override = name;
                 self.save_settings();
-                self.specs_changed();
+                self.rig_changed();
                 Task::none()
             }
             Message::Download(download::Event::Progress { done, total }) => {
@@ -924,34 +799,24 @@ impl App {
                 }
                 Task::none()
             }
-            Message::CatalogSearch(query) => match &self.db {
-                Some(db) => {
-                    self.catalog_list.search(query, db);
-                    Task::batch([catalog_to_top(), self.catalog_covers()])
-                }
-                None => Task::none(),
-            },
-            Message::CatalogProtonDb(lowest) => match &self.db {
-                Some(db) => {
-                    self.catalog_list.protondb(lowest, db);
-                    Task::batch([catalog_to_top(), self.catalog_covers()])
-                }
-                None => Task::none(),
-            },
-            Message::CatalogFilter(chip) => match &self.db {
-                Some(db) => {
-                    self.catalog_list.toggle(chip, self.specs(), db);
-                    Task::batch([catalog_to_top(), self.catalog_covers()])
-                }
-                None => Task::none(),
-            },
+            Message::CatalogSearch(query) => {
+                self.relist_catalog(|list, records| list.search(query, records))
+            }
+            Message::CatalogProtonDb(lowest) => {
+                self.relist_catalog(|list, records| list.protondb(lowest, records))
+            }
+            Message::CatalogFilter(chip) => {
+                let specs = self.specs().cloned();
+                self.relist_catalog(|list, records| list.toggle(chip, specs, records))
+            }
             Message::CatalogScrolled {
                 offset,
                 height,
                 width,
             } => {
                 if let Some(db) = &self.db {
-                    self.catalog_list.scrolled(offset, height, width, db);
+                    let records = Records::new(db, &self.fetched, now());
+                    self.catalog_list.scrolled(offset, height, width, &records);
                 }
                 self.catalog_covers()
             }
@@ -966,7 +831,7 @@ impl App {
             }
             Message::RetryDownload => {
                 self.download = download::Status::Running { done: 0, total: 0 };
-                download_db(&self.paths.data, None)
+                download_db(&self.web, &self.paths.data, None)
             }
             Message::WhatIfGpu(name) => {
                 self.whatif.gpu = name;
@@ -985,6 +850,21 @@ impl App {
                 None => Task::none(),
             },
         }
+    }
+
+    /// Changes what the Catalog lists and shows it from the top.
+    fn relist_catalog(
+        &mut self,
+        change: impl FnOnce(&mut catalog::List, &Records),
+    ) -> Task<Message> {
+        let Some(db) = &self.db else {
+            return Task::none();
+        };
+        change(
+            &mut self.catalog_list,
+            &Records::new(db, &self.fetched, now()),
+        );
+        Task::batch([catalog_to_top(), self.catalog_covers()])
     }
 
     /// Opens a game's page: its cover and its record.
@@ -1013,38 +893,41 @@ impl App {
         }
     }
 
-    /// The record for the game page: games.db, then a recent lookup in
-    /// fetched.db, else asks Steam (ROADMAP §7.1).
+    /// The record for the game page, else asks Steam (ROADMAP §7.1).
     fn look_up(&mut self, app_id: u32) -> Task<Message> {
-        self.opened = self.db.as_ref().and_then(|db| db.game(app_id).ok()?);
-        if self.opened.as_ref().is_some_and(|game| game.crawled) {
-            return Task::none();
-        }
-        let (Some(_), Some(fetched)) = (&self.db, &self.fetched) else {
+        let Some(records) = self.records() else {
+            self.opened = None;
             return Task::none();
         };
-        if let Some(game) = fetched.lookup(app_id, now()).ok().flatten() {
-            self.opened = Some(game);
+        let (opened, ask) = (
+            records.get(app_id).ok().flatten(),
+            records.needs_lookup(app_id),
+        );
+        self.opened = opened;
+        if !ask {
             return Task::none();
         }
         self.lookup = lookup::State::Checking(app_id);
-        self.steam.ask(app_id)
+        lookup::ask(&self.web, app_id)
     }
 
-    /// Keeps Steam's answer about `app_id` in fetched.db and shows it.
-    fn looked_up(&mut self, app_id: u32, answer: Result<String, String>) {
-        let (Some(db), Some(fetched)) = (&self.db, &self.fetched) else {
+    /// Keeps Steam's answer about `app_id` and shows it on every page.
+    fn looked_up(&mut self, app_id: u32, answer: Result<String, web::Failure>) {
+        let Some(db) = &self.db else {
             return;
         };
-        let stored = answer.and_then(|json| {
-            match ingest(app_id, &json).map_err(|error| error.to_string())? {
-                Ingested::Game(record) => fetched
-                    .store_lookup(*record, db, now())
-                    .map(|()| true)
-                    .map_err(|error| error.to_string()),
-                Ingested::NotAGame { .. } | Ingested::Unavailable => Ok(false),
-            }
-        });
+        let records = Records::new(db, &self.fetched, now());
+        let stored = answer
+            .map_err(|failure| failure.to_string())
+            .and_then(
+                |json| match ingest(app_id, &json).map_err(|error| error.to_string())? {
+                    Ingested::Game(record) => records
+                        .store_lookup(*record)
+                        .map(|()| true)
+                        .map_err(|error| error.to_string()),
+                    Ingested::NotAGame { .. } | Ingested::Unavailable => Ok(false),
+                },
+            );
         self.lookup = match stored {
             Ok(true) => lookup::State::Idle,
             Ok(false) => lookup::State::NoRequirements(app_id),
@@ -1053,22 +936,18 @@ impl App {
                 lookup::State::Failed(app_id)
             }
         };
-        if self.page == Page::Game(app_id) && self.lookup == lookup::State::Idle {
-            self.opened = fetched.lookup(app_id, now()).ok().flatten();
+        if self.lookup == lookup::State::Idle {
+            self.catalog_list.reload(app_id, &records);
+            if self.page == Page::Game(app_id) {
+                self.opened = records.get(app_id).ok().flatten();
+            }
+            self.load_records();
         }
     }
 
-    /// A game's record by the lookup order of its page (ROADMAP §7.1):
-    /// games.db if checked, else a recent live lookup, else games.db's name.
+    /// A game's record by the lookup order of every page (ROADMAP §7.1).
     fn record(&self, app_id: u32) -> Option<Game> {
-        let from_db = self.db.as_ref().and_then(|db| db.game(app_id).ok()?);
-        if from_db.as_ref().is_some_and(|game| game.crawled) {
-            return from_db;
-        }
-        self.fetched
-            .as_ref()
-            .and_then(|fetched| fetched.lookup(app_id, now()).ok()?)
-            .or(from_db)
+        self.records()?.get(app_id).ok().flatten()
     }
 
     /// A game's name: its record's, else Steam's for an installed game.
@@ -1096,11 +975,22 @@ impl App {
         };
     }
 
-    /// Lets the Catalog's CAN RUN use the current specs.
-    fn specs_changed(&mut self) {
-        let specs = self.specs();
+    /// Reads the hardware against the hardware table again, with any
+    /// override, and lets the Catalog's CAN RUN use the result.
+    fn rig_changed(&mut self) {
+        let overrides = Swap {
+            gpu: self.settings.gpu_override.as_deref(),
+            cpu: self.settings.cpu_override.as_deref(),
+            ram_gb: None,
+        };
+        self.rig = self
+            .hardware
+            .as_ref()
+            .map(|hardware| Rig::new(&self.catalog, hardware).swapped(&self.catalog, overrides));
+        let specs = self.specs().cloned();
         if let Some(db) = &self.db {
-            self.catalog_list.use_specs(specs, db);
+            let records = Records::new(db, &self.fetched, now());
+            self.catalog_list.use_specs(specs, &records);
         }
     }
 
@@ -1154,8 +1044,8 @@ impl App {
                         name,
                         lookup::note(self.lookup, app_id, i18n, colors),
                         self.opened.as_ref(),
-                        &library::status(self.opened.as_ref(), self.specs().as_ref()),
-                        &self.rig(),
+                        &library::status(self.opened.as_ref(), self.specs()),
+                        &self.rig_view(),
                         self.cover_of(app_id),
                         self.opened_from,
                         self.compare_pick
@@ -1168,14 +1058,14 @@ impl App {
             }
             Page::Catalog => catalog::view(
                 &self.catalog_list,
-                self.specs().as_ref(),
+                self.specs(),
                 &|app_id| self.cover_of(app_id),
                 i18n,
                 colors,
             ),
             Page::MyRig => match &self.hardware {
                 Some(hardware) => {
-                    let rig = self.rig();
+                    let rig = self.rig_view();
                     let picked = overrides::Picked {
                         gpu: self.settings.gpu_override.as_ref(),
                         cpu: self.settings.cpu_override.as_ref(),
@@ -1210,7 +1100,7 @@ impl App {
                     compare::Side {
                         app_id,
                         name: self.game_name(app_id),
-                        status: library::status(record.as_ref(), self.specs().as_ref()),
+                        status: library::status(record.as_ref(), self.specs()),
                         record,
                     }
                 };
@@ -1219,14 +1109,7 @@ impl App {
             Page::Settings => settings_page::view(
                 &self.settings,
                 self.storage,
-                account::view(
-                    &self.steam_key_input,
-                    self.has_steam_key,
-                    self.steam_id,
-                    self.bad_key,
-                    i18n,
-                    colors,
-                ),
+                self.account.view(i18n, colors),
                 i18n,
                 colors,
             ),
@@ -1294,19 +1177,12 @@ impl App {
     }
 }
 
-/// fetched.db in `dir`, created on first use.
-fn open_fetched(dir: &Path) -> Option<GameDb> {
-    let path = dir.join("fetched.db");
-    let opened = if path.exists() {
-        GameDb::open(&path)
-    } else {
-        std::fs::create_dir_all(dir)
-            .map_err(Into::into)
-            .and_then(|()| GameDb::create(&path))
-    };
-    opened
-        .inspect_err(|error| eprintln!("couldn't open fetched.db: {error}"))
-        .ok()
+/// fetched.db in `dir`, created on first use; in memory if it can't be.
+fn open_fetched(dir: &Path) -> Fetched {
+    Fetched::open(&dir.join("fetched.db")).unwrap_or_else(|error| {
+        eprintln!("couldn't open fetched.db, so lookups last this session: {error}");
+        Fetched::in_memory()
+    })
 }
 
 /// Seconds since 1970, the way games.db and fetched.db store times.
@@ -1334,12 +1210,11 @@ fn catalog_to_top() -> Task<Message> {
     )
 }
 
-/// Downloads games.db into `data`, reporting progress as messages.
 /// Downloads games.db into `data` unless `installed` is the published
 /// build, reporting progress as messages.
-fn download_db(data: &Path, installed: Option<String>) -> Task<Message> {
+fn download_db(web: &Web, data: &Path, installed: Option<String>) -> Task<Message> {
     Task::run(
-        download::games_db(data.join("games.db"), installed),
+        download::games_db(web.clone(), data.join("games.db"), installed),
         Message::Download,
     )
 }
@@ -1602,7 +1477,6 @@ mod tests {
             (30, None, 1000),
         ])
         .unwrap();
-        db.rebuild_search().unwrap();
         let (mut app, _) = App::new(paths, Language::English);
         let _ = app.update(Message::HardwareDetected(test_support::amd_laptop()));
         app
@@ -1868,12 +1742,31 @@ mod tests {
     }
 
     #[test]
+    fn a_looked_up_game_shows_its_verdict_in_the_library_and_the_catalog() {
+        let dir = TempDir::new().unwrap();
+        let mut app = lookup_app(&dir);
+        let bg3 = test_support::installed(BG3, "Baldur's Gate 3");
+        let _ = app.update(Message::GamesFound(vec![bg3]));
+        click(&mut app, "CATALOG");
+        assert!(!shows(&app, "TOO WEAK"));
+
+        let _ = app.update(Message::Open(Page::Game(BG3)));
+        let _ = app.update(steam_says(BG3));
+
+        click(&mut app, "LIBRARY");
+        assert!(shows(&app, "TOO WEAK"));
+        click(&mut app, "CATALOG");
+        assert!(shows(&app, "TOO WEAK"));
+    }
+
+    #[test]
     fn a_failed_lookup_says_so_and_can_be_retried() {
         let dir = TempDir::new().unwrap();
         let mut app = lookup_app(&dir);
         let _ = app.update(Message::Open(Page::Game(BG3)));
 
-        let _ = app.update(Message::SteamLookup(BG3, Err("offline".to_owned())));
+        let offline = web::Failure::Failed("offline".to_owned());
+        let _ = app.update(Message::SteamLookup(BG3, Err(offline)));
         assert!(shows(&app, "Couldn't reach Steam."));
 
         click(&mut app, "RETRY");
@@ -2013,7 +1906,7 @@ mod tests {
         assert!(shows(&app, "0.0 MB"));
         let images = Paths::under(dir.path()).cache.join("images");
         assert_eq!(
-            covers::Covers::new(dir.path().join("home"), images).size(),
+            covers::Covers::new(dir.path().join("home"), images, Web::net()).size(),
             0
         );
     }
@@ -2145,7 +2038,7 @@ mod tests {
         for answer in [
             Ok(env!("CARGO_PKG_VERSION").to_owned()),
             Ok("0.0.1".to_owned()),
-            Err("offline".to_owned()),
+            Err(web::Failure::Failed("offline".to_owned())),
         ] {
             let _ = app.update(Message::LatestRelease(answer));
             assert!(!shows(&app, "GET IT"));
@@ -2418,9 +2311,15 @@ mod tests {
 
     /// Steam's (saved) GetOwnedGames answer: Cyberpunk 2077, OMORI and
     /// Baldur's Gate 3, which isn't installed.
-    fn steam_owns() -> Message {
-        let json = std::fs::read_to_string("../data/fixtures/steam/owned_games.json").unwrap();
-        Message::OwnedGames(Ok(json))
+    fn steam_owns() -> Result<String, web::Failure> {
+        Ok(std::fs::read_to_string("../data/fixtures/steam/owned_games.json").unwrap())
+    }
+
+    /// Saves a Steam key, then gets `answer` from Steam.
+    fn steam_answers(app: &mut App, answer: Result<String, web::Failure>) {
+        let _ = app.update(Message::Account(account::Message::Input(KEY.to_owned())));
+        let _ = app.update(Message::Account(account::Message::Save));
+        let _ = app.update(Message::Account(account::Message::Owned(answer)));
     }
 
     #[test]
@@ -2454,7 +2353,7 @@ mod tests {
     fn all_my_games_lists_every_game_the_account_owns() {
         let dir = TempDir::new().unwrap();
         let mut app = library_app(&dir);
-        let _ = app.update(steam_owns());
+        steam_answers(&mut app, steam_owns());
 
         click(&mut app, "ALL MY GAMES");
 
@@ -2473,7 +2372,7 @@ mod tests {
     fn the_owned_games_are_remembered_for_offline_starts() {
         let dir = TempDir::new().unwrap();
         let mut app = library_app(&dir);
-        let _ = app.update(steam_owns());
+        steam_answers(&mut app, steam_owns());
 
         let (mut reopened, _) = App::new(Paths::under(dir.path()), Language::English);
         let _ = reopened.update(Message::HardwareDetected(test_support::amd_laptop()));
@@ -2486,7 +2385,7 @@ mod tests {
     fn a_private_profile_is_explained() {
         let dir = TempDir::new().unwrap();
         let mut app = library_app(&dir);
-        let _ = app.update(Message::OwnedGames(Ok(r#"{"response":{}}"#.to_owned())));
+        steam_answers(&mut app, Ok(r#"{"response":{}}"#.to_owned()));
 
         click(&mut app, "ALL MY GAMES");
 
@@ -2515,8 +2414,9 @@ mod tests {
         let mut app = library_app(&dir);
         click(&mut app, "SETTINGS");
 
-        let _ = app.update(Message::SteamKeyInput("76561198388197563".to_owned()));
-        let _ = app.update(Message::SaveSteamKey);
+        let steam_id = "76561198388197563".to_owned();
+        let _ = app.update(Message::Account(account::Message::Input(steam_id)));
+        let _ = app.update(Message::Account(account::Message::Save));
 
         assert!(
             !Paths::under(dir.path())
@@ -2534,7 +2434,7 @@ mod tests {
     fn a_rejected_key_is_named_as_the_problem() {
         let dir = TempDir::new().unwrap();
         let mut app = library_app(&dir);
-        let _ = app.update(Message::OwnedGames(Err("HTTP 401 Unauthorized".to_owned())));
+        steam_answers(&mut app, Err(web::Failure::Rejected));
 
         click(&mut app, "ALL MY GAMES");
 
@@ -2544,6 +2444,10 @@ mod tests {
         ));
     }
 
+    fn not_found() -> web::Failure {
+        web::Failure::Failed("HTTP 404 Not Found".to_owned())
+    }
+
     #[test]
     fn the_app_redraws_for_animations_only_while_covers_load_or_fade_in() {
         let dir = TempDir::new().unwrap();
@@ -2551,8 +2455,8 @@ mod tests {
         let mut app = library_app(&dir);
         let loading = app.subscription().units();
 
-        let _ = app.update(Message::CoverFetched(1091500, Err("404".to_owned())));
-        let _ = app.update(Message::CoverFetched(1150690, Err("404".to_owned())));
+        let _ = app.update(Message::CoverFetched(1091500, Err(not_found())));
+        let _ = app.update(Message::CoverFetched(1150690, Err(not_found())));
         let idle = app.subscription().units();
         assert_eq!(idle, loading - 1, "no frames once nothing is loading");
 

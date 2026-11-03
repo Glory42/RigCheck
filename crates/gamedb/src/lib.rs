@@ -2,7 +2,8 @@
 //!
 //! The app downloads the pipeline's build ([`install`]). [`GameDb::create_seed`]
 //! builds a small one from `data/seed/`, the hardware table and the corpus,
-//! for tests.
+//! for tests. Games games.db hasn't checked are looked up live and kept in
+//! [`Fetched`]; [`Records`] reads the two in ROADMAP §7.1's order.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -12,13 +13,14 @@ use rigcheck_core::{
     AntiCheat, Catalog, CatalogEntry, GameRequirements, Level, LinuxInfo, ParsedTier, ProtonTier,
     Requirement, Specs, Vendor, Verdict, evaluate, parse, requirement_text,
 };
-use rigcheck_hardware::{Hardware, Vram};
 use rusqlite::{Connection, OptionalExtension, params, params_from_iter};
 use serde::Deserialize;
 
+mod fetched;
 pub mod ingest;
 mod update;
 
+pub use fetched::{Fetched, Records};
 pub use update::{Manifest, SCHEMA_VERSION, install};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -27,6 +29,21 @@ const SCHEMA: &str = include_str!("schema.sql");
 const SEED_GAMES: &str = include_str!("../../../data/seed/games.toml");
 const HARDWARE: &str = include_str!("../../../data/hardware.toml");
 const CORPUS: &str = include_str!("../../../data/fixtures/requirements/corpus.json");
+
+/// Keep `games_fts` in step with `games.name`, so no writer has to rebuild
+/// it. Writes to `games` must be plain INSERTs, UPDATEs and DELETEs: an
+/// `INSERT OR REPLACE` deletes the old row without telling the triggers.
+const SEARCH_TRIGGERS: &str = "
+    CREATE TRIGGER IF NOT EXISTS games_fts_insert AFTER INSERT ON games BEGIN
+        INSERT INTO games_fts (rowid, name) VALUES (new.app_id, new.name);
+    END;
+    CREATE TRIGGER IF NOT EXISTS games_fts_delete AFTER DELETE ON games BEGIN
+        INSERT INTO games_fts (games_fts, rowid, name) VALUES ('delete', old.app_id, old.name);
+    END;
+    CREATE TRIGGER IF NOT EXISTS games_fts_update AFTER UPDATE OF name ON games BEGIN
+        INSERT INTO games_fts (games_fts, rowid, name) VALUES ('delete', old.app_id, old.name);
+        INSERT INTO games_fts (rowid, name) VALUES (new.app_id, new.name);
+    END;";
 
 pub struct GameDb {
     conn: Connection,
@@ -141,6 +158,24 @@ fn upgrade(conn: &Connection) -> Result<(), Error> {
     {
         conn.execute("ALTER TABLE requirements ADD COLUMN text TEXT", [])?;
     }
+    // The search triggers: added in Phase 8. Before them the pipeline
+    // rebuilt the index after writing, so it may be behind; a file the app
+    // installed was published with a fresh one (and the app never writes
+    // names to it).
+    let has = |name: &str| {
+        conn.query_row(
+            "SELECT 1 FROM sqlite_master WHERE name = ?1",
+            [name],
+            |_| Ok(()),
+        )
+        .is_ok()
+    };
+    if !has("games_fts_insert") {
+        conn.execute_batch(SEARCH_TRIGGERS)?;
+        if !has("games_search") {
+            conn.execute("INSERT INTO games_fts(games_fts) VALUES ('rebuild')", [])?;
+        }
+    }
     Ok(())
 }
 
@@ -210,38 +245,6 @@ fn fts_query(query: &str) -> Option<String> {
     (!terms.is_empty()).then(|| terms.join(" "))
 }
 
-/// Turns detected hardware into what the matcher compares, using the
-/// hardware table for CPU and GPU scores.
-pub fn specs(catalog: &Catalog, hardware: &Hardware) -> Specs {
-    let gpu = hardware.gaming_gpu();
-    let vulkan = gpu.and_then(|gpu| gpu.vulkan.as_ref());
-    let gpu_entry = gpu.and_then(|gpu| {
-        catalog
-            .gpu_by_pci(gpu.vendor_id, gpu.device_id)
-            .or_else(|| catalog.match_gpus(&vulkan?.name).into_iter().next())
-    });
-    Specs {
-        ram_mb: hardware.ram_bytes.map(|bytes| (bytes >> 20) as u32),
-        vram_mb: gpu.and_then(|gpu| match gpu.vram {
-            Vram::Dedicated(bytes) => Some((bytes >> 20) as u32),
-            Vram::Shared | Vram::Unknown => None,
-        }),
-        // Installed games are already on disk.
-        free_storage_mb: None,
-        vulkan: vulkan.and_then(|vulkan| {
-            let mut parts = vulkan.api_version.split('.').map(str::parse::<u32>);
-            Some((parts.next()?.ok()?, parts.next()?.ok()?))
-        }),
-        nouveau: gpu.is_some_and(|gpu| gpu.kernel_driver.as_deref() == Some("nouveau")),
-        cpu: hardware
-            .cpu
-            .as_deref()
-            .and_then(|model| catalog.match_cpus(model).into_iter().next())
-            .map(CatalogEntry::to_ref),
-        gpu: gpu_entry.map(CatalogEntry::to_ref),
-    }
-}
-
 impl Tier {
     /// What the matcher compares.
     pub fn requirement(&self) -> Requirement {
@@ -268,8 +271,17 @@ impl GameDb {
         if path.exists() {
             std::fs::remove_file(path)?;
         }
-        let conn = Connection::open(path)?;
+        GameDb::with_schema(Connection::open(path)?)
+    }
+
+    /// An empty database that lives as long as it's open.
+    fn create_in_memory() -> Result<GameDb, Error> {
+        GameDb::with_schema(Connection::open_in_memory()?)
+    }
+
+    fn with_schema(conn: Connection) -> Result<GameDb, Error> {
         conn.execute_batch(SCHEMA)?;
+        conn.execute_batch(SEARCH_TRIGGERS)?;
         conn.execute(
             "INSERT INTO meta (key, value) VALUES ('schema_version', ?1)",
             [SCHEMA_VERSION],
@@ -308,7 +320,6 @@ impl GameDb {
             "INSERT INTO meta (key, value) VALUES ('source', 'seed')",
             [],
         )?;
-        db.rebuild_search()?;
         Ok(db)
     }
 
@@ -400,10 +411,19 @@ impl GameDb {
                 [record.app_id],
             )?;
         }
+        // An upsert rather than INSERT OR REPLACE, which would hide the old
+        // name from the search triggers. Popularity is ProtonDB's and stays.
         tx.execute(
-            "INSERT OR REPLACE INTO games (app_id, name, release_date, linux_native, protondb_tier,
+            "INSERT INTO games (app_id, name, release_date, linux_native, protondb_tier,
                  deck_status, anticheat_status, anticheat_name, requirements_status, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+             ON CONFLICT (app_id) DO UPDATE SET name = excluded.name,
+                 release_date = excluded.release_date, linux_native = excluded.linux_native,
+                 protondb_tier = excluded.protondb_tier, deck_status = excluded.deck_status,
+                 anticheat_status = excluded.anticheat_status,
+                 anticheat_name = excluded.anticheat_name,
+                 requirements_status = excluded.requirements_status,
+                 updated_at = excluded.updated_at",
             params![
                 record.app_id,
                 record.name,
@@ -562,11 +582,10 @@ impl GameDb {
         Ok(())
     }
 
-    /// Rebuilds the name index after games were written.
-    pub fn rebuild_search(&self) -> Result<(), Error> {
-        self.conn
-            .execute("INSERT INTO games_fts(games_fts) VALUES ('rebuild')", [])?;
-        Ok(())
+    /// The published build this file is (e.g. "2026-11-01.1"), set when the
+    /// app installs it; `None` for a file the app didn't download.
+    pub fn db_version(&self) -> Option<String> {
+        self.meta(update::DB_VERSION).ok().flatten()
     }
 
     /// Games `offset..offset + limit` of the Catalog, most popular first.
@@ -779,83 +798,6 @@ impl GameDb {
         Ok(games.into_values().collect())
     }
 
-    /// In fetched.db: saves a live lookup of a store page, made at `now`
-    /// (Unix seconds). A store page doesn't say what ProtonDB, the Deck or
-    /// AreWeAntiCheatYet think, so whatever `games` (games.db) knows about
-    /// that is kept, and its hardware table matches the CPU and GPU text.
-    pub fn store_lookup(
-        &self,
-        mut record: GameRecord,
-        games: &GameDb,
-        now: i64,
-    ) -> Result<(), Error> {
-        type Known = (
-            Option<String>,
-            Option<String>,
-            Option<String>,
-            Option<String>,
-        );
-        let known: Option<Known> = games
-            .conn
-            .query_row(
-                "SELECT protondb_tier, deck_status, anticheat_status, anticheat_name
-                 FROM games WHERE app_id = ?1",
-                [record.app_id],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
-            )
-            .optional()?;
-        if let Some((protondb, deck, anticheat, anticheat_name)) = known {
-            record.protondb = record.protondb.or(protondb);
-            record.deck = record.deck.or(deck);
-            record.anticheat = record.anticheat.or(anticheat);
-            record.anticheat_name = record.anticheat_name.or(anticheat_name);
-        }
-        record.updated_at = now;
-        let catalog = games.catalog()?;
-        // Requirement rows point at this file's own hardware rows: add the
-        // ones it lacks, never renumbering those earlier lookups point at.
-        let tx = self.conn.unchecked_transaction()?;
-        let entries = catalog
-            .cpus()
-            .iter()
-            .map(|entry| ("cpu", entry))
-            .chain(catalog.gpus().iter().map(|entry| ("gpu", entry)));
-        for (kind, entry) in entries {
-            tx.execute(
-                "INSERT INTO hardware (kind, vendor, name, score, score_source, vram_mb)
-                 SELECT ?1, ?2, ?3, ?4, 'games.db', ?5
-                 WHERE NOT EXISTS (SELECT 1 FROM hardware WHERE kind = ?1 AND name = ?3)",
-                params![
-                    kind,
-                    vendor_name(entry.vendor),
-                    entry.name,
-                    entry.score,
-                    entry.vram_mb
-                ],
-            )?;
-        }
-        tx.commit()?;
-        self.store(&record, &catalog)
-    }
-
-    /// In fetched.db: the game with `app_id`, unless it was looked up more
-    /// than 30 days before `now` (ROADMAP §7.1), when it's worth asking again.
-    pub fn lookup(&self, app_id: u32, now: i64) -> Result<Option<Game>, Error> {
-        const STALE_AFTER: i64 = 30 * 24 * 60 * 60;
-        let looked_up_at: Option<i64> = self
-            .conn
-            .query_row(
-                "SELECT updated_at FROM games WHERE app_id = ?1",
-                [app_id],
-                |row| row.get(0),
-            )
-            .optional()?;
-        match looked_up_at {
-            Some(at) if now - at <= STALE_AFTER => self.game(app_id),
-            _ => Ok(None),
-        }
-    }
-
     /// Games with a requirement tier but not its text: crawled before
     /// games.db kept the text, so their store page is worth fetching again.
     pub fn without_requirement_text(&self) -> Result<std::collections::HashSet<u32>, Error> {
@@ -910,11 +852,6 @@ impl GameDb {
             anticheat_name,
             crawled,
         }))
-    }
-
-    /// How well the game with `app_id` should run, or `None` if it's not here.
-    pub fn verdict(&self, app_id: u32, specs: &Specs) -> Result<Option<Verdict>, Error> {
-        Ok(self.game(app_id)?.map(|game| game.verdict(specs)))
     }
 
     /// The hardware table shipped in the database.
@@ -1208,4 +1145,31 @@ fn anticheat_status(name: &str) -> Option<AntiCheat> {
         "denied" => AntiCheat::Denied,
         _ => return None,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn an_older_file_gets_the_search_triggers_and_a_fresh_index() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let path = dir.path().join("games.db");
+        let db = GameDb::create(&path).unwrap();
+        // As a build from before the triggers left it: names written, index behind.
+        db.conn
+            .execute_batch(
+                "DROP TRIGGER games_fts_insert; DROP TRIGGER games_fts_delete;
+                 DROP TRIGGER games_fts_update;",
+            )
+            .unwrap();
+        db.store_names(&[(400, "Portal")]).unwrap();
+        drop(db);
+
+        let db = GameDb::open(&path).unwrap();
+        db.store_names(&[(620, "Portal 2")]).unwrap();
+
+        let found = db.games_page("portal", &Filters::default(), 0, 10).unwrap();
+        assert_eq!(found.len(), 2);
+    }
 }

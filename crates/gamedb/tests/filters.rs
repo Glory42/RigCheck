@@ -5,14 +5,13 @@
 use std::path::{Path, PathBuf};
 
 use rigcheck_core::{AntiCheat, ProtonTier};
-use rigcheck_gamedb::{Filters, GameDb, specs};
-use rigcheck_hardware::{Commands, Hardware, detect};
+use rigcheck_gamedb::{Filters, GameDb};
+use rigcheck_hardware::{Commands, Hardware, Rig, detect};
 use tempfile::TempDir;
 
 fn seed() -> (TempDir, GameDb) {
     let dir = TempDir::new().unwrap();
     let db = GameDb::create_seed(&dir.path().join("games.db")).unwrap();
-    db.rebuild_search().unwrap();
     (dir, db)
 }
 
@@ -141,7 +140,11 @@ fn can_run_keeps_games_that_meet_at_least_the_minimum() {
     let (_dir, db) = seed();
     db.store_names(&[(30, "Day of Defeat")]).unwrap();
     let filters = Filters {
-        runs_on: Some(specs(&db.catalog().unwrap(), &amd_laptop())),
+        runs_on: Some(
+            Rig::new(&db.catalog().unwrap(), &amd_laptop())
+                .specs()
+                .clone(),
+        ),
         ..Filters::default()
     };
 

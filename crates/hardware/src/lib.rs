@@ -1,11 +1,16 @@
-//! Linux hardware detection.
+//! Linux hardware detection, and the [`Rig`]: what was detected, read
+//! against the hardware table.
 //!
 //! Everything is read relative to a `root` directory (`/` in the app) and
 //! external programs run through [`Commands`], so tests can replay fixtures
 //! captured from other machines.
 
+mod rig;
+
 use std::fs;
 use std::path::Path;
+
+pub use rig::{Rig, Swap};
 
 /// Runs external programs such as `vulkaninfo`.
 pub trait Commands {

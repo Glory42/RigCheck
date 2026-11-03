@@ -18,6 +18,19 @@ pub struct Choices {
     pub cpus: combo_box::State<String>,
 }
 
+impl Choices {
+    /// Every GPU and CPU in the hardware table, by name.
+    pub fn of(catalog: &rigcheck_core::Catalog) -> Choices {
+        let names = |entries: &[rigcheck_core::CatalogEntry]| {
+            entries.iter().map(|entry| entry.name.clone()).collect()
+        };
+        Choices {
+            gpus: combo_box::State::new(names(catalog.gpus())),
+            cpus: combo_box::State::new(names(catalog.cpus())),
+        }
+    }
+}
+
 pub struct Picked<'a> {
     pub gpu: Option<&'a String>,
     pub cpu: Option<&'a String>,

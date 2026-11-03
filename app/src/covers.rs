@@ -3,14 +3,12 @@
 
 use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 use iced::Task;
-use iced::futures::channel::oneshot;
-use rigcheck_net::{Allowlist, Client, RateLimiter, Retry};
 
 use crate::Message;
+use crate::web::{Web, background};
 
 pub struct Covers {
     /// Where Steam installs are looked for.
@@ -23,18 +21,17 @@ pub struct Covers {
     /// without art, a tile gets a still placeholder (and `asked` keeps it
     /// from being asked again).
     loading: HashSet<u32>,
-    /// One client for every download, so its rate limiter sees them all.
-    cdn: Arc<Mutex<Option<Client>>>,
+    web: Web,
 }
 
 impl Covers {
-    pub fn new(home: PathBuf, dir: PathBuf) -> Covers {
+    pub fn new(home: PathBuf, dir: PathBuf, web: Web) -> Covers {
         Covers {
             home,
             dir,
             asked: HashSet::new(),
             loading: HashSet::new(),
-            cdn: Arc::default(),
+            web,
         }
     }
 
@@ -113,26 +110,15 @@ impl Covers {
             return Task::none();
         }
         self.loading.insert(app_id);
-        let cdn = self.cdn.clone();
-        Task::perform(
-            async move {
-                let (sender, receiver) = oneshot::channel();
-                std::thread::spawn(move || {
-                    let _ = sender.send(download(&cdn, app_id));
-                });
-                receiver
-                    .await
-                    .unwrap_or_else(|_| Err("the download stopped".to_owned()))
-            },
-            move |result| Message::CoverFetched(app_id, result),
-        )
+        let web = self.web.clone();
+        background(move || web.cover(app_id)).map(move |jpeg| Message::CoverFetched(app_id, jpeg))
     }
 
     /// Downloads and keeps `app_id`'s cover now, blocking: for the README
     /// screenshots, which don't run iced's tasks.
     #[cfg(test)]
     pub fn download_now(&self, app_id: u32) -> Option<PathBuf> {
-        let jpeg = download(&self.cdn, app_id).ok()?;
+        let jpeg = self.web.cover(app_id).ok()?;
         self.save(app_id, &jpeg).ok()
     }
 
@@ -155,27 +141,6 @@ impl Covers {
     }
 }
 
-/// Steam's 600×900 library art for `app_id`, the same image Steam caches.
-fn download(cdn: &Mutex<Option<Client>>, app_id: u32) -> Result<Vec<u8>, String> {
-    let mut client = cdn.lock().map_err(|_| "the client broke".to_owned())?;
-    if client.is_none() {
-        // A CDN, so faster than the store API; still paced, since a big
-        // library asks for hundreds at once.
-        let limiter = RateLimiter::new(10, Duration::from_secs(1));
-        let retry = Retry::new(1, Duration::from_secs(2));
-        *client = Some(Client::new(Allowlist::app(), limiter, retry).map_err(|e| e.to_string())?);
-    }
-    let client = client.as_mut().expect("just built");
-    let url = format!(
-        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{app_id}/library_600x900.jpg"
-    );
-    let mut jpeg = Vec::new();
-    client
-        .download(&url, &mut jpeg, |_| {})
-        .map_err(|e| e.to_string())?;
-    Ok(jpeg)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -184,7 +149,12 @@ mod tests {
     const BG3: u32 = 1086940;
 
     fn covers(dir: &TempDir) -> Covers {
-        Covers::new(dir.path().join("home"), dir.path().join("cache/images"))
+        let web = crate::web::Web::with(crate::web::fake::Fake::replying(Ok("jpeg")));
+        Covers::new(
+            dir.path().join("home"),
+            dir.path().join("cache/images"),
+            web,
+        )
     }
 
     #[test]

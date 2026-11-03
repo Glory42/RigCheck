@@ -2,17 +2,13 @@
 //! one `appdetails` request for the app ID whose page was opened. The answer
 //! is kept in fetched.db by the caller.
 
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-
-use iced::futures::channel::oneshot;
 use iced::widget::{button, row, space, text};
 use iced::{Element, Task};
-use rigcheck_net::{Allowlist, Client, RateLimiter, Retry};
 
 use crate::Message;
 use crate::i18n::I18n;
 use crate::style::{BOLD, Colors};
+use crate::web::{Web, background};
 
 /// Where a lookup is, for the game page.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -25,50 +21,12 @@ pub enum State {
     NoRequirements(u32),
 }
 
-/// One client for every lookup, so its rate limiter sees them all. Built on
-/// first use.
-#[derive(Clone, Default)]
-pub struct Steam(Arc<Mutex<Option<Client>>>);
-
-impl Steam {
-    /// Asks Steam about `app_id` on a background thread; the answer comes
-    /// back as [`Message::SteamLookup`]. Nothing is sent until iced runs
-    /// the task (tests drop it unrun, so they never reach the network).
-    pub fn ask(&self, app_id: u32) -> Task<Message> {
-        let steam = self.clone();
-        Task::perform(
-            async move {
-                let (sender, receiver) = oneshot::channel();
-                std::thread::spawn(move || {
-                    let _ = sender.send(steam.get(app_id));
-                });
-                receiver
-                    .await
-                    .unwrap_or_else(|_| Err("the lookup stopped".to_owned()))
-            },
-            move |result| Message::SteamLookup(app_id, result),
-        )
-    }
-
-    /// The `appdetails` JSON for `app_id`. Blocks, waiting its turn under
-    /// the rate limit.
-    fn get(&self, app_id: u32) -> Result<String, String> {
-        let mut client = self.0.lock().map_err(|_| "the client broke".to_owned())?;
-        if client.is_none() {
-            // Well under Steam's ~200 requests per 5 minutes, even for
-            // someone opening game after game.
-            let limiter = RateLimiter::new(20, Duration::from_secs(60));
-            let retry = Retry::new(1, Duration::from_secs(5));
-            *client = Some(
-                Client::new(Allowlist::app(), limiter, retry).map_err(|error| error.to_string())?,
-            );
-        }
-        let client = client.as_mut().expect("just built");
-        let url = format!(
-            "https://store.steampowered.com/api/appdetails?appids={app_id}&l=english&cc=us"
-        );
-        client.get_text(&url).map_err(|error| error.to_string())
-    }
+/// Asks Steam about `app_id`; the answer comes back as
+/// [`Message::SteamLookup`].
+pub fn ask(web: &Web, app_id: u32) -> Task<Message> {
+    let web = web.clone();
+    background(move || web.appdetails(app_id))
+        .map(move |answer| Message::SteamLookup(app_id, answer))
 }
 
 /// A line for the page of `app_id` about its lookup, if there's one to show.

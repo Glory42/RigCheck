@@ -12,6 +12,9 @@ use crate::{Error, GameDb};
 /// The games.db schema this build reads and writes.
 pub const SCHEMA_VERSION: u32 = 1;
 
+/// The `meta` key an installed file keeps its manifest's `db_version` under.
+pub(crate) const DB_VERSION: &str = "db_version";
+
 /// `manifest.json`, published next to `games.db.zst`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Manifest {
@@ -68,7 +71,7 @@ pub fn install(zst: &Path, manifest: &Manifest, dest: &Path) -> Result<GameDb, E
         .map_err(Error::from)
         .and_then(|()| check(&new, manifest))
         .and_then(|()| add_indexes(&new))
-        .and_then(|()| GameDb::open(&new)?.set_meta("db_version", &manifest.db_version));
+        .and_then(|()| GameDb::open(&new)?.set_meta(DB_VERSION, &manifest.db_version));
     if let Err(error) = unpacked {
         let _ = fs::remove_file(&new);
         return Err(error);

@@ -3929,6 +3929,7 @@ dependencies = [
 name = "rigcheck-hardware"
 version = "0.7.0"
 dependencies = [
+ "rigcheck-core",
  "rustix 1.1.6",
  "tempfile",
 ]
