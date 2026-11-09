@@ -285,3 +285,95 @@ fn placeholders_and_the_64_bit_line_are_not_parts() {
 fn finds_ram_written_as_ram_colon() {
     assert_eq!(parse(tier(315210, "minimum")).ram_mb, Some(16384));
 }
+
+/// KOTOR II and Stubbs the Zombie give each vendor's card its own line:
+/// "Video Card (ATI): Radeon HD 5450", "Video Card (NVidia): GeForce 260".
+#[test]
+fn joins_gpu_lines_given_per_vendor() {
+    assert_eq!(
+        parse(tier(208580, "minimum")).gpu.as_deref(),
+        Some("Radeon HD 5450 or GeForce 260 or HD 4400")
+    );
+    assert_eq!(
+        parse(tier(7800, "minimum")).gpu.as_deref(),
+        Some("Radeon R9 M270 or GeForce GTX 660")
+    );
+}
+
+/// RAM that pages state plainly, just not as "8 GB RAM".
+#[test]
+fn reads_memory_written_in_other_ways() {
+    let cases = [
+        (32370, "Memory: 256 RAM", 256),
+        (219740, "Memory: 1+ gigs of RAM GB RAM", 1024),
+        (2009100, "Memory: 16(Dual-channel) GB RAM", 16 * 1024),
+        (2190220, "Memory: ４ GB RAM (a full-width 4)", 4 * 1024),
+        (6880, "256MB System Memory.", 256),
+        (6980, "…, 256 MB system memory, 64 MB video memory, …", 256),
+        (9500, "…; 256MB of memory", 256),
+    ];
+    for (app_id, line, mb) in cases {
+        assert_eq!(parse(tier(app_id, "minimum")).ram_mb, Some(mb), "{line}");
+    }
+}
+
+/// Old pages write one paragraph: items split at commas, semicolons or
+/// sentences, with a "Label:" somewhere inside.
+#[test]
+fn reads_parts_from_one_paragraph_pages() {
+    // "Windows XP, 1 GHz 32-bit (x86) or 64-bit (x64) CPU, …, WEI Rating: 4.0 (3.0 required)"
+    let geometry_wars = parse(tier(8400, "minimum"));
+    assert_eq!(
+        geometry_wars.cpu.as_deref(),
+        Some("1 GHz 32-bit (x86) or 64-bit (x64) CPU")
+    );
+    assert_eq!(
+        geometry_wars.gpu.as_deref(),
+        Some("DirectX Video Card (128MB memory - Shader Model 2.0 support required)")
+    );
+    // "…, AMD, Intel or G3 1000+ Mhz processor; OpenGL Compatible 3D Graphics adaptor (ATI, NVIDIA, Intel, etc.) with …"
+    let gish = parse(tier(9500, "minimum"));
+    assert_eq!(gish.cpu.as_deref(), Some("Intel or G3 1000+ Mhz processor"));
+    assert_eq!(
+        gish.gpu.as_deref(),
+        Some(
+            "OpenGL Compatible 3D Graphics adaptor (ATI, NVIDIA, Intel, etc.) with 32 mb of video memory"
+        )
+    );
+    // "Pentium® III 450. Windows® 98,ME,XP,2000. NVIDIA® TNT2 3D card. 128MB of RAM. …"
+    let ghost_master = parse(tier(6200, "minimum"));
+    assert_eq!(ghost_master.cpu.as_deref(), Some("Pentium® III 450"));
+    assert_eq!(ghost_master.gpu.as_deref(), Some("NVIDIA® TNT2 3D card"));
+    // "…, 2.2 GHz Pentium® 4, …, nVidia: GF6600, ATI: Radeon 9800 or better video card*, …"
+    let call_of_juarez = parse(tier(3020, "minimum"));
+    assert_eq!(call_of_juarez.cpu.as_deref(), Some("2.2 GHz Pentium® 4"));
+    assert_eq!(call_of_juarez.gpu.as_deref(), Some("nVidia: GF6600"));
+}
+
+/// Older ways to name the graphics requirement without a label.
+#[test]
+fn finds_video_memory_and_3d_accelerators_as_the_gpu() {
+    // Thief: Deadly Shadows: "…, 256 MB system memory, 64 MB video memory, …"
+    let thief = parse(tier(6980, "minimum"));
+    assert_eq!(thief.gpu.as_deref(), Some("64 MB video memory"));
+    assert_eq!(thief.vram_mb, Some(64));
+    // Return to Castle Wolfenstein: "3-D Hardware Accelerator (with 16MB VRAM
+    // with full OpenGL® support; Pentium® II 400 Mhz processor or …" never
+    // closes its parenthesis.
+    let wolfenstein = parse(tier(9010, "minimum"));
+    assert_eq!(
+        wolfenstein.cpu.as_deref(),
+        Some("Pentium® II 400 Mhz processor or Athlon® processor")
+    );
+    assert_eq!(
+        wolfenstein.gpu.as_deref(),
+        Some("3-D Hardware Accelerator (with 16MB VRAM with full OpenGL® support")
+    );
+    // Commandos: the sound card shares the line, after the graphics card.
+    assert_eq!(
+        parse(tier(6800, "minimum")).gpu.as_deref(),
+        Some(
+            "100% DirectX® 8 compatible 3D Accelerator card with at least 12 MB VRAM 100% DirectX® 8 compatible (or higher) Sound card"
+        )
+    );
+}
