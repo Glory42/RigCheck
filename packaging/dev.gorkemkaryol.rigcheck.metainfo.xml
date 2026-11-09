@@ -58,6 +58,11 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.0.0" date="2026-11-09">
+      <description>
+        <p>First stable release. Requirements are read from more kinds of store pages: one graphics card per vendor, memory written without a unit, and old one-paragraph pages.</p>
+      </description>
+    </release>
     <release version="0.8.0" date="2026-11-03">
       <description>
         <p>Library: ALL MY GAMES, with your own Steam Web API key. Catalog: a grid of cover tiles. Looked-up games show their verdict on every page.</p>

@@ -3882,7 +3882,7 @@ checksum = "47b34b781b31e5d73e9fbc8689c70551fd1ade9a19e3e28cfec8580a79290cc4"
 
 [[package]]
 name = "rigcheck"
-version = "0.8.0"
+version = "1.0.0"
 dependencies = [
  "directories",
  "fluent-bundle",
@@ -3901,7 +3901,7 @@ dependencies = [
 
 [[package]]
 name = "rigcheck-core"
-version = "0.8.0"
+version = "1.0.0"
 dependencies = [
  "insta",
  "regex",
@@ -3912,7 +3912,7 @@ dependencies = [
 
 [[package]]
 name = "rigcheck-gamedb"
-version = "0.8.0"
+version = "1.0.0"
 dependencies = [
  "rigcheck-core",
  "rigcheck-hardware",
@@ -3927,7 +3927,7 @@ dependencies = [
 
 [[package]]
 name = "rigcheck-hardware"
-version = "0.8.0"
+version = "1.0.0"
 dependencies = [
  "rigcheck-core",
  "rustix 1.1.6",
@@ -3936,7 +3936,7 @@ dependencies = [
 
 [[package]]
 name = "rigcheck-net"
-version = "0.8.0"
+version = "1.0.0"
 dependencies = [
  "reqwest",
  "url",
@@ -3944,7 +3944,7 @@ dependencies = [
 
 [[package]]
 name = "rigcheck-pipeline"
-version = "0.8.0"
+version = "1.0.0"
 dependencies = [
  "rigcheck-core",
  "rigcheck-gamedb",
@@ -3958,7 +3958,7 @@ dependencies = [
 
 [[package]]
 name = "rigcheck-steam"
-version = "0.8.0"
+version = "1.0.0"
 dependencies = [
  "serde",
  "serde_json",
