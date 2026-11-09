@@ -4,7 +4,7 @@
 # stable rigcheck-bin. pkgver comes from git, so this file only changes when
 # the build does; users rebuild with `yay -Syu --devel`.
 pkgname=rigcheck-git
-pkgver=0.8.0.r2.g5f46a4e
+pkgver=1.0.0.r0.g4b725b6
 pkgrel=1
 pkgdesc="Check which Steam games your PC can run on Linux (latest master)"
 arch=('x86_64')

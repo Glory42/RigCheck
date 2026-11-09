@@ -1,6 +1,6 @@
 pkgbase = rigcheck-git
 	pkgdesc = Check which Steam games your PC can run on Linux (latest master)
-	pkgver = 0.8.0.r2.g5f46a4e
+	pkgver = 1.0.0.r0.g4b725b6
 	pkgrel = 1
 	url = https://github.com/Glory42/rigcheck
 	arch = x86_64

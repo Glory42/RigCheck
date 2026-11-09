@@ -1,6 +1,6 @@
 pkgbase = rigcheck-bin
 	pkgdesc = Check which Steam games your PC can run on Linux
-	pkgver = 0.8.0
+	pkgver = 1.0.0
 	pkgrel = 1
 	url = https://github.com/Glory42/rigcheck
 	arch = x86_64
@@ -16,7 +16,7 @@ pkgbase = rigcheck-bin
 	optdepends = vulkan-tools: vulkaninfo, for Vulkan version and VRAM detection
 	provides = rigcheck
 	conflicts = rigcheck
-	source = https://github.com/Glory42/rigcheck/releases/download/v0.8.0/rigcheck-0.8.0-x86_64-linux.tar.gz
-	sha256sums = 717f7e0c2a48438df8d79282f4bb04689380db35ff79b43036063075af1896ec
+	source = https://github.com/Glory42/rigcheck/releases/download/v1.0.0/rigcheck-1.0.0-x86_64-linux.tar.gz
+	sha256sums = f3254bc80b9bf3a0816ef8e393a3deb2e89bc61a9bb88231eed5247990d2a673
 
 pkgname = rigcheck-bin
