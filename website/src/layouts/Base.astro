@@ -1,0 +1,67 @@
+---
+import "@fontsource/fira-sans/400.css";
+import "@fontsource/fira-sans/700.css";
+import "@fontsource/fira-mono/700.css";
+import "../styles/global.css";
+
+import icon16 from "../../../assets/brand/icon-16.png";
+import icon32 from "../../../assets/brand/icon-32.png";
+import icon256 from "../../../assets/brand/icon-256.png";
+import { homePath, languages, strings, type Lang } from "../i18n";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = strings[lang];
+const site = Astro.site!;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{t.title}</title>
+    <meta name="description" content={t.description} />
+    <meta name="theme-color" content="#f58a1f" />
+    <link rel="canonical" href={new URL(homePath(lang), site)} />
+    {languages.map((other) => <link rel="alternate" hreflang={other} href={new URL(homePath(other), site)} />)}
+    <link rel="alternate" hreflang="x-default" href={new URL("/", site)} />
+    <link rel="icon" type="image/png" sizes="16x16" href={icon16.src} />
+    <link rel="icon" type="image/png" sizes="32x32" href={icon32.src} />
+    <link rel="apple-touch-icon" href={icon256.src} />
+    <meta property="og:title" content={t.title} />
+    <meta property="og:description" content={t.description} />
+    <meta property="og:image" content={new URL(icon256.src, site)} />
+    {
+      lang === "en" && (
+        /* First visit to the English page: follow the browser's language if
+           the site has it. A language picked in the header is saved and
+           always wins. Nothing leaves the browser. */
+        <script is:inline>
+          (function () {
+            try {
+              var saved = localStorage.getItem("rigcheck-lang");
+              if (saved) {
+                if (saved === "tr" || saved === "de") location.replace("/" + saved + "/");
+                return;
+              }
+              var wanted = navigator.languages || [navigator.language];
+              for (var i = 0; i < wanted.length; i++) {
+                var code = String(wanted[i] || "").slice(0, 2).toLowerCase();
+                if (code === "tr" || code === "de") return location.replace("/" + code + "/");
+                if (code === "en") return;
+              }
+            } catch (error) {}
+          })();
+        </script>
+      )
+    }
+  </head>
+  <body>
+    <a class="skip button" href="#content">{t.skip}</a>
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,528 @@
+---
+import { Image } from "astro:assets";
+import Base from "../layouts/Base.astro";
+import Header from "./Header.astro";
+import library from "../../../assets/screenshots/library.webp";
+import catalog from "../../../assets/screenshots/catalog.webp";
+import icon from "../../../assets/brand/icon-256.png";
+import { strings, type Lang } from "../i18n";
+import { latestRelease, releasesUrl, repoUrl } from "../release";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = strings[lang];
+const release = await latestRelease();
+const download = (url: string | undefined) => url ?? releasesUrl;
+
+const stamps = [
+  ["ready", t.stampReady, t.stampReadyText],
+  ["low", t.stampLow, t.stampLowText],
+  ["weak", t.stampWeak, t.stampWeakText],
+  ["blocked", t.stampBlocked, t.stampBlockedText],
+  ["unknown", t.stampUnknown, t.stampUnknownText],
+] as const;
+
+// The game page of the app's own screenshot, rebuilt in HTML.
+const rows = [
+  { part: "CPU", yours: "Ryzen 5 7530U", minimum: "Intel i5 4690 / AMD FX 8350", result: t.resultMinimum },
+  {
+    part: "GPU",
+    yours: "Radeon Vega 7",
+    minimum: "GTX 970 / RX 480 / Arc A380",
+    result: t.resultBelow,
+    bottleneck: true,
+  },
+  { part: "RAM", yours: "15.0 GiB", minimum: "8 GB", result: t.resultRecommended },
+];
+
+const facts = [
+  [t.factProtondb, t.factProtondbValue],
+  [t.factAnticheat, t.factAnticheatValue],
+  [t.factDeck, t.factDeckValue],
+];
+
+const features = [
+  [t.featLibraryTitle, t.featLibraryText],
+  [t.featHardwareTitle, t.featHardwareText],
+  [t.featCatalogTitle, t.featCatalogText],
+  [t.featWhatIfTitle, t.featWhatIfText],
+  [t.featLinuxTitle, t.featLinuxText],
+  [t.featOfflineTitle, t.featOfflineText],
+];
+
+const destinations = [
+  ["github.com", t.privacyGithub],
+  ["store.steampowered.com", t.privacySteamStore],
+  ["shared.akamai.steamstatic.com", t.privacySteamCdn],
+  ["api.steampowered.com", t.privacySteamApi],
+];
+
+const packages = [
+  ["APPIMAGE", t.installAppImage, release?.appImage],
+  [".DEB", t.installDeb, release?.deb],
+  [".RPM", t.installRpm, release?.rpm],
+  ["TARBALL", t.installTarball, release?.tarball],
+] as const;
+---
+
+<Base lang={lang}>
+  <Header lang={lang} />
+  <main id="content">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-text">
+          <p class="label kicker">{t.heroKicker}</p>
+          <h1>{t.heroTitle}</h1>
+          <p class="lead">{t.heroLead}</p>
+          <div class="actions">
+            <a class="button big on" href="#install">
+              {t.heroDownload}{release && ` v${release.version}`}
+            </a>
+            <a class="button big" href={repoUrl}>{t.heroSource}</a>
+          </div>
+          <p class="formats label">{t.heroFormats}</p>
+        </div>
+        <div class="box shot">
+          <Image src={library} alt={t.shotLibrary} widths={[640, 1024]} sizes="(max-width: 900px) 100vw, 560px" loading="eager" />
+        </div>
+      </div>
+    </section>
+
+    <section class="stamps">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>{t.stampsTitle}</h2>
+          <p class="lead">{t.stampsLead}</p>
+        </div>
+        <ul class="stamp-list">
+          {
+            stamps.map(([kind, name, text]) => (
+              <li class="box">
+                <span class:list={["stamp", kind]}>{name}</span>
+                <p>{text}</p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+
+    <section class="why">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>{t.whyTitle}</h2>
+          <p class="lead">{t.whyLead}</p>
+        </div>
+        <div class="game">
+          <h3 class="game-title">{t.whyGame}</h3>
+          <span class="stamp weak big-stamp">{t.stampWeak}</span>
+          <p>{t.whyVerdict}</p>
+        </div>
+        <div class="box compare" role="table" aria-label={t.whyGame}>
+          <div class="compare-row head" role="row">
+            <span class="label" role="columnheader">{t.colPart}</span>
+            <span class="label" role="columnheader">{t.colYourPc}</span>
+            <span class="label" role="columnheader">{t.colMinimum}</span>
+            <span class="label" role="columnheader">{t.colResult}</span>
+          </div>
+          {
+            rows.map((row) => (
+              <div class:list={["compare-row", { bottleneck: row.bottleneck }]} role="row">
+                <span class="label" role="rowheader">{row.part}</span>
+                <span role="cell" data-label={t.colYourPc} class:list={{ label: row.bottleneck }}>
+                  {row.yours}
+                </span>
+                <span role="cell" data-label={t.colMinimum}>{row.minimum}</span>
+                <span class="label" role="cell" data-label={t.colResult}>
+                  {row.result}
+                </span>
+              </div>
+            ))
+          }
+        </div>
+        <ul class="facts">
+          {
+            facts.map(([name, value]) => (
+              <li class="box">
+                <span class="label small">{name}</span>
+                <span class="label value">{value}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+
+    <section id="features" class="features">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>{t.featuresTitle}</h2>
+        </div>
+        <ul class="feature-grid">
+          {
+            features.map(([title, text]) => (
+              <li class="box">
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="box shot wide">
+          <Image src={catalog} alt={t.shotCatalog} widths={[640, 1024, 1600]} sizes="(max-width: 1160px) 100vw, 1120px" />
+        </div>
+      </div>
+    </section>
+
+    <section id="privacy" class="privacy">
+      <div class="wrap">
+        <div class="box privacy-box">
+          <h2>{t.privacyTitle}</h2>
+          <p class="lead">{t.privacyLead}</p>
+          <ul class="destinations">
+            {
+              destinations.map(([host, why]) => (
+                <li>
+                  <code class="label">{host}</code>
+                  <span>{why}</span>
+                </li>
+              ))
+            }
+          </ul>
+          <p class="site-note">{t.privacySite}</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" class="install">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>{t.installTitle}{release && <span class="version"> v{release.version}</span>}</h2>
+          <p class="lead">{t.installLead}</p>
+        </div>
+        <ul class="package-grid">
+          {
+            packages.map(([name, who, url]) => (
+              <li class="box">
+                <h3>{name}</h3>
+                <p>{who}</p>
+                <a class="button on" href={download(url)}>
+                  {t.installGet}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="tip">{t.installVulkan}</p>
+        <ul class="soon-grid">
+          <li class="box">
+            <h3>AUR <span class="stamp soon">{t.installSoon}</span></h3>
+            <p>{t.installAur}</p>
+          </li>
+          <li class="box">
+            <h3>FLATHUB <span class="stamp soon">{t.installSoon}</span></h3>
+            <p>{t.installFlathub}</p>
+          </li>
+        </ul>
+        <a class="button" href={releasesUrl}>{t.installAllReleases}</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-row">
+      <Image src={icon} alt="" width={32} height={32} />
+      <p>
+        <span class="label">RIGCHECK</span> · <a href={`${repoUrl}/blob/master/LICENSE`}>{t.footerLicense}</a>
+        {" · "}{t.footerBy} <a href="https://github.com/Glory42">Glory42</a>
+      </p>
+      <p class="data">{t.footerData}</p>
+    </div>
+  </footer>
+</Base>
+
+<style>
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .hero {
+    padding-block: clamp(2.5rem, 1.5rem + 4vw, 5rem);
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: clamp(2rem, 1rem + 3vw, 4rem);
+  }
+
+  .hero-text {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .kicker {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  h1 {
+    font-size: clamp(2.4rem, 1.4rem + 4vw, 4.25rem);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .formats {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .shot {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .shot.wide {
+    margin-top: 2.5rem;
+  }
+
+  .stamps,
+  .features {
+    background: var(--panel2);
+    border-block: var(--border);
+  }
+
+  .stamp-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+    gap: 1.25rem;
+  }
+
+  .stamp-list li {
+    display: grid;
+    align-content: start;
+    gap: 0.9rem;
+    padding: 1.25rem;
+  }
+
+  .stamp-list .stamp {
+    justify-self: start;
+    font-size: 1.05rem;
+  }
+
+  .game {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .game-title {
+    font-size: clamp(1.4rem, 1rem + 1.5vw, 2rem);
+    width: 100%;
+  }
+
+  .big-stamp {
+    font-size: 1.5rem;
+    padding: 0.35rem 0.8rem;
+  }
+
+  .compare-row {
+    display: grid;
+    grid-template-columns: 6rem 1fr 1.4fr 1fr;
+    gap: 1rem;
+    padding: 0.9rem 1.25rem;
+  }
+
+  .compare-row.head {
+    padding-top: 1.1rem;
+  }
+
+  .compare-row.bottleneck {
+    background: var(--weak);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .facts li {
+    display: grid;
+    gap: 0.3rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .small {
+    font-size: 0.8rem;
+  }
+
+  .value {
+    font-size: 1.35rem;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+
+  .feature-grid li {
+    display: grid;
+    align-content: start;
+    gap: 0.6rem;
+    padding: 1.4rem;
+  }
+
+  .privacy-box {
+    display: grid;
+    gap: 1.25rem;
+    padding: clamp(1.5rem, 1rem + 2vw, 2.75rem);
+  }
+
+  .destinations {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .destinations li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px dashed var(--muted);
+  }
+
+  .destinations code {
+    min-width: 19rem;
+  }
+
+  .site-note {
+    font-weight: 700;
+  }
+
+  .version {
+    color: var(--muted);
+  }
+
+  .package-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+  }
+
+  .package-grid li,
+  .soon-grid li {
+    display: grid;
+    align-content: start;
+    gap: 0.6rem;
+    padding: 1.25rem;
+  }
+
+  .package-grid .button {
+    justify-self: start;
+    margin-top: 0.4rem;
+  }
+
+  .tip {
+    margin-block: 1.75rem;
+    color: var(--muted);
+  }
+
+  .soon-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .soon-grid h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .soon-grid .stamp {
+    font-size: 0.8rem;
+  }
+
+  .footer {
+    border-top: var(--border);
+    background: var(--panel2);
+    padding-block: 2rem;
+  }
+
+  .footer-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+  }
+
+  .data {
+    width: 100%;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 900px) {
+    .hero-grid,
+    .feature-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .package-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .facts,
+    .package-grid,
+    .soon-grid {
+      grid-template-columns: 1fr;
+    }
+
+    /* The table becomes one card per part, each value under its column name. */
+    .compare-row {
+      grid-template-columns: 1fr;
+      gap: 0.35rem;
+    }
+
+    .compare-row.head {
+      display: none;
+    }
+
+    .compare-row [data-label]::before {
+      content: attr(data-label) ": ";
+      font: 700 0.8rem var(--mono);
+      color: var(--muted);
+    }
+
+    .compare-row.bottleneck [data-label]::before {
+      color: var(--line);
+    }
+
+    .compare-row + .compare-row {
+      border-top: 2px solid var(--line);
+    }
+
+    .destinations code {
+      min-width: 0;
+    }
+  }
+</style>

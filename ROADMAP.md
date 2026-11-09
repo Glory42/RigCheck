@@ -134,10 +134,11 @@ The overall verdict is the **worst component**. A ⛔ Linux blocker overrides ev
 
 ```
 rigcheck/
-├── Cargo.toml                 # Rust workspace
+├── Cargo.toml                 # Rust workspace: app/, crates/*, pipeline/
 ├── deny.toml                  # dependency rules (only crates/net may do HTTP)
 ├── app/                       # the desktop app (iced), binary `rigcheck`
-│   └── src/                   # main.rs + one module per screen
+│   ├── src/                   # main.rs + one module per screen
+│   └── i18n/                  # UI translations, one Fluent file per language
 ├── pipeline/                  # data pipeline binary (crawl, parse, build games.db)
 ├── crates/                    # libraries shared by app/ and pipeline/
 │   ├── core/                  # requirement parser, matcher, shared types (no I/O)
@@ -145,16 +146,23 @@ rigcheck/
 │   ├── steam/                 # Steam install + library discovery
 │   ├── gamedb/                # games.db schema, queries, migrations
 │   └── net/                   # HTTP client with the host allowlist (§6)
-├── packaging/                 # .desktop file, AppStream metainfo, Flatpak manifest (Phase 7)
-├── website/                   # Astro showcase site (Phase 9, after v1.0)
-├── assets/brand/              # pixel-art icon and the scripts that draw it
+├── packaging/                 # .desktop file, AppStream metainfo, package.sh (Phase 7)
+│   ├── aur/                   # rigcheck-bin: the release tarball (stable)
+│   ├── aur-git/               # rigcheck-git: built from master (nightly)
+│   └── flatpak/               # Flathub manifest + cargo-sources.json
+├── website/                   # Astro showcase site, its own npm project (Phase 9)
+├── assets/
+│   ├── brand/                 # pixel-art icon and the scripts that draw it
+│   └── screenshots/           # rendered by app/src/screenshots.rs; used by README, metainfo, website
 ├── data/                      # hand-maintained, version-controlled inputs
 │   ├── hardware.toml          # known CPUs/GPUs: scores, aliases ("GTX 1060" → GTX 1060 6GB), PCI IDs
-│   ├── seed/games.toml        # the seed games.db's games and Linux facts (until Phase 4)
+│   ├── seed/games.toml        # the seed games.db's games and Linux facts (test data since Phase 5)
 │   └── fixtures/              # real requirement strings + fake /proc, /sys trees for tests
 ├── .github/workflows/
-│   ├── ci.yml                 # lint + test on every PR
-│   ├── release-app.yml        # build + publish app on tag
+│   ├── ci.yml                 # Rust lint + test on every PR (skipped steps for website-only PRs)
+│   ├── release-app.yml        # build packages on packaging PRs; publish them on a v* tag
+│   ├── flatpak.yml            # build the Flathub manifest offline on PRs touching it
+│   ├── website.yml            # build the site on PRs touching it
 │   └── build-db.yml           # scheduled data pipeline
 ├── ROADMAP.md
 └── README.md
@@ -488,12 +496,12 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 
 ### Phase 9: Showcase website (after v1.0)
 A static showcase page. It describes the app and sends people to GitHub, Flathub or AUR. It has no backend, collects no data and runs no analytics.
-- [ ] Astro site in `apps/website/`
-- [ ] Host on a subdomain of `gorkemkaryol.dev` (e.g. `rigcheck.gorkemkaryol.dev`)
-- [ ] Free hosting: GitHub Pages (custom domain via a `CNAME` DNS record) or Cloudflare Pages
-- [ ] Content: what it does, screenshots or a short video, privacy promise (§6), install buttons (Flathub, AUR, AppImage/deb/rpm from GitHub Releases), credits
-- [ ] Favicon from `assets/brand/` (`icon-16.png`, `icon-32.png`, `icon-64.png`)
-- [ ] Optional: a "latest version" badge, read at build time from the GitHub Releases API
+- [x] Astro site in `website/`: one static page in the app's Paper appearance, in English, Turkish and German (the browser's language on a first visit; a language picked in the header wins)
+- [ ] Host on `rigcheck.gorkemkaryol.dev`
+- [ ] Free hosting: Cloudflare Pages, which also holds the domain's DNS (settings in `website/README.md`)
+- [x] Content: what it does, the verdict stamps, a game page's comparison rebuilt in HTML, screenshots, privacy promise (§6), install buttons (AppImage/deb/rpm/tarball from the latest release; AUR and Flathub marked soon), credits. The site itself has no analytics or cookies and serves its own fonts
+- [x] Favicon from `assets/brand/` (`icon-16.png`, `icon-32.png`; `icon-256.png` for touch icons)
+- [x] The latest version, read at build time from the GitHub Releases API, names the download buttons and links straight to its files
 
 **Done when:** the subdomain serves the page over HTTPS and every install link works.
 
