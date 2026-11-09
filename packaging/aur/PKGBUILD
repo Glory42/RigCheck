@@ -23,7 +23,7 @@ optdepends=(
 provides=('rigcheck')
 conflicts=('rigcheck')
 source=("$url/releases/download/v$pkgver/rigcheck-$pkgver-x86_64-linux.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('717f7e0c2a48438df8d79282f4bb04689380db35ff79b43036063075af1896ec')
 
 package() {
   cp -a "rigcheck-$pkgver-x86_64-linux/usr" "$pkgdir/"

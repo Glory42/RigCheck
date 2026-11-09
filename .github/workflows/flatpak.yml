@@ -1,0 +1,31 @@
+name: Flatpak
+
+# Builds the Flathub manifest the way Flathub does: offline, from the release
+# tag it names, with the crates in cargo-sources.json. The tag's code is
+# built, not the pull request's, so this checks the manifest and that
+# cargo-sources.json matches the tag's Cargo.lock.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/flatpak.yml
+      - packaging/flatpak/**
+      - packaging/dev.gorkemkaryol.rigcheck.*
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  flatpak:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-26.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v7
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          manifest-path: packaging/flatpak/dev.gorkemkaryol.rigcheck.yml
+          bundle: rigcheck.flatpak
+          cache-key: flatpak-builder-${{ hashFiles('packaging/flatpak/**') }}
