@@ -9,3 +9,10 @@
 .env
 .env.*
 /dist
+
+# makepkg output when building the AUR recipes locally
+/packaging/aur*/src/
+/packaging/aur*/pkg/
+/packaging/aur*/rigcheck/
+/packaging/aur*/*.tar.gz
+/packaging/aur*/*.pkg.tar.zst
