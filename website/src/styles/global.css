@@ -1,0 +1,183 @@
+/* The app's Paper appearance (app/src/style.rs): cream page, orange bar,
+   near-black ink, chunky boxes with hard shadows and square corners. */
+
+:root {
+  --bg: #f2e8d5;
+  --hud: #f58a1f;
+  --panel: #fffaf0;
+  --panel2: #f7ecd6;
+  --line: #1b1410;
+  --text: #1b1410;
+  --muted: #6b5a48;
+  --accent: #2ea043;
+  --on-accent: #08160c;
+  /* Verdict stamps (style.rs level_color) */
+  --ready: #2ea043;
+  --low: #d29922;
+  --weak: #e5534b;
+  --blocked: #a371f7;
+  --unknown: #8b949e;
+
+  --mono: "Fira Mono", ui-monospace, monospace;
+  --sans: "Fira Sans", system-ui, sans-serif;
+  --border: 3px solid var(--line);
+  --shadow: 4px 4px 0 var(--line);
+  --width: 1120px;
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 1rem;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 1.0625rem/1.55 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.label {
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+h2 {
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.25rem);
+}
+
+h3 {
+  font-size: 1.05rem;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+:focus-visible {
+  outline: 3px solid var(--hud);
+  outline-offset: 3px;
+}
+
+.wrap {
+  width: min(100% - 2.5rem, var(--width));
+  margin-inline: auto;
+}
+
+section {
+  padding-block: clamp(3rem, 2rem + 4vw, 5.5rem);
+}
+
+.section-head {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 46rem;
+  margin-bottom: 2rem;
+}
+
+.lead {
+  font-size: 1.15rem;
+  color: var(--muted);
+}
+
+/* A chunky box: thick outline, hard shadow, no blur. */
+.box {
+  background: var(--panel);
+  border: var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* A tab or button; pressing flattens the shadow like a physical key. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: var(--panel);
+  color: var(--text);
+  border: var(--border);
+  box-shadow: 3px 3px 0 var(--line);
+  font: 700 0.95rem/1 var(--mono);
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 60ms, box-shadow 60ms;
+}
+
+.button:hover {
+  background: var(--panel2);
+}
+
+.button:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+.button.on {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.button.big {
+  padding: 0.95rem 1.4rem;
+  font-size: 1.1rem;
+}
+
+/* Verdict stamps */
+.stamp {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  font: 700 0.95rem/1.2 var(--mono);
+  color: var(--line);
+  white-space: nowrap;
+}
+
+.stamp.ready { background: var(--ready); }
+.stamp.low { background: var(--low); }
+.stamp.weak { background: var(--weak); }
+.stamp.blocked { background: var(--blocked); }
+.stamp.unknown { background: var(--unknown); }
+.stamp.soon { background: var(--hud); }
+
+.skip {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 10;
+}
+
+.skip:focus {
+  top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .button {
+    transition: none;
+  }
+}

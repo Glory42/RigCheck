@@ -146,7 +146,7 @@ rigcheck/
 │   ├── gamedb/                # games.db schema, queries, migrations
 │   └── net/                   # HTTP client with the host allowlist (§6)
 ├── packaging/                 # .desktop file, AppStream metainfo, Flatpak manifest (Phase 7)
-├── website/                   # Astro showcase site (Phase 9, after v1.0)
+├── website/                   # Astro showcase site (Phase 9)
 ├── assets/brand/              # pixel-art icon and the scripts that draw it
 ├── data/                      # hand-maintained, version-controlled inputs
 │   ├── hardware.toml          # known CPUs/GPUs: scores, aliases ("GTX 1060" → GTX 1060 6GB), PCI IDs
@@ -488,12 +488,12 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 
 ### Phase 9: Showcase website (after v1.0)
 A static showcase page. It describes the app and sends people to GitHub, Flathub or AUR. It has no backend, collects no data and runs no analytics.
-- [ ] Astro site in `apps/website/`
-- [ ] Host on a subdomain of `gorkemkaryol.dev` (e.g. `rigcheck.gorkemkaryol.dev`)
-- [ ] Free hosting: GitHub Pages (custom domain via a `CNAME` DNS record) or Cloudflare Pages
-- [ ] Content: what it does, screenshots or a short video, privacy promise (§6), install buttons (Flathub, AUR, AppImage/deb/rpm from GitHub Releases), credits
-- [ ] Favicon from `assets/brand/` (`icon-16.png`, `icon-32.png`, `icon-64.png`)
-- [ ] Optional: a "latest version" badge, read at build time from the GitHub Releases API
+- [x] Astro site in `website/`: one static page in the app's Paper appearance, in English, Turkish and German (the browser's language on a first visit; a language picked in the header wins)
+- [ ] Host on `rigcheck.gorkemkaryol.dev`
+- [ ] Free hosting: Cloudflare Pages, which also holds the domain's DNS (settings in `website/README.md`)
+- [x] Content: what it does, the verdict stamps, a game page's comparison rebuilt in HTML, screenshots, privacy promise (§6), install buttons (AppImage/deb/rpm/tarball from the latest release; AUR and Flathub marked soon), credits. The site itself has no analytics or cookies and serves its own fonts
+- [x] Favicon from `assets/brand/` (`icon-16.png`, `icon-32.png`; `icon-256.png` for touch icons)
+- [x] The latest version, read at build time from the GitHub Releases API, names the download buttons and links straight to its files
 
 **Done when:** the subdomain serves the page over HTTPS and every install link works.
 

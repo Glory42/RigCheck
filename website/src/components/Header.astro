@@ -1,0 +1,99 @@
+---
+import { Image } from "astro:assets";
+import icon from "../../../assets/brand/icon-256.png";
+import { homePath, languages, strings, type Lang } from "../i18n";
+import { repoUrl } from "../release";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = strings[lang];
+---
+
+<header class="hud">
+  <div class="wrap bar">
+    <a class="brand" href={homePath(lang)}>
+      <Image src={icon} alt="" width={44} height={44} loading="eager" />
+      <span class="label">RIGCHECK</span>
+    </a>
+    <nav aria-label="rigcheck">
+      <a class="button" href="#features">{t.navFeatures}</a>
+      <a class="button" href="#privacy">{t.navPrivacy}</a>
+      <a class="button" href="#install">{t.navInstall}</a>
+      <a class="button" href={repoUrl}>GITHUB</a>
+    </nav>
+    <div class="languages" role="group" aria-label={t.language}>
+      {
+        languages.map((other) => (
+          <a
+            class:list={["button", { on: other === lang }]}
+            href={homePath(other)}
+            hreflang={other}
+            lang={other}
+            data-lang={other}
+            aria-current={other === lang ? "page" : undefined}
+          >
+            {other.toUpperCase()}
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</header>
+
+<script>
+  // A picked language is remembered, so the English page stops following
+  // the browser's language.
+  for (const link of document.querySelectorAll<HTMLAnchorElement>("[data-lang]")) {
+    link.addEventListener("click", () => {
+      try {
+        localStorage.setItem("rigcheck-lang", link.dataset.lang!);
+      } catch {}
+    });
+  }
+</script>
+
+<style>
+  .hud {
+    background: var(--hud);
+    border-bottom: 5px solid var(--line);
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.9rem 1.5rem;
+    padding-block: 0.9rem;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-right: auto;
+    text-decoration: none;
+    font-size: 1.35rem;
+  }
+
+  nav,
+  .languages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .button {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 760px) {
+    nav {
+      order: 3;
+      width: 100%;
+    }
+  }
+</style>
