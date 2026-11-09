@@ -14,15 +14,16 @@
 </p>
 
 > [!NOTE]
-> **v1.0.** The game database is rebuilt daily from Steam; its store pages are read a few thousand a day, so many of Steam's ~200k games are known by name only for now, and get looked up live when you open them. See the [roadmap](ROADMAP.md).
+> **v1.0 is out.** The app is complete; the game database is still filling in. It's rebuilt daily from Steam, reading a few thousand store pages a day, most popular games first. Until a game's page has been read it's known by name only (`NOT CHECKED YET`), and the app looks it up on Steam when you open it, so you still get a verdict. See the [roadmap](ROADMAP.md).
 
 ## What it does
 
-- **Reads your Steam library.** It finds native, `~/.steam` and Flatpak installs and every library folder, including other drives, and skips Proton and the Steam runtimes. Add your own Steam Web API key in Settings and the Library can show every game you own, installed or not.
+- **Reads your Steam library.** It finds native, `~/.steam` and Flatpak installs and every library folder, including other drives, and skips Proton and the Steam runtimes. Add your own Steam Web API key in Settings and the Library can show every game you own, installed or not. Sort it A–Z or by verdict, with a summary on top: "38 of 42 installed games meet the recommended specs."
 - **Detects your hardware.** It reads CPU, RAM, every GPU by its PCI ID, video memory, the Vulkan version and the driver straight from `/proc`, `/sys` and `vulkaninfo`. Hybrid laptops use the discrete GPU, and it warns if your NVIDIA card runs on `nouveau`.
 - **Gives every game a verdict.** It compares your PC with the game's minimum and recommended specs, names the part holding you back, and takes Linux into account: ProtonDB ratings, anti-cheat that blocks Linux, and the Vulkan version Proton needs.
 - **Searches all of Steam.** The Catalog lists every game, most popular first, and filters it: only games your PC can run, ProtonDB tier, native Linux, Deck Verified, no anti-cheat problems. A game the database hasn't checked yet is looked up on Steam when you open it.
 - **Lets you ask "what if?"** Pick a different GPU or CPU on My Rig and every verdict updates.
+- **Compares two games.** Side by side: their verdicts, each part's minimum and how your PC does against it, and their Linux facts.
 - **Keeps itself current.** The game database updates in the background, and the app tells you when a new version is out.
 
 | Stamp | Meaning |
@@ -32,6 +33,8 @@
 | `TOO WEAK` | At least one part is below the minimum, and the game page says which |
 | `BLOCKED` | Can't run on Linux whatever the hardware, e.g. anti-cheat that denies Linux |
 | `???` | Not enough data to say |
+| `NOT CHECKED YET` | Known by name only; opening the game looks it up on Steam |
+| `NO DATA` | Not in the game database at all |
 
 ## Screenshots
 
@@ -112,6 +115,8 @@ crates/
 pipeline/     data pipeline that builds games.db daily (GitHub Actions)
 packaging/    desktop file, AppStream metainfo, AppImage/deb/rpm, AUR and Flatpak recipes
 data/         hardware table, seed games, test fixtures
+assets/       the pixel-art icon and the scripts that draw it; screenshots
+website/      the showcase site (Astro, its own npm project; see website/README.md)
 ```
 
 ```sh
@@ -123,7 +128,7 @@ cargo deny check bans            # only crates/net may use an HTTP client
 INSTA_UPDATE=always cargo test -p rigcheck-core --test parser   # accept parser snapshot changes, then review the diff
 ```
 
-CI runs fmt, clippy, tests and `cargo deny` on pushes to `master` and on pull requests. Screenshots are rendered by an ignored test: `RIGCHECK_SCREENSHOT_DB=<a games.db> cargo test -p rigcheck screenshots -- --ignored`.
+CI runs fmt, clippy, tests and `cargo deny` on pushes to `master` and on pull requests; pull requests that only touch `website/` skip the Rust steps. Other workflows build the game database daily (`build-db.yml`), the release packages (`release-app.yml`), the Flatpak (`flatpak.yml`) and the site (`website.yml`). Screenshots are rendered by an ignored test: `RIGCHECK_SCREENSHOT_DB=<a games.db> cargo test -p rigcheck screenshots -- --ignored`.
 
 ## Contributing
 

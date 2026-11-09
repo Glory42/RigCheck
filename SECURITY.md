@@ -13,7 +13,7 @@ rigcheck is a one-person side project, so there's no bug bounty.
 
 ## Supported versions
 
-Before v1.0, only the latest release gets fixes.
+Only the latest release gets fixes.
 
 ## What's in scope
 
@@ -22,9 +22,9 @@ rigcheck runs on your machine with your user's permissions. The parts worth a cl
 | Area | What it does |
 |---|---|
 | Files it reads | `/proc`, `/sys`, `/etc/os-release`, and Steam's folders (`libraryfolders.vdf`, app manifests, cached cover art) |
-| Programs it runs | `vulkaninfo --summary` and `nvidia-smi` from `PATH` |
-| Files it writes | `~/.config/rigcheck/settings.json` and `~/.local/share/rigcheck/games.db` |
-| Network | None today. Later versions talk to exactly three read-only destinations (GitHub Releases, Steam's store API, Steam's image CDN), all through `crates/net`; see [ROADMAP §6](ROADMAP.md#6-privacy--network) |
+| Programs it runs | `vulkaninfo --summary` and `nvidia-smi` from `PATH`; `xdg-open` to open a link in your browser |
+| Files it writes | `~/.config/rigcheck/`: `settings.json`, and `steam-api-key` (mode 600) if you add one; `~/.local/share/rigcheck/games.db`; `~/.cache/rigcheck/`: `fetched.db`, `images/` and `owned-games.json` |
+| Network | Read-only requests to GitHub Releases, Steam's store API and Steam's image CDN, plus the Steam Web API only if you add your own key. All go through `crates/net`, which refuses any other host; see [ROADMAP §6](ROADMAP.md#6-privacy--network) |
 
 Especially interesting: anything that makes the app talk to another host, run another program, or read or write outside the paths above, and anything in a downloaded `games.db` or Steam file that can do more than produce a wrong verdict.
 

@@ -68,4 +68,4 @@ The [roadmap](ROADMAP.md) says what's planned and why. For anything bigger than 
 
 ## License
 
-Code contributions are MIT licensed, like the rest of the code ([LICENSE](LICENSE)). Data contributions to `data/` are included in the published game database, which will be licensed under the ODbL (see [ROADMAP §1.2](ROADMAP.md#12-licenses)).
+Code contributions are MIT licensed, like the rest of the code ([LICENSE](LICENSE)). Data contributions to `data/` are included in the published game database, which is licensed under the ODbL (see [ROADMAP §1.2](ROADMAP.md#12-licenses)).

@@ -1,7 +1,5 @@
 # ROADMAP
 
-> **Working name:** `rigcheck` (placeholder, rename freely)
->
 > A Linux desktop app that tells you whether your PC can run a game before you buy it. It checks your installed Steam library and can search every game on Steam. Beyond raw hardware, it covers the Linux-specific questions: Proton compatibility, anti-cheat, drivers and Vulkan.
 
 ---
@@ -50,24 +48,24 @@ These are the rules every decision below follows. If a feature breaks one of the
 
 | Feature | Description |
 |---|---|
-| **My Library** | Lists every installed Steam game with cover art and a verdict badge (✅ / ⚠️ / ❌ / ❓) |
+| **My Library** | Lists every installed Steam game with cover art and a verdict stamp (READY / LOW / TOO WEAK / BLOCKED / ???) |
 | **Catalog** | Instant search across every game on Steam, owned or not |
 | **Game page** | Per-component verdict (CPU, GPU, RAM, VRAM, storage, graphics API), the bottleneck component, ProtonDB rating, anti-cheat status, Steam Deck status and a native Linux flag |
-| **My Hardware** | Shows detected CPU, GPU(s), RAM, VRAM, driver, Vulkan version, distro, kernel and free disk space |
+| **My Rig** | Shows detected CPU, GPU(s), RAM, VRAM, driver, Vulkan version, distro, kernel and free disk space |
 | **Appearance** | Five color themes for the pixel-art look (Paper, Ink, Midnight, Plum, Forest). Paper is the default; the choice is saved in `settings.json` |
 | **Language** | English, Turkish and German (Fluent `.ftl` files in `app/i18n/`). Follows the system language unless the user picks one. Game names and Steam's requirement text stay in English |
 | **Storage settings** | Database size and update status, a clear button for the cache, an image cache limit |
 
 ### Verdict levels
-| Badge | Meaning |
-|---|---|
-| ✅ **Recommended** | Every component meets the recommended specs |
-| 🟢 **Minimum** | Every component meets the minimum specs, at least one falls short of recommended |
-| ❌ **Below minimum** | At least one component is below minimum. The app names it |
-| ⛔ **Blocked** | The game can't run on Linux regardless of hardware, e.g. anti-cheat that denies Linux or a ProtonDB "Borked" rating |
-| ❓ **Unknown** | Not enough data. The app shows the raw requirement text |
+| Stamp | Level | Meaning |
+|---|---|---|
+| `READY` | Recommended | Every component meets the recommended specs |
+| `LOW` | Minimum | Every component meets the minimum specs, at least one falls short of recommended |
+| `TOO WEAK` | Below minimum | At least one component is below minimum. The app names it |
+| `BLOCKED` | Blocked | The game can't run on Linux regardless of hardware, e.g. anti-cheat that denies Linux or a ProtonDB "Borked" rating |
+| `???` | Unknown | Not enough data. The app shows the raw requirement text |
 
-The overall verdict is the **worst component**. A ⛔ Linux blocker overrides every hardware verdict.
+The overall verdict is the **worst component**. A `BLOCKED` Linux blocker overrides every hardware verdict.
 
 ---
 
@@ -76,7 +74,7 @@ The overall verdict is the **worst component**. A ⛔ Linux blocker overrides ev
 ```
 ┌──────────────────── Desktop app (one Rust binary, iced) ───────────────┐
 │                                                                        │
-│  app/  UI: Library │ Catalog │ Game page │ My Hardware │ Settings      │
+│  app/  UI: Library │ Catalog │ Game page │ My Rig │ Settings           │
 │        Elm architecture: state → view → Message → update               │
 │        calls the crates below directly (no IPC, no webview)            │
 │  ────────────────────────────────────────────────────────────────────  │
@@ -88,9 +86,10 @@ The overall verdict is the **worst component**. A ⛔ Linux blocker overrides ev
 │  │              lookups, cover art download, games.db download         │
 │  └── core       requirement parser + matcher (shared with pipeline)    │
 └────────────────────────────────────────────────────────────────────────┘
-          │ only 3 network destinations, all read-only, all via net (§6)
+          │ only these network destinations, all read-only, all via net (§6)
           ▼
    GitHub Releases (games.db)   Steam store API (live lookups)   Steam CDN (images)
+   Steam Web API (owned games; only with the user's own key)
 
 ┌──────────────────── Data pipeline (GitHub Actions, scheduled) ─────────┐
 │ 1. Download the previous games.db release                              │
@@ -116,15 +115,15 @@ The overall verdict is the **worst component**. A ⛔ Linux blocker overrides ev
 | Async work (UI) | iced `Task` on tokio | Loading states for disk and network work without blocking the UI |
 | App directories | `directories` (XDG) | `~/.local/share`, `~/.cache`, `~/.config`; Flatpak redirects these into its sandbox |
 | Database | **SQLite** via `rusqlite` (bundled), **FTS5** for search | Local, millisecond search, zero cost |
-| Steam files | `steamlocate`, `keyvalues-parser` | Finds Steam (native + Flatpak) and parses VDF/ACF |
-| System info | `sysinfo` + reading `/proc`, `/sys`, `vulkaninfo` | CPU, RAM, disks, GPU details |
+| Steam files | `steamlocate` | Finds Steam (native + Flatpak) and parses VDF/ACF |
+| System info | Reading `/proc`, `/sys`, `vulkaninfo` directly | CPU, RAM, disks, GPU details |
 | HTTP | `reqwest` (rustls), only inside `crates/net` | Live lookups, images, database download |
 | Serialization | `serde`, `serde_json` | Everything |
 | Compression | `zstd` | Smaller database downloads |
 | Tests (Rust) | built-in tests + `insta` snapshots | Parser and matcher correctness |
 | Tests (UI) | `iced_test` (headless simulator) + unit tests on `update` | Screens and state changes, no display needed |
 | Dependency rules | `cargo-deny` | Enforces that only `crates/net` has an HTTP client (§6) |
-| Packaging | `cargo-packager` (deb, AppImage, pacman), `cargo-generate-rpm` (rpm) | Linux packages from the same binary |
+| Packaging | `cargo-deb` (deb), `cargo-generate-rpm` (rpm), `appimagetool` (AppImage), plain `PKGBUILD`s (AUR) and a Flatpak manifest | Linux packages from the same binary, each installing our own `.desktop` file, metainfo and icons |
 | Pipeline | Rust binary in the same workspace | Shares `core` with the app |
 | CI/CD | GitHub Actions | Free for public repos |
 
@@ -191,7 +190,7 @@ As with any download, GitHub and Valve see the user's IP address. The project it
 
 **Enforced in code, not just promised:**
 - Only `crates/net` may depend on an HTTP client. `deny.toml` bans `reqwest` everywhere else (and bans other HTTP clients outright), and `cargo deny check bans` fails CI if that ever changes.
-- The client in `crates/net` only accepts the three hosts above. Any other host is a bug.
+- The client in `crates/net` only accepts the hosts above. Any other host is a bug.
 - A settings toggle lets users disable automatic update checks and update manually.
 
 ---
@@ -206,6 +205,8 @@ As with any download, GitHub and Valve see the user's IP address. The project it
 | `fetched.db` | `~/.cache/rigcheck/` | Yes. Holds live lookups for games not in `games.db` |
 | Cover images | `~/.cache/rigcheck/images/` | Yes. LRU-evicted at a user-set limit (default 500 MB) |
 | `settings.json` | `~/.config/rigcheck/` | Reset button |
+| `steam-api-key` | `~/.config/rigcheck/` (mode 600) | Yes. Only exists if the user adds their own Steam Web API key |
+| `owned-games.json` | `~/.cache/rigcheck/` | Yes. Steam's last list of owned games, for offline starts |
 
 Use the `directories` crate (`ProjectDirs`), which follows the XDG variables. Flatpak points those variables into the sandbox, so the same code works there.
 
@@ -307,7 +308,7 @@ CREATE TABLE gpu_pci_id (
 | **On disk** | **~30–60 MB** |
 | **Download (zstd)** | **~10–20 MB** |
 
-**Rule:** don't ship raw requirement HTML. It would add hundreds of MB. Store only the short cleaned `cpu_raw` / `gpu_raw` text, and fetch full text live if a game page needs it. A CI check fails the build if `games.db.zst` grows past a set budget (start at 50 MB).
+**Rule:** don't ship raw requirement HTML. It would add hundreds of MB. Store only the cleaned requirement text (~620 bytes a game), which the game page shows next to its verdict. A CI check fails the build if `games.db.zst` grows past a set budget (start at 50 MB).
 
 ---
 
@@ -509,10 +510,8 @@ A static showcase page. It describes the app and sends people to GitHub, Flathub
 
 ## 11. Future ideas (post-1.0, only if they keep the principles)
 
-- **Owned games:** an optional Steam Web API key entered by the user, stored locally and only ever sent to Steam.
 - **Non-Steam launchers:** Heroic (GOG/Epic) and Lutris libraries, read from local config files. Requirements would come from PCGamingWiki.
 - **Wishlist import:** paste a Steam wishlist URL to see which wishlisted games you can run.
-- **Translations** (i18n).
 - **Diff-based database updates** if `games.db` ever grows past ~100 MB.
 - **CLI companion** (`rigcheck check "elden ring"`), which is easy since all the logic is in Rust crates.
 
@@ -527,8 +526,8 @@ A static showcase page. It describes the app and sends people to GitHub, Flathub
 | Hardware scores missing for old or obscure parts | Unknown verdicts | Manual scores in `data/hardware.toml`, fall back to a release-year/tier estimate marked "low confidence" |
 | iced is pre-1.0 | Breaking changes between releases, weaker screen-reader support than GTK or the web | Pin the version, keep `app/` thin so upgrades touch little code, upgrade on purpose rather than automatically |
 | GPU driver problems (no Vulkan, old drivers) | Blank or crashing window for some users | iced falls back to software rendering (tiny-skia). Document `ICED_BACKEND=tiny-skia` and test on NVIDIA every release |
-| Scheduled workflow auto-disabled | Database goes stale | The pipeline commits a version file each run, and a "DB older than 7 days" warning appears in the app |
-| Steam installed via Flatpak or Snap | Library not found | Check all known paths, plus a manual "add Steam folder" option |
+| Scheduled workflow auto-disabled | Database goes stale | Each run re-enables its own workflow through the API (Phase 4). Not built yet: a "DB older than 7 days" warning in the app |
+| Steam installed via Flatpak or Snap | Library not found | Check the native and Flatpak paths and every library folder. Not built yet: Snap, and a manual "add Steam folder" option |
 | First crawl takes days | Slow start | Crawl popular games first, make it resumable, and optionally run the first crawl locally |
 | Data license conflicts | Legal risk | Verify every license in §9 before v0.4. Keep attribution in the app and the database `meta` table |
 | Private-repo Actions minutes run out (2,000/month) | CI blocked during Phases 0–3 | CI only on `master` + PRs with Rust caching, no scheduled jobs while private, go public before Phase 4 |
@@ -545,10 +544,10 @@ A static showcase page. It describes the app and sends people to GitHub, Flathub
 | Database hosting | GitHub Releases asset (up to 2 GB per file) |
 | App distribution | GitHub Releases, Flathub, AUR |
 | App updates | Flathub and AUR, plus an in-app "new version" notice from GitHub Releases |
-| Code signing | Not required on Linux. The updater key is self-generated |
+| Code signing | Not required on Linux. Database downloads are checked against the SHA-256 in `manifest.json` |
 | Images | Steam CDN directly |
 | Steam Web API key | Free |
-| Website (after v1.0) | GitHub Pages or Cloudflare Pages on a subdomain of `gorkemkaryol.dev` (domain already owned) |
+| Website | Cloudflare Pages on `rigcheck.gorkemkaryol.dev` (domain already owned) |
 | Servers, databases, analytics | **None. That's the point** |
 
 ---
