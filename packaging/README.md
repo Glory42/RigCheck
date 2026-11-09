@@ -33,7 +33,7 @@ Two packages, so Arch users pick a channel:
 | Package | Channel | Recipe | Builds |
 |---|---|---|---|
 | `rigcheck-bin` | Stable | `aur/PKGBUILD` | Repackages the release tarball |
-| `rigcheck-git` | Latest `master` | `aur-git/PKGBUILD` | Compiles from source on the user's machine; `pkgver` comes from `git describe` (`0.8.0.r2.g5f46a4e`), so users rebuild with `yay -Syu --devel` |
+| `rigcheck-git` | Latest `master` | `aur-git/PKGBUILD` | Compiles from source on the user's machine; `pkgver` comes from `git describe` (`1.0.0.r2.g1234abc`), so users rebuild with `yay -Syu --devel` |
 
 Both provide and conflict with `rigcheck`, so only one is installed at a time. Each is published by pushing its `PKGBUILD` and `.SRCINFO` to `ssh://aur@aur.archlinux.org/<package>.git` (needs an AUR account with your SSH key; the first push creates the package; the AUR only takes `master`):
 
