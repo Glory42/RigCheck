@@ -134,10 +134,11 @@ The overall verdict is the **worst component**. A ⛔ Linux blocker overrides ev
 
 ```
 rigcheck/
-├── Cargo.toml                 # Rust workspace
+├── Cargo.toml                 # Rust workspace: app/, crates/*, pipeline/
 ├── deny.toml                  # dependency rules (only crates/net may do HTTP)
 ├── app/                       # the desktop app (iced), binary `rigcheck`
-│   └── src/                   # main.rs + one module per screen
+│   ├── src/                   # main.rs + one module per screen
+│   └── i18n/                  # UI translations, one Fluent file per language
 ├── pipeline/                  # data pipeline binary (crawl, parse, build games.db)
 ├── crates/                    # libraries shared by app/ and pipeline/
 │   ├── core/                  # requirement parser, matcher, shared types (no I/O)
@@ -145,16 +146,23 @@ rigcheck/
 │   ├── steam/                 # Steam install + library discovery
 │   ├── gamedb/                # games.db schema, queries, migrations
 │   └── net/                   # HTTP client with the host allowlist (§6)
-├── packaging/                 # .desktop file, AppStream metainfo, Flatpak manifest (Phase 7)
-├── website/                   # Astro showcase site (Phase 9)
-├── assets/brand/              # pixel-art icon and the scripts that draw it
+├── packaging/                 # .desktop file, AppStream metainfo, package.sh (Phase 7)
+│   ├── aur/                   # rigcheck-bin: the release tarball (stable)
+│   ├── aur-git/               # rigcheck-git: built from master (nightly)
+│   └── flatpak/               # Flathub manifest + cargo-sources.json
+├── website/                   # Astro showcase site, its own npm project (Phase 9)
+├── assets/
+│   ├── brand/                 # pixel-art icon and the scripts that draw it
+│   └── screenshots/           # rendered by app/src/screenshots.rs; used by README, metainfo, website
 ├── data/                      # hand-maintained, version-controlled inputs
 │   ├── hardware.toml          # known CPUs/GPUs: scores, aliases ("GTX 1060" → GTX 1060 6GB), PCI IDs
-│   ├── seed/games.toml        # the seed games.db's games and Linux facts (until Phase 4)
+│   ├── seed/games.toml        # the seed games.db's games and Linux facts (test data since Phase 5)
 │   └── fixtures/              # real requirement strings + fake /proc, /sys trees for tests
 ├── .github/workflows/
-│   ├── ci.yml                 # lint + test on every PR
-│   ├── release-app.yml        # build + publish app on tag
+│   ├── ci.yml                 # Rust lint + test on every PR (skipped steps for website-only PRs)
+│   ├── release-app.yml        # build packages on packaging PRs; publish them on a v* tag
+│   ├── flatpak.yml            # build the Flathub manifest offline on PRs touching it
+│   ├── website.yml            # build the site on PRs touching it
 │   └── build-db.yml           # scheduled data pipeline
 ├── ROADMAP.md
 └── README.md

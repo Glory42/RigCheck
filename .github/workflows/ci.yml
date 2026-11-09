@@ -22,18 +22,43 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+        with:
+          # A pull request's merge commit and its parents, to see what it changes.
+          fetch-depth: 2
+      # A pull request that only touches the website skips the Rust steps. The
+      # job itself still runs and passes: it's a required check, and a skipped
+      # required check would block the merge.
+      - name: What changed
+        id: changes
+        run: |
+          # No pipe into grep -q: it stops reading early, which fails the pipe.
+          changed=$(git diff --name-only HEAD^1 HEAD)
+          if [[ "${{ github.event_name }}" == pull_request ]] &&
+            ! grep -qvE '^(website/|\.github/workflows/website\.yml$)' <<< "$changed"; then
+            echo "rust=false" >> "$GITHUB_OUTPUT"
+            echo "Only the website changed: skipping the Rust checks."
+          else
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: dtolnay/rust-toolchain@stable
+        if: steps.changes.outputs.rust == 'true'
         with:
           components: clippy, rustfmt
       # Caches ~/.cargo and target/ between runs; the biggest time (and minutes) saver.
       - uses: Swatinem/rust-cache@v2
+        if: steps.changes.outputs.rust == 'true'
         with:
           save-if: ${{ github.ref == 'refs/heads/master' }}
 
       - run: cargo fmt --all --check
+        if: steps.changes.outputs.rust == 'true'
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+        if: steps.changes.outputs.rust == 'true'
       - run: cargo test --workspace --locked
+        if: steps.changes.outputs.rust == 'true'
       - uses: EmbarkStudios/cargo-deny-action@v2
+        if: steps.changes.outputs.rust == 'true'
         with:
           command: check bans
 
