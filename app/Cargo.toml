@@ -13,11 +13,11 @@ directories = "6.0.0"
 fluent-bundle = "0.16"
 # `image` decodes the PNG window icon now and cover art later.
 iced = { version = "0.14", features = ["image"] }
-rigcheck-core = { version = "0.8.0", path = "../crates/core" }
-rigcheck-gamedb = { version = "0.8.0", path = "../crates/gamedb" }
+rigcheck-core = { version = "1.0.0", path = "../crates/core" }
+rigcheck-gamedb = { version = "1.0.0", path = "../crates/gamedb" }
 rigcheck-hardware = { path = "../crates/hardware" }
-rigcheck-net = { version = "0.8.0", path = "../crates/net" }
-rigcheck-steam = { version = "0.8.0", path = "../crates/steam" }
+rigcheck-net = { version = "1.0.0", path = "../crates/net" }
+rigcheck-steam = { version = "1.0.0", path = "../crates/steam" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 unic-langid = "0.9"

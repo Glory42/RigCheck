@@ -14,7 +14,7 @@
 </p>
 
 > [!NOTE]
-> **Pre-1.0 (v0.7).** Everything below works today. The game database is rebuilt daily from Steam; its store pages are read a few thousand a day, so most of Steam's ~200k games are known by name only for now, and get looked up live when you open them. See the [roadmap](ROADMAP.md).
+> **v1.0.** The game database is rebuilt daily from Steam; its store pages are read a few thousand a day, so many of Steam's ~200k games are known by name only for now, and get looked up live when you open them. See the [roadmap](ROADMAP.md).
 
 ## What it does
 
@@ -81,7 +81,7 @@ Settings → Privacy turns the start-up checks off (then they run only when you 
 
 ## Install
 
-Each [release](https://github.com/Glory42/rigcheck/releases) has an **AppImage** (any distro), a **.deb** (Debian, Ubuntu, Mint), an **.rpm** (Fedora, openSUSE) and a tarball. An AUR package (`rigcheck-bin`) and a Flathub listing are on the way; their recipes are in [`packaging/`](packaging/).
+Each [release](https://github.com/Glory42/rigcheck/releases) has an **AppImage** (any distro), a **.deb** (Debian, Ubuntu, Mint), an **.rpm** (Fedora, openSUSE) and a tarball. AUR packages (`rigcheck-bin` for releases, `rigcheck-git` for the latest `master`) and a Flathub listing are on the way; their recipes are in [`packaging/`](packaging/).
 
 Install `vulkan-tools` as well, so rigcheck can read your GPU's Vulkan version and video memory.
 
