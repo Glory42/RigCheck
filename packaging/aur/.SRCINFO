@@ -17,6 +17,6 @@ pkgbase = rigcheck-bin
 	provides = rigcheck
 	conflicts = rigcheck
 	source = https://github.com/Glory42/rigcheck/releases/download/v0.8.0/rigcheck-0.8.0-x86_64-linux.tar.gz
-	sha256sums = SKIP
+	sha256sums = 717f7e0c2a48438df8d79282f4bb04689380db35ff79b43036063075af1896ec
 
 pkgname = rigcheck-bin
