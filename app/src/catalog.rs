@@ -158,24 +158,12 @@ impl List {
         self.refresh(records);
     }
 
-    /// Counts the matches and fetches the rows in view, e.g. for a new games.db.
+    /// Counts the matches and fetches the rows in view again, e.g. for a
+    /// new games.db or a lookup stored or cleared.
     pub fn refresh(&mut self, records: &Records) {
-        self.total = records
-            .games()
-            .games_count(&self.query, &self.filters)
-            .unwrap_or(0);
+        self.total = records.count(&self.query, &self.filters).unwrap_or(0);
         self.rows.clear();
         self.fetch_rows(records);
-    }
-
-    /// Reads `app_id`'s row again if it's in view, e.g. once Steam was
-    /// asked about it.
-    pub fn reload(&mut self, app_id: u32, records: &Records) {
-        let before = self.rows.len();
-        self.rows.retain(|game| game.app_id != app_id);
-        if self.rows.len() != before {
-            self.fetch_rows(records);
-        }
     }
 
     /// Tiles in a row.
@@ -217,8 +205,7 @@ impl List {
         match self.selected.checked_sub(self.first) {
             Some(index) if index < self.rows.len() => Some(self.rows[index].app_id),
             _ => records
-                .games()
-                .games_page(&self.query, &self.filters, self.selected, 1)
+                .page(&self.query, &self.filters, self.selected, 1)
                 .ok()?
                 .first()
                 .map(|(app_id, _)| *app_id),
@@ -231,8 +218,7 @@ impl List {
             return; // Same rows as before.
         }
         let page = records
-            .games()
-            .games_page(&self.query, &self.filters, range.start, range.len())
+            .page(&self.query, &self.filters, range.start, range.len())
             .unwrap_or_default();
         self.first = range.start;
         // Scrolling a little keeps most rows: reuse them and only load the

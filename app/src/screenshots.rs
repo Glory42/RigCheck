@@ -47,9 +47,7 @@ fn screenshots() {
     shoot(&mut app, &out, "catalog-loading");
     // The tiles in view with their covers, as the app downloads them.
     for app_id in app.catalog_list.visible_ids() {
-        if let Some(path) = app.art.download_now(app_id) {
-            app.covers.insert(app_id, path);
-        }
+        app.art.download_now(app_id);
     }
     shoot(&mut app, &out, "catalog");
     let _ = app.update(Message::CatalogFilter(catalog::Chip::CanRun));
