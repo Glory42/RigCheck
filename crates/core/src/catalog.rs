@@ -104,12 +104,17 @@ impl Catalog {
     }
 }
 
-/// Lookup keys for each entry: its name and aliases, normalized.
+/// Lookup keys for each entry: its name and aliases, normalized. A name
+/// with nothing left ("AMD Radeon Graphics", "") names no model and gets no
+/// key: it would match every text with nothing left either.
 fn keys(entries: &[CatalogEntry]) -> HashMap<String, usize> {
     let mut keys = HashMap::new();
     for (index, entry) in entries.iter().enumerate() {
         for name in std::iter::once(&entry.name).chain(&entry.aliases) {
-            keys.insert(normalize(name, false), index);
+            let key = normalize(name, false);
+            if !key.is_empty() {
+                keys.insert(key, index);
+            }
         }
     }
     keys
@@ -166,9 +171,10 @@ fn alternatives(text: &str) -> Vec<String> {
 }
 
 fn lookup(token: &str, keys: &HashMap<String, usize>) -> Option<usize> {
-    keys.get(&normalize(token, false))
-        .or_else(|| keys.get(&normalize(token, true)))
-        .copied()
+    [normalize(token, false), normalize(token, true)]
+        .into_iter()
+        .filter(|key| !key.is_empty())
+        .find_map(|key| keys.get(&key).copied())
 }
 
 /// Words that don't tell models apart.
@@ -191,6 +197,8 @@ const NOISE: &[&str] = &[
     "with",
     "and",
     "similar",
+    // Mesa's driver name, as in ProtonDB's "Intel Mesa Intel UHD 620".
+    "mesa",
 ];
 
 /// A comparable key: "Intel I5 4690" and "Core i5-4690" both become "i54690".

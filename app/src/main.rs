@@ -1257,6 +1257,42 @@ mod tests {
     }
 
     #[test]
+    fn a_part_steam_names_no_model_for_is_compared_with_protondb_players_hardware() {
+        let dir = TempDir::new().unwrap();
+        let paths = Paths::under(dir.path());
+        std::fs::create_dir_all(&paths.data).unwrap();
+        let db = GameDb::create_seed(&paths.data.join("games.db")).unwrap();
+        let part = |name: &str, weakest, typical| rigcheck_core::Reported {
+            weakest_name: name.to_owned(),
+            weakest,
+            typical,
+        };
+        // OMORI's page names no CPU or GPU the table knows.
+        db.set_reported(&[(
+            1150690,
+            Some(part("Core i3-6100", 60, 150)),
+            Some(part("Radeon Vega 8", 30, 100)),
+        )])
+        .unwrap();
+        drop(db);
+        let (mut app, _) = App::new(paths, Language::English);
+        let _ = app.update(Message::HardwareDetected(test_support::amd_laptop()));
+
+        let _ = app.update(Message::Open(Page::Game(1150690)));
+
+        // Ryzen 5 7530U (190) beats the typical player's CPU; the Vega 7 (32)
+        // only the weakest GPU: LOW, without a question mark.
+        assert!(shows(&app, "LOW"));
+        assert!(shows(
+            &app,
+            "Runs at low settings. Your GPU is below recommended. Players on ProtonDB ran it \
+             on CPUs as weak as Core i3-6100 and GPUs as weak as Radeon Vega 8."
+        ));
+        assert!(shows(&app, "MEETS RECOMMENDED (PROTONDB)"));
+        assert!(shows(&app, "MEETS MINIMUM (PROTONDB)"));
+    }
+
+    #[test]
     fn the_library_shows_each_installed_game_with_its_verdict() {
         let dir = TempDir::new().unwrap();
         let app = library_app(&dir);

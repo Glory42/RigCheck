@@ -212,3 +212,59 @@ fn new_hardware_applies_to_games_crawled_before_it_existed() {
     let names: Vec<&str> = minimum.gpus.iter().map(|gpu| gpu.name.as_str()).collect();
     assert_eq!(names, ["NVIDIA GeForce RTX 3050", "Radeon RX 580"]);
 }
+
+#[test]
+fn games_keep_what_players_ran_them_on() {
+    let dir = TempDir::new().unwrap();
+    let db = crawled(&dir);
+    let played = rigcheck_pipeline::protondb::Played {
+        cpus: Vec::new(),
+        gpus: ["GTX 750 Ti", "GTX 660", "GTX 970"]
+            .map(String::from)
+            .to_vec(),
+    };
+
+    build(
+        &db,
+        &Sources {
+            played: HashMap::from([(1085660, played)]),
+            ..Sources::default()
+        },
+    )
+    .unwrap();
+
+    let destiny = db.game(1085660).unwrap().unwrap();
+    assert_eq!(
+        destiny.linux.reported_gpu.map(|gpu| gpu.weakest_name),
+        Some("GeForce GTX 660".to_owned())
+    );
+    assert_eq!(destiny.linux.reported_cpu, None);
+}
+
+#[test]
+fn each_build_adds_blenders_parts_once() {
+    let dir = TempDir::new().unwrap();
+    let db = crawled(&dir);
+    let part = CatalogEntry {
+        name: "AMD A10-7800 Radeon R7, 12 Compute Cores 4C+8G".to_owned(),
+        vendor: Vendor::Amd,
+        score: 40,
+        vram_mb: None,
+        aliases: Vec::new(),
+        pci: Vec::new(),
+    };
+    let sources = Sources {
+        gaps: GapScores {
+            cpus: vec![part],
+            gpus: Vec::new(),
+        },
+        ..Sources::default()
+    };
+    let cpus = |db: &GameDb| db.catalog().unwrap().cpus().len();
+
+    build(&db, &sources).unwrap();
+    let once = cpus(&db);
+    build(&db, &sources).unwrap();
+
+    assert_eq!(cpus(&db), once);
+}

@@ -11,7 +11,7 @@ use std::path::Path;
 
 use rigcheck_core::{
     AntiCheat, Catalog, CatalogEntry, GameRequirements, Level, LinuxInfo, ParsedTier, ProtonTier,
-    Requirement, Specs, Vendor, Verdict, evaluate, parse, requirement_text,
+    Reported, Requirement, Specs, Vendor, Verdict, evaluate, parse, requirement_text,
 };
 use rusqlite::{Connection, OptionalExtension, params, params_from_iter};
 use serde::Deserialize;
@@ -45,8 +45,25 @@ const SEARCH_TRIGGERS: &str = "
         INSERT INTO games_fts (rowid, name) VALUES (new.app_id, new.name);
     END;";
 
+/// What ProtonDB players ran each game on without performance problems
+/// (pipeline/src/protondb.rs): per kind, the weakest part (20th percentile)
+/// and the typical one (median). Added after games.db's first release, so
+/// it's created here rather than in schema.sql, and only read if present.
+const REPORTED_HARDWARE: &str = "
+    CREATE TABLE IF NOT EXISTS reported_hardware (
+      app_id        INTEGER NOT NULL,
+      kind          TEXT NOT NULL CHECK (kind IN ('cpu', 'gpu')),
+      weakest_name  TEXT NOT NULL,
+      weakest_score INTEGER NOT NULL,
+      typical_score INTEGER NOT NULL,
+      PRIMARY KEY (app_id, kind)
+    );";
+
 pub struct GameDb {
     conn: Connection,
+    /// Whether the file has `reported_hardware`: a games.db installed
+    /// before it existed doesn't, and opening it doesn't add it.
+    has_reported: bool,
     /// The specs `temp.runnable` was filled for, if it has been (see
     /// [`Filters::runs_on`]).
     runnable_for: RefCell<Option<Specs>>,
@@ -129,6 +146,14 @@ impl Game {
             recommended: self.recommended.as_ref().map(Tier::requirement),
         };
         evaluate(&requirements, specs, &self.linux)
+    }
+
+    /// Keeps what players ran this game on, for `kind` "cpu" or "gpu".
+    fn set_reported(&mut self, kind: &str, part: Reported) {
+        match kind {
+            "cpu" => self.linux.reported_cpu = Some(part),
+            _ => self.linux.reported_gpu = Some(part),
+        }
     }
 
     /// Whether this game reaches at least its minimum on `specs`.
@@ -232,6 +257,11 @@ fn upgrade(conn: &Connection) -> Result<(), Error> {
         conn.execute_batch(SEARCH_TRIGGERS)?;
         conn.execute("INSERT INTO games_fts(games_fts) VALUES ('rebuild')", [])?;
     }
+    // Players' reported hardware: added after 1.0, likewise only for files
+    // that get written to.
+    if !has("games_search") {
+        conn.execute_batch(REPORTED_HARDWARE)?;
+    }
     Ok(())
 }
 
@@ -246,11 +276,13 @@ fn requirements_status(minimum: Option<&ParsedTier>) -> &'static str {
 }
 
 /// A game's Linux facts from its games.db columns.
+/// What players reported comes from `reported_hardware`.
 fn linux_info(native: bool, protondb: Option<&str>, anticheat: Option<&str>) -> LinuxInfo {
     LinuxInfo {
         anticheat: anticheat.and_then(anticheat_status),
         protondb: protondb.and_then(proton_tier),
         native,
+        ..LinuxInfo::default()
     }
 }
 
@@ -327,6 +359,7 @@ impl GameDb {
     fn with_schema(conn: Connection) -> Result<GameDb, Error> {
         conn.execute_batch(SCHEMA)?;
         conn.execute_batch(SEARCH_TRIGGERS)?;
+        conn.execute_batch(REPORTED_HARDWARE)?;
         conn.execute(
             "INSERT INTO meta (key, value) VALUES ('schema_version', ?1)",
             [SCHEMA_VERSION],
@@ -335,15 +368,19 @@ impl GameDb {
     }
 
     fn with(conn: Connection) -> GameDb {
-        let prefix_indexed = conn
-            .query_row(
-                "SELECT 1 FROM sqlite_master WHERE name = 'games_search'",
-                [],
+        let has = |name: &str| {
+            conn.query_row(
+                "SELECT 1 FROM sqlite_master WHERE name = ?1",
+                [name],
                 |_| Ok(()),
             )
-            .is_ok();
+            .is_ok()
+        };
+        let prefix_indexed = has("games_search");
+        let has_reported = has("reported_hardware");
         GameDb {
             conn,
+            has_reported,
             runnable_for: RefCell::new(None),
             search_table: if prefix_indexed {
                 "games_search"
@@ -376,10 +413,48 @@ impl GameDb {
         Ok(())
     }
 
-    /// Adds hardware scored elsewhere (e.g. `source` "blender") to the table.
+    /// Adds hardware scored elsewhere (e.g. `source` "blender") that the
+    /// table doesn't have by name yet. Rows earlier builds added twice go:
+    /// names the matcher couldn't find itself by (e.g. "A10-7800 Radeon R7,
+    /// 12 Compute Cores 4C+8G") came back as gaps every build. Matches to
+    /// the rows that go are dropped, so [`GameDb::rematch`] should run after.
     pub fn store_extra_hardware(&self, extra: &Catalog, source: &str) -> Result<(), Error> {
         let tx = self.conn.unchecked_transaction()?;
-        insert_hardware(&tx, extra, source)?;
+        tx.execute_batch(
+            "CREATE TEMP TABLE first_of_name AS
+               SELECT min(id) AS id FROM hardware GROUP BY kind, name;
+             UPDATE OR IGNORE gpu_pci_id SET hardware_id = (
+               SELECT min(same.id) FROM hardware this
+               JOIN hardware same ON same.kind = this.kind AND same.name = this.name
+               WHERE this.id = gpu_pci_id.hardware_id);
+             DELETE FROM gpu_pci_id WHERE hardware_id NOT IN (SELECT id FROM temp.first_of_name);
+             DELETE FROM hardware_alias WHERE hardware_id NOT IN (SELECT id FROM temp.first_of_name);
+             DELETE FROM requirement_hardware
+               WHERE hardware_id NOT IN (SELECT id FROM temp.first_of_name);
+             DELETE FROM hardware WHERE id NOT IN (SELECT id FROM temp.first_of_name);
+             DROP TABLE temp.first_of_name;",
+        )?;
+        let mut seen = std::collections::HashSet::new();
+        let mut new =
+            |kind: &'static str, entries: &[CatalogEntry]| -> Result<Vec<CatalogEntry>, Error> {
+                let mut kept = Vec::new();
+                for entry in entries {
+                    let stored = tx
+                        .query_row(
+                            "SELECT 1 FROM hardware WHERE kind = ?1 AND name = ?2",
+                            params![kind, entry.name],
+                            |_| Ok(()),
+                        )
+                        .optional()?
+                        .is_some();
+                    if !stored && seen.insert((kind, entry.name.clone())) {
+                        kept.push(entry.clone());
+                    }
+                }
+                Ok(kept)
+            };
+        let new = Catalog::new(new("cpu", extra.cpus())?, new("gpu", extra.gpus())?);
+        insert_hardware(&tx, &new, source)?;
         tx.commit()?;
         Ok(())
     }
@@ -885,6 +960,11 @@ impl GameDb {
                 _ => tier.gpus.push(entry),
             }
         }
+        for (app_id, kind, part) in self.reported(None)? {
+            if let Some(game) = games.get_mut(&app_id) {
+                game.set_reported(&kind, part);
+            }
+        }
         Ok(games.into_values().collect())
     }
 
@@ -932,7 +1012,7 @@ impl GameDb {
         let Some((name, native, protondb, deck, anticheat, anticheat_name, crawled)) = row else {
             return Ok(None);
         };
-        Ok(Some(Game {
+        let mut game = Game {
             app_id,
             name,
             minimum: self.tier(app_id, "minimum")?,
@@ -941,7 +1021,50 @@ impl GameDb {
             deck,
             anticheat_name,
             crawled,
-        }))
+        };
+        for (_, kind, part) in self.reported(Some(app_id))? {
+            game.set_reported(&kind, part);
+        }
+        Ok(Some(game))
+    }
+
+    /// What players ran `app_id` (or every game, for `None`) on, as
+    /// (app ID, "cpu" or "gpu", part).
+    fn reported(&self, app_id: Option<u32>) -> Result<Vec<(u32, String, Reported)>, Error> {
+        if !self.has_reported {
+            return Ok(Vec::new());
+        }
+        let mut statement = self.conn.prepare(
+            "SELECT app_id, kind, weakest_name, weakest_score, typical_score
+             FROM reported_hardware WHERE ?1 IS NULL OR app_id = ?1",
+        )?;
+        let rows = statement.query_map([app_id], |row| {
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                Reported {
+                    weakest_name: row.get(2)?,
+                    weakest: row.get(3)?,
+                    typical: row.get(4)?,
+                },
+            ))
+        })?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
+    /// Replaces what players ran each game on with `games`: (app ID, CPUs,
+    /// GPUs). Games not listed keep nothing.
+    pub fn set_reported(
+        &self,
+        games: &[(u32, Option<Reported>, Option<Reported>)],
+    ) -> Result<(), Error> {
+        let tx = self.conn.unchecked_transaction()?;
+        tx.execute("DELETE FROM reported_hardware", [])?;
+        for (app_id, cpu, gpu) in games {
+            write_reported(&tx, *app_id, cpu.as_ref(), gpu.as_ref())?;
+        }
+        tx.commit()?;
+        Ok(())
     }
 
     /// The hardware table shipped in the database.
@@ -1053,6 +1176,27 @@ impl GameDb {
 }
 
 /// Links a requirement tier to the table entries its CPU and GPU text name.
+/// Writes what players ran `app_id` on, replacing what was there.
+fn write_reported(
+    conn: &Connection,
+    app_id: u32,
+    cpu: Option<&Reported>,
+    gpu: Option<&Reported>,
+) -> Result<(), Error> {
+    conn.execute("DELETE FROM reported_hardware WHERE app_id = ?1", [app_id])?;
+    for (kind, part) in [("cpu", cpu), ("gpu", gpu)] {
+        let Some(part) = part else {
+            continue;
+        };
+        conn.execute(
+            "INSERT INTO reported_hardware (app_id, kind, weakest_name, weakest_score, typical_score)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![app_id, kind, part.weakest_name, part.weakest, part.typical],
+        )?;
+    }
+    Ok(())
+}
+
 fn insert_matches(
     tx: &rusqlite::Transaction,
     catalog: &Catalog,

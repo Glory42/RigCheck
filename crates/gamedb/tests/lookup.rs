@@ -226,3 +226,25 @@ fn a_stale_or_cleared_lookup_leaves_the_catalogs_filters() {
     fetched.clear().unwrap();
     assert!(listed(&Records::new(&games, &fetched, NOW), &native).is_empty());
 }
+
+#[test]
+fn a_lookup_keeps_what_players_ran_the_game_on() {
+    let dir = TempDir::new().unwrap();
+    let (games, fetched) = databases(&dir);
+    let gpu = rigcheck_core::Reported {
+        weakest_name: "Radeon RX 580".to_owned(),
+        weakest: 90,
+        typical: 210,
+    };
+    games
+        .set_reported(&[(BG3, None, Some(gpu.clone()))])
+        .unwrap();
+    let records = Records::new(&games, &fetched, NOW);
+
+    records.store_lookup(looked_up(BG3)).unwrap();
+
+    assert_eq!(
+        records.get(BG3).unwrap().unwrap().linux.reported_gpu,
+        Some(gpu)
+    );
+}

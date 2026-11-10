@@ -62,6 +62,22 @@ pub struct LinuxInfo {
     pub protondb: Option<ProtonTier>,
     /// Has a Linux build, so Proton isn't needed.
     pub native: bool,
+    /// The CPUs and GPUs ProtonDB players ran the game on, for a part
+    /// Steam's text doesn't name.
+    pub reported_cpu: Option<Reported>,
+    pub reported_gpu: Option<Reported>,
+}
+
+/// The parts of one kind that ProtonDB players ran a game on without
+/// performance problems, by score.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Reported {
+    /// The weakest part players ran it on: the 20th percentile, so one
+    /// report naming the wrong part doesn't decide it.
+    pub weakest_name: String,
+    pub weakest: u32,
+    /// The median part.
+    pub typical: u32,
 }
 
 /// ProtonDB's rating for running the Windows version through Proton.
@@ -145,6 +161,9 @@ pub struct Verdict {
     /// the game page lists them.
     pub components: Vec<(Component, Level)>,
     pub confidence: Confidence,
+    /// The components compared with what ProtonDB players ran the game on,
+    /// because Steam's text doesn't name a part.
+    pub reported: Vec<Component>,
     pub blocker: Option<Blocker>,
     pub warnings: Vec<Warning>,
 }
@@ -172,6 +191,16 @@ pub fn evaluate(game: &GameRequirements, specs: &Specs, linux: &LinuxInfo) -> Ve
 
     let (min, rec) = tiers(&|r| needed_score(&r.gpus, specs.gpu));
     let gpu = compare(specs.gpu.map(|gpu| gpu.score), min, rec);
+
+    // Steam's text names no part: what ProtonDB players ran the game on.
+    let cpu_players = among_players(specs.cpu, &linux.reported_cpu).filter(|_| cpu.is_none());
+    let gpu_players = among_players(specs.gpu, &linux.reported_gpu).filter(|_| gpu.is_none());
+    let reported = [(Component::Cpu, cpu_players), (Component::Gpu, gpu_players)]
+        .into_iter()
+        .filter(|(_, level)| level.is_some())
+        .map(|(component, _)| component)
+        .collect();
+    let (cpu, gpu) = (cpu.or(cpu_players), gpu.or(gpu_players));
 
     // Native games don't go through Proton; their DirectX line is for Windows.
     let api = if linux.native {
@@ -218,6 +247,7 @@ pub fn evaluate(game: &GameRequirements, specs: &Specs, linux: &LinuxInfo) -> Ve
             .map(|(component, _)| component),
         components: known,
         confidence,
+        reported,
         blocker,
         warnings: specs
             .nouveau
@@ -250,6 +280,20 @@ fn needed_score(alternatives: &[HardwareRef], have: Option<HardwareRef>) -> Opti
     same_vendor
         .or_else(|| alternatives.iter().min_by_key(|a| a.score))
         .map(|a| a.score)
+}
+
+/// Where `have` falls among the parts players ran the game on: as strong as
+/// the typical one meets recommended, as strong as the weakest meets the
+/// minimum. Weaker than that says nothing either way: `None`.
+fn among_players(have: Option<HardwareRef>, players: &Option<Reported>) -> Option<Level> {
+    let (have, players) = (have?.score, players.as_ref()?);
+    if have >= players.typical {
+        Some(Level::Recommended)
+    } else if have >= players.weakest {
+        Some(Level::Minimum)
+    } else {
+        None
+    }
 }
 
 /// Where `have` falls against the tiers the game lists. `None` if either

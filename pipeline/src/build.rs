@@ -11,7 +11,7 @@ use crate::applist::App;
 use crate::awacy::AntiCheatInfo;
 use crate::blender::GapScores;
 use crate::pci::PciId;
-use crate::protondb::Summary;
+use crate::protondb::{Played, Summary, reported};
 
 /// Everything `build` merges into the crawled games.
 #[derive(Debug, Clone, Default)]
@@ -19,6 +19,8 @@ pub struct Sources {
     /// Every game on Steam, for name search.
     pub apps: Vec<App>,
     pub protondb: HashMap<u32, Summary>,
+    /// What ProtonDB's players ran each game on.
+    pub played: HashMap<u32, Played>,
     pub anticheat: HashMap<u32, AntiCheatInfo>,
     /// Parts missing from data/hardware.toml, scored from Blender Open Data.
     pub gaps: GapScores,
@@ -33,7 +35,7 @@ Database Contents License: https://opendatacommons.org/licenses/dbcl/1-0/.";
 /// Credits for every data source (ROADMAP §9).
 const SOURCES: &str = "Steam store data: Valve Corporation (store.steampowered.com). \
 ProtonDB reports: ProtonDB (protondb.com), ODbL, via github.com/bdefore/protondb-data; \
-tiers computed by rigcheck's own rule. \
+tiers and players' hardware computed by rigcheck's own rules. \
 Anti-cheat status: AreWeAntiCheatYet (areweanticheatyet.com), MIT, © AreWeAntiCheatYet contributors. \
 Steam Deck compatibility: Valve Corporation's Deck compatibility reports. \
 Hardware scores: rigcheck's table (github.com/Glory42/rigcheck), gaps from Blender Open Data \
@@ -41,12 +43,13 @@ Hardware scores: rigcheck's table (github.com/Glory42/rigcheck), gaps from Blend
 
 /// Adds missing hardware and GPU PCI IDs and re-matches every game against
 /// the grown table; adds every app-list game not crawled yet (by name),
-/// ProtonDB tiers and popularity and anti-cheat status; rebuilds the name
-/// search; and writes the license and source credits.
+/// ProtonDB tiers, popularity and players' hardware, and anti-cheat status;
+/// rebuilds the name search; and writes the license and source credits.
 pub fn build(db: &GameDb, sources: &Sources) -> Result<(), Error> {
     let Sources {
         apps,
         protondb,
+        played,
         anticheat,
         gaps,
         pci_ids,
@@ -73,6 +76,17 @@ pub fn build(db: &GameDb, sources: &Sources) -> Result<(), Error> {
         .map(|(&app_id, summary)| (app_id, summary.tier, summary.reports))
         .collect();
     db.set_protondb(&proton)?;
+    // Matched against the grown table, Blender's parts included.
+    let catalog = db.catalog()?;
+    let players: Vec<_> = played
+        .iter()
+        .map(|(&app_id, played)| {
+            let (cpu, gpu) = reported(played, &catalog);
+            (app_id, cpu, gpu)
+        })
+        .filter(|(_, cpu, gpu)| cpu.is_some() || gpu.is_some())
+        .collect();
+    db.set_reported(&players)?;
     let anticheat: Vec<_> = anticheat
         .iter()
         .map(|(&app_id, info)| (app_id, info.status, info.name.clone()))

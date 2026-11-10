@@ -386,6 +386,7 @@ mod tests {
             bottleneck: None,
             components: Vec::new(),
             confidence,
+            reported: Vec::new(),
             blocker: None,
             warnings: Vec::new(),
         })

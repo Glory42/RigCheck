@@ -7,6 +7,6 @@ mod parser;
 pub use catalog::{Catalog, CatalogEntry};
 pub use matcher::{
     AntiCheat, Blocker, Component, Confidence, GameRequirements, HardwareRef, Level, LinuxInfo,
-    ProtonTier, Requirement, Specs, Vendor, Verdict, Warning, evaluate,
+    ProtonTier, Reported, Requirement, Specs, Vendor, Verdict, Warning, evaluate,
 };
 pub use parser::{ParsedTier, parse, requirement_text};

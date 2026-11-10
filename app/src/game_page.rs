@@ -106,18 +106,46 @@ pub fn view<'a>(
     scroll(page.padding([0, 6]), colors).into()
 }
 
-/// Why the game got its stamp: one sentence, and for READY? or LOW? a
-/// second naming what couldn't be compared.
+/// Why the game got its stamp: one sentence, then what ProtonDB players ran
+/// it on if their hardware filled in for Steam's text, and for READY? or
+/// LOW? what couldn't be compared.
 fn reason(status: &Status, record: Option<&Game>, i18n: &I18n) -> String {
     let because = cause(status, record, i18n);
     let Status::Verdict(verdict) = status else {
         return because;
     };
-    if !matches!(verdict.overall, Level::Recommended | Level::Minimum) {
-        return because;
+    let mut sentences = vec![because];
+    sentences.extend(record.and_then(|game| players(verdict, game, i18n)));
+    if matches!(verdict.overall, Level::Recommended | Level::Minimum) {
+        sentences.extend(gaps(verdict, i18n));
     }
+    sentences.join(" ")
+}
+
+/// "Players on ProtonDB ran it on GPUs as weak as Radeon Vega 8.", for the
+/// parts compared with their hardware.
+fn players(verdict: &Verdict, game: &Game, i18n: &I18n) -> Option<String> {
+    let weakest = |reported: &Option<rigcheck_core::Reported>| {
+        reported.as_ref().map(|part| part.weakest_name.clone())
+    };
+    let cpu =
+        weakest(&game.linux.reported_cpu).filter(|_| verdict.reported.contains(&Component::Cpu));
+    let gpu =
+        weakest(&game.linux.reported_gpu).filter(|_| verdict.reported.contains(&Component::Gpu));
+    Some(match (cpu, gpu) {
+        (Some(cpu), Some(gpu)) => {
+            i18n.t_with("why-players-cpu-gpu", &[("cpu", &cpu), ("gpu", &gpu)])
+        }
+        (Some(cpu), None) => i18n.t_with("why-players-cpu", &[("cpu", &cpu)]),
+        (None, Some(gpu)) => i18n.t_with("why-players-gpu", &[("gpu", &gpu)]),
+        (None, None) => return None,
+    })
+}
+
+/// "The CPU and GPU couldn't be compared.", if any of them couldn't.
+fn gaps(verdict: &Verdict, i18n: &I18n) -> Option<String> {
     let id = match not_compared(verdict).as_slice() {
-        [] => return because,
+        [] => return None,
         [Component::Cpu] => "why-not-compared-cpu",
         [Component::Gpu] => "why-not-compared-gpu",
         [Component::Ram] => "why-not-compared-ram",
@@ -126,7 +154,7 @@ fn reason(status: &Status, record: Option<&Game>, i18n: &I18n) -> String {
         [Component::Gpu, Component::Ram] => "why-not-compared-gpu-ram",
         _ => "why-not-compared-all",
     };
-    format!("{because} {}", i18n.t(id))
+    Some(i18n.t(id))
 }
 
 /// The CPU, GPU and RAM, less the ones `verdict` compared.
@@ -212,12 +240,18 @@ pub fn result(status: &Status, component: Component, i18n: &I18n) -> String {
         .iter()
         .find(|(compared, _)| *compared == component)
         .map(|(_, level)| *level);
-    i18n.t(match level {
+    let result = i18n.t(match level {
         Some(Level::Recommended) => "row-meets-recommended",
         Some(Level::Minimum) => "row-meets-minimum",
         Some(Level::Below) => "row-below-minimum",
         _ => "row-not-compared",
-    })
+    });
+    // Compared with what ProtonDB players ran the game on, not Steam's text.
+    if verdict.reported.contains(&component) {
+        format!("{result} (PROTONDB)")
+    } else {
+        result
+    }
 }
 
 /// ProtonDB, anti-cheat and Steam Deck: label and value.
