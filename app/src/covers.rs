@@ -65,7 +65,8 @@ impl Covers {
         }
         self.loading.insert(app_id);
         let web = self.web.clone();
-        background(move || web.cover(app_id)).map(move |jpeg| Message::CoverFetched(app_id, jpeg))
+        background(move || web.cover(app_id).and_then(decodes))
+            .map(move |jpeg| Message::CoverFetched(app_id, jpeg))
     }
 
     /// The download for `app_id` ended, with a cover or without. A cover is
@@ -144,7 +145,7 @@ impl Covers {
     /// screenshots, which don't run iced's tasks.
     #[cfg(test)]
     pub fn download_now(&mut self, app_id: u32) {
-        let jpeg = self.web.cover(app_id);
+        let jpeg = self.web.cover(app_id).and_then(decodes);
         self.fetched(app_id, jpeg, u64::MAX);
         // Shown at once: no frames run to fade it in.
         self.arrived.remove(&app_id);
@@ -208,6 +209,16 @@ impl Covers {
 
     fn file(&self, app_id: u32) -> PathBuf {
         self.dir.join(format!("{app_id}.jpg"))
+    }
+}
+
+/// `jpeg`, if it decodes as an image. A file that doesn't (an error page,
+/// a cut-off download) is no cover: iced's software renderer panics the
+/// second time it's asked to draw one.
+fn decodes(jpeg: Vec<u8>) -> Result<Vec<u8>, Failure> {
+    match image::load_from_memory(&jpeg) {
+        Ok(_) => Ok(jpeg),
+        Err(error) => Err(Failure::Failed(format!("not an image: {error}"))),
     }
 }
 
@@ -343,6 +354,13 @@ mod tests {
         assert!(opacity < 1.0, "fading in");
         assert!(covers.animating(now));
         assert!(!covers.animating(now + motion::FADE_IN));
+    }
+
+    #[test]
+    fn only_a_cover_that_decodes_is_kept() {
+        assert!(decodes(crate::test_support::jpeg(1_000)).is_ok());
+        assert!(decodes(b"<html>Service Unavailable</html>".to_vec()).is_err());
+        assert!(decodes(vec![0; 1_000]).is_err());
     }
 
     #[test]

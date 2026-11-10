@@ -1870,7 +1870,10 @@ mod tests {
     fn clearing_images_frees_their_space() {
         let dir = TempDir::new().unwrap();
         let mut app = library_app(&dir);
-        let _ = app.update(Message::CoverFetched(1150690, Ok(vec![0; 1_500_000])));
+        let _ = app.update(Message::CoverFetched(
+            1150690,
+            Ok(test_support::jpeg(1_500_000)),
+        ));
 
         click(&mut app, "SETTINGS");
         assert!(shows(&app, "1.5 MB"));
@@ -1891,7 +1894,7 @@ mod tests {
     fn covers_come_back_after_clearing_images() {
         let dir = TempDir::new().unwrap();
         let mut app = library_app(&dir);
-        let _ = app.update(Message::CoverFetched(1150690, Ok(vec![0; 1000])));
+        let _ = app.update(Message::CoverFetched(1150690, Ok(test_support::jpeg(1000))));
 
         let _ = app.update(Message::ClearImages);
 
@@ -1909,11 +1912,17 @@ mod tests {
         let mut app = library_app(&dir);
         // Below what Settings offers, to keep the covers small.
         let _ = app.update(Message::ImageCacheLimit(1));
-        let _ = app.update(Message::CoverFetched(1150690, Ok(vec![0; 800_000])));
+        let _ = app.update(Message::CoverFetched(
+            1150690,
+            Ok(test_support::jpeg(800_000)),
+        ));
         std::thread::sleep(std::time::Duration::from_millis(20));
 
         // Cyberpunk 2077's cover is newer: OMORI's goes to make room.
-        let _ = app.update(Message::CoverFetched(1091500, Ok(vec![0; 800_000])));
+        let _ = app.update(Message::CoverFetched(
+            1091500,
+            Ok(test_support::jpeg(800_000)),
+        ));
 
         assert!(matches!(app.cover_of(1150690), library::Cover::Missing));
         assert!(matches!(
@@ -2501,7 +2510,10 @@ mod tests {
         assert_eq!(idle, loading - 1, "no frames once nothing is loading");
 
         // A cover that arrives fades in, then everything is still again.
-        let _ = app.update(Message::CoverFetched(1086940, Ok(b"jpeg".to_vec())));
+        let _ = app.update(Message::CoverFetched(
+            1086940,
+            Ok(test_support::jpeg(1_000)),
+        ));
         assert_eq!(app.subscription().units(), loading);
         std::thread::sleep(motion::FADE_IN + std::time::Duration::from_millis(50));
         assert_eq!(app.subscription().units(), idle);

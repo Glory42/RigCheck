@@ -35,3 +35,11 @@ pub fn installed(app_id: u32, name: &str) -> InstalledGame {
         install_dir: PathBuf::from(format!("/games/{app_id}")),
     }
 }
+
+/// A real cover `size` bytes long: a 2×3 JPEG, padded after its end so
+/// covers can take up space without being big images.
+pub fn jpeg(size: usize) -> Vec<u8> {
+    let mut jpeg = include_bytes!("../../data/fixtures/cover.jpg").to_vec();
+    jpeg.resize(size.max(jpeg.len()), 0);
+    jpeg
+}
