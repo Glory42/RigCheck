@@ -77,6 +77,10 @@ why-not-compared-cpu-gpu = CPU ve GPU karşılaştırılamadı.
 why-not-compared-cpu-ram = CPU ve RAM karşılaştırılamadı.
 why-not-compared-gpu-ram = GPU ve RAM karşılaştırılamadı.
 why-not-compared-all = CPU, GPU ve RAM karşılaştırılamadı.
+# A CPU or GPU Steam's text names no part for, compared with ProtonDB players' hardware.
+why-players-cpu = ProtonDB oyuncuları bu oyunu { $cpu } seviyesindeki CPU'larla bile çalıştırmış.
+why-players-gpu = ProtonDB oyuncuları bu oyunu { $gpu } seviyesindeki GPU'larla bile çalıştırmış.
+why-players-cpu-gpu = ProtonDB oyuncuları bu oyunu { $cpu } seviyesindeki CPU'larla ve { $gpu } seviyesindeki GPU'larla bile çalıştırmış.
 why-no-data = Bu oyun henüz rigcheck veritabanında yok.
 part-cpu = CPU
 part-gpu = GPU

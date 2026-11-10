@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 use rusqlite::{OptionalExtension, params};
 
-use crate::{Error, Filters, Game, GameDb, GameRecord, LookedUp, vendor_name};
+use crate::{Error, Filters, Game, GameDb, GameRecord, LookedUp, vendor_name, write_reported};
 
 /// A lookup older than this is worth asking Steam again (ROADMAP §7.1).
 const STALE_AFTER: i64 = 30 * 24 * 60 * 60;
@@ -85,7 +85,12 @@ impl Fetched {
             .collect();
         let tx = self.db.conn.unchecked_transaction()?;
         for app_id in &gone {
-            for table in ["requirement_hardware", "requirements", "games"] {
+            for table in [
+                "requirement_hardware",
+                "requirements",
+                "reported_hardware",
+                "games",
+            ] {
                 tx.execute(&format!("DELETE FROM {table} WHERE app_id = ?1"), [app_id])?;
             }
         }
@@ -95,9 +100,9 @@ impl Fetched {
     }
 
     /// Saves a live lookup of a store page, made at `now` (Unix seconds). A
-    /// store page doesn't say what ProtonDB, the Deck or AreWeAntiCheatYet
-    /// think, so whatever `games` knows about that is kept, and its hardware
-    /// table matches the CPU and GPU text.
+    /// store page doesn't say what ProtonDB, its players, the Deck or
+    /// AreWeAntiCheatYet think, so whatever `games` knows about that is kept,
+    /// and its hardware table matches the CPU and GPU text.
     fn store(&self, mut record: GameRecord, games: &GameDb, now: i64) -> Result<(), Error> {
         type Known = (
             Option<String>,
@@ -146,7 +151,17 @@ impl Fetched {
         }
         tx.commit()?;
         self.lookups.take();
-        self.db.store(&record, &catalog)
+        let app_id = record.app_id;
+        self.db.store(&record, &catalog)?;
+        // What players ran it on comes from games.db's ProtonDB data too.
+        let (mut cpu, mut gpu) = (None, None);
+        for (_, kind, part) in games.reported(Some(app_id))? {
+            match kind.as_str() {
+                "cpu" => cpu = Some(part),
+                _ => gpu = Some(part),
+            }
+        }
+        write_reported(&self.db.conn, app_id, cpu.as_ref(), gpu.as_ref())
     }
 
     /// The lookups recent at `now`, and which of them `filters` keep.

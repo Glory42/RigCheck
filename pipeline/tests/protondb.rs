@@ -11,7 +11,7 @@ use std::fs::File;
 use std::io::BufReader;
 
 use rigcheck_core::ProtonTier;
-use rigcheck_pipeline::protondb::{Report, read_reports, summarize};
+use rigcheck_pipeline::protondb::{Report, played_on, read_reports, reported, summarize};
 
 /// 2026-10-01, the dump's date.
 const NOW: i64 = 1_790_812_800;
@@ -90,4 +90,62 @@ fn reports_with_a_numeric_app_id_count_too() {
     let summaries = summarize(&reports(), NOW);
 
     assert_eq!(summaries[&427510].reports, 1);
+}
+
+/// A report on app 1 from a player with `gpu` and `cpu`.
+fn report(verdict: &str, performance_faults: &str, cpu: &str, gpu: &str) -> String {
+    format!(
+        r#"{{"app": {{"steam": {{"appId": "1"}}}}, "timestamp": {NOW},
+            "responses": {{"verdict": "{verdict}", "performanceFaults": "{performance_faults}"}},
+            "systemInfo": {{"cpu": "{cpu}", "gpu": "{gpu}"}}}}"#
+    )
+}
+
+fn catalog() -> rigcheck_core::Catalog {
+    rigcheck_core::Catalog::from_toml(include_str!("../../data/hardware.toml")).unwrap()
+}
+
+#[test]
+fn players_hardware_comes_from_reports_where_the_game_worked_well() {
+    let working = |gpu| report("yes", "no", "Intel Core i5-4460", gpu);
+    let reports = [
+        working("NVIDIA GeForce GTX 750 Ti"), // 35
+        working("NVIDIA GeForce GTX 660"),    // 38
+        working("NVIDIA GeForce GTX 970"),    // 83
+        working("NVIDIA GeForce GTX 1060 6GB"),
+        working("NVIDIA GeForce RTX 4070"),
+        working("Some GPU the table doesn't know"),
+        // Didn't run, or ran poorly: they say nothing about what's enough.
+        report("no", "no", "Intel Core i5-4460", "Intel UHD Graphics 620"),
+        report("yes", "yes", "Intel Core i5-4460", "NVIDIA GeForce GTS 450"),
+    ];
+    let reports = read_reports(format!("[{}]", reports.join(",")).as_bytes()).unwrap();
+
+    let (cpu, gpu) = reported(&played_on(&reports)[&1], &catalog());
+
+    // Five GPUs the table knows: the weakest is the 20th percentile (the
+    // second, so one odd report doesn't decide it), the typical the median.
+    let gpu = gpu.unwrap();
+    assert_eq!(
+        (gpu.weakest_name.as_str(), gpu.weakest),
+        ("GeForce GTX 660", 38)
+    );
+    assert_eq!(gpu.typical, 83);
+    assert_eq!(cpu.unwrap().weakest_name, "Core i5-4460");
+}
+
+#[test]
+fn fewer_than_three_known_parts_say_nothing() {
+    let reports = [
+        report("yes", "no", "Intel Core i5-4460", "NVIDIA GeForce GTX 970"),
+        report(
+            "yes",
+            "no",
+            "Intel Core i5-4460",
+            "NVIDIA GeForce GTX 1060 6GB",
+        ),
+    ];
+    let reports = read_reports(format!("[{}]", reports.join(",")).as_bytes()).unwrap();
+
+    assert_eq!(reported(&played_on(&reports)[&1], &catalog()), (None, None));
 }

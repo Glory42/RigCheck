@@ -3,7 +3,7 @@
 
 use rigcheck_core::{
     AntiCheat, Blocker, Component, Confidence, GameRequirements, HardwareRef, Level, LinuxInfo,
-    ProtonTier, Requirement, Specs, Vendor, Warning, evaluate,
+    ProtonTier, Reported, Requirement, Specs, Vendor, Warning, evaluate,
 };
 
 /// A game that only states RAM, in MB.
@@ -427,4 +427,93 @@ fn the_verdict_lists_each_compared_components_level() {
             (Component::Ram, Level::Minimum)
         ]
     );
+}
+
+/// ProtonDB players ran a game on GPUs scored `weakest` and up, `typical`
+/// in the middle.
+fn players_ran_gpus(weakest: u32, typical: u32) -> LinuxInfo {
+    LinuxInfo {
+        reported_gpu: Some(Reported {
+            weakest_name: "Radeon Vega 8".to_owned(),
+            weakest,
+            typical,
+        }),
+        ..LinuxInfo::default()
+    }
+}
+
+fn with_ram_and_gpu(ram_mb: u32, gpu: u32) -> Specs {
+    Specs {
+        gpu: Some(HardwareRef {
+            vendor: Vendor::Amd,
+            score: gpu,
+        }),
+        ..with_ram(ram_mb)
+    }
+}
+
+#[test]
+fn a_gpu_steam_doesnt_name_is_compared_with_what_players_ran_the_game_on() {
+    let game = needs_ram(4096, 8192);
+    let linux = players_ran_gpus(30, 100);
+    let level = |gpu| {
+        let verdict = evaluate(&game, &with_ram_and_gpu(16384, gpu), &linux);
+        let level = verdict
+            .components
+            .iter()
+            .find(|(component, _)| *component == Component::Gpu)
+            .map(|(_, level)| *level);
+        (level, verdict.reported)
+    };
+
+    assert_eq!(level(120), (Some(Level::Recommended), vec![Component::Gpu]));
+    assert_eq!(level(100), (Some(Level::Recommended), vec![Component::Gpu]));
+    assert_eq!(level(50), (Some(Level::Minimum), vec![Component::Gpu]));
+    // Weaker than what players ran it on says nothing either way.
+    assert_eq!(level(20), (None, vec![]));
+}
+
+#[test]
+fn steams_own_requirement_comes_before_what_players_ran_it_on() {
+    let mut game = needs_ram(4096, 8192);
+    game.minimum.as_mut().unwrap().gpus = vec![HardwareRef {
+        vendor: Vendor::Amd,
+        score: 80,
+    }];
+
+    let verdict = evaluate(
+        &game,
+        &with_ram_and_gpu(16384, 50),
+        &players_ran_gpus(10, 40),
+    );
+
+    assert_eq!(verdict.overall, Level::Below);
+    assert_eq!(verdict.bottleneck, Some(Component::Gpu));
+    assert!(verdict.reported.is_empty());
+}
+
+#[test]
+fn parts_compared_with_players_reports_count_for_confidence() {
+    let linux = LinuxInfo {
+        reported_cpu: Some(Reported {
+            weakest_name: "Core i3-6100".to_owned(),
+            weakest: 60,
+            typical: 150,
+        }),
+        ..players_ran_gpus(30, 100)
+    };
+    let specs = Specs {
+        cpu: Some(HardwareRef {
+            vendor: Vendor::Amd,
+            score: 190,
+        }),
+        ..with_ram_and_gpu(16384, 50)
+    };
+
+    let verdict = evaluate(&needs_ram(4096, 8192), &specs, &linux);
+
+    assert_eq!(verdict.confidence, Confidence::High);
+    assert_eq!(verdict.overall, Level::Minimum);
+    assert_eq!(verdict.bottleneck, Some(Component::Gpu));
+    assert_eq!(verdict.reported, [Component::Cpu, Component::Gpu]);
 }

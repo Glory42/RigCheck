@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::io::Read;
 
-use rigcheck_core::ProtonTier;
+use rigcheck_core::{Catalog, CatalogEntry, ProtonTier, Reported};
 use serde::Deserialize;
 
 use crate::Error;
@@ -16,6 +16,16 @@ pub struct Report {
     app: ReportApp,
     pub timestamp: i64,
     responses: Responses,
+    #[serde(rename = "systemInfo", default)]
+    system_info: Option<SystemInfo>,
+}
+
+/// The player's machine, as ProtonDB's form read it.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+struct SystemInfo {
+    cpu: Option<String>,
+    gpu: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -71,6 +81,62 @@ pub struct Summary {
     pub tier: Option<ProtonTier>,
     /// Every report, native ones included: how much Linux players care.
     pub reports: u32,
+}
+
+/// The CPUs and GPUs players ran a game on, as their reports name them.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Played {
+    pub cpus: Vec<String>,
+    pub gpus: Vec<String>,
+}
+
+/// What every game was played on, from the reports where it worked without
+/// performance problems: one that didn't run, or ran poorly, says nothing
+/// about what hardware is enough.
+pub fn played_on(reports: &[Report]) -> HashMap<u32, Played> {
+    let mut played: HashMap<u32, Played> = HashMap::new();
+    for report in reports {
+        let worked = report.responses.verdict.as_deref() == Some("yes")
+            && report.responses.performance_faults.as_deref() != Some("yes");
+        let (Some(app_id), Some(system), true) = (report.app_id(), &report.system_info, worked)
+        else {
+            continue;
+        };
+        let game = played.entry(app_id).or_default();
+        game.cpus.extend(system.cpu.clone());
+        game.gpus.extend(system.gpu.clone());
+    }
+    played
+}
+
+/// The weakest and typical CPU and GPU in `played` that the hardware table
+/// knows. Fewer than three known parts of a kind say nothing about it.
+pub fn reported(played: &Played, catalog: &Catalog) -> (Option<Reported>, Option<Reported>) {
+    let cpus = played
+        .cpus
+        .iter()
+        .filter_map(|cpu| catalog.match_cpus(cpu).first().copied());
+    let gpus = played
+        .gpus
+        .iter()
+        .filter_map(|gpu| catalog.match_gpus(gpu).first().copied());
+    (spread(cpus), spread(gpus))
+}
+
+/// The 20th percentile (at least the second weakest, so one report naming
+/// the wrong part doesn't decide it) and the median of `parts`, by score.
+fn spread<'a>(parts: impl Iterator<Item = &'a CatalogEntry>) -> Option<Reported> {
+    let mut parts: Vec<&CatalogEntry> = parts.collect();
+    if parts.len() < 3 {
+        return None;
+    }
+    parts.sort_by_key(|part| part.score);
+    let weakest = parts[(parts.len() / 5).max(1)];
+    Some(Reported {
+        weakest_name: weakest.name.clone(),
+        weakest: weakest.score,
+        typical: parts[parts.len() / 2].score,
+    })
 }
 
 /// Reads the dump's `reports_piiremoved.json` (a JSON array).

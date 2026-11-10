@@ -112,10 +112,14 @@ fn now() -> Result<i64, Error> {
     Ok(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64)
 }
 
+/// ProtonDB's reports, from the dump's `reports_piiremoved.json`.
+fn protondb_reports(reports: &Path) -> Result<Vec<protondb::Report>, Error> {
+    protondb::read_reports(BufReader::new(File::open(reports)?))
+}
+
 /// ProtonDB tiers and report counts for every game it has reports for.
 fn protondb_summaries(reports: &Path) -> Result<HashMap<u32, protondb::Summary>, Error> {
-    let reports = protondb::read_reports(BufReader::new(File::open(reports)?))?;
-    Ok(protondb::summarize(&reports, now()?))
+    Ok(protondb::summarize(&protondb_reports(reports)?, now()?))
 }
 
 /// The data files `build` reads.
@@ -136,19 +140,22 @@ fn build_db(db: &Path, inputs: Inputs) -> Result<(), Error> {
         table.cpus().iter().chain(&gaps.cpus).cloned().collect(),
         table.gpus().iter().chain(&gaps.gpus).cloned().collect(),
     );
+    let reports = protondb_reports(inputs.reports)?;
     let sources = build::Sources {
         apps: serde_json::from_str(&std::fs::read_to_string(inputs.apps)?)?,
-        protondb: protondb_summaries(inputs.reports)?,
+        protondb: protondb::summarize(&reports, now()?),
+        played: protondb::played_on(&reports),
         anticheat: awacy::statuses(&std::fs::read_to_string(inputs.awacy)?)?,
         pci_ids: pci::ids(&grown, &std::fs::read_to_string(inputs.pci_ids)?),
         gaps,
     };
     build::build(&db, &sources)?;
     println!(
-        "built: {} apps, ProtonDB facts for {}, anti-cheat for {}, {} PCI IDs, \
-         Blender scores for {} CPUs and {} GPUs",
+        "built: {} apps, ProtonDB facts for {} and players' hardware for {}, anti-cheat for {}, \
+         {} PCI IDs, Blender scores for {} CPUs and {} GPUs",
         sources.apps.len(),
         sources.protondb.len(),
+        sources.played.len(),
         sources.anticheat.len(),
         sources.pci_ids.len(),
         sources.gaps.cpus.len(),

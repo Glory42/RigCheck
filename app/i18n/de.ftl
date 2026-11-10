@@ -77,6 +77,10 @@ why-not-compared-cpu-gpu = CPU und GPU konnten nicht verglichen werden.
 why-not-compared-cpu-ram = CPU und Arbeitsspeicher konnten nicht verglichen werden.
 why-not-compared-gpu-ram = GPU und Arbeitsspeicher konnten nicht verglichen werden.
 why-not-compared-all = CPU, GPU und Arbeitsspeicher konnten nicht verglichen werden.
+# A CPU or GPU Steam's text names no part for, compared with ProtonDB players' hardware.
+why-players-cpu = Spieler auf ProtonDB haben es schon mit CPUs ab { $cpu } gespielt.
+why-players-gpu = Spieler auf ProtonDB haben es schon mit GPUs ab { $gpu } gespielt.
+why-players-cpu-gpu = Spieler auf ProtonDB haben es schon mit CPUs ab { $cpu } und GPUs ab { $gpu } gespielt.
 why-no-data = Dieses Spiel ist noch nicht in der rigcheck-Datenbank.
 part-cpu = Die CPU
 part-gpu = Die GPU

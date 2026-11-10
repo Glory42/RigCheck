@@ -278,6 +278,8 @@ name = "Steam Deck GPU (Van Gogh)"
 vendor = "amd"
 score = 40
 pci = ["1002:163f"]
+# As ProtonDB's reports name it.
+aliases = ["Custom GPU 0405"]
 
 # ── GPUs: Intel ──────────────────────────────────────────────────────────
 [[gpu]]

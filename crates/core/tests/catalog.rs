@@ -127,3 +127,57 @@ fn a_bare_model_number_reuses_the_previous_names_series() {
         ]
     );
 }
+
+#[test]
+fn matches_gpus_as_protondb_reports_name_them() {
+    let catalog = catalog();
+    let first = |text| names(catalog.match_gpus(text)).first().copied();
+
+    assert_eq!(
+        first("AMD Custom GPU 0405 (vangogh, LLVM 15.0.7, DRM 3.54, 6.5.0-valve22-1-neptune-65)"),
+        Some("Steam Deck GPU (Van Gogh)")
+    );
+    // Mesa's driver name before the GPU's.
+    assert_eq!(
+        first("Intel Mesa Intel UHD 620 (KBL GT2)"),
+        Some("UHD Graphics 620")
+    );
+}
+
+/// A GPU entry named `name`, as Blender Open Data's gap scores add them.
+fn gpu(name: &str, score: u32) -> CatalogEntry {
+    CatalogEntry {
+        name: name.to_owned(),
+        vendor: rigcheck_core::Vendor::Amd,
+        score,
+        vram_mb: None,
+        aliases: Vec::new(),
+        pci: Vec::new(),
+    }
+}
+
+#[test]
+fn a_name_without_a_model_matches_nothing() {
+    // Names Blender Open Data has: nothing left once brand words go.
+    let catalog = Catalog::new(
+        Vec::new(),
+        vec![
+            gpu("", 234),
+            gpu("AMD Radeon Graphics", 59),
+            gpu("Intel(R) Graphics", 29),
+        ],
+    );
+
+    // Dota Underlords' minimum: "w/128 MB or better" is nothing but a size.
+    assert!(
+        catalog
+            .match_gpus("Integrated HD Graphics 520 w/128 MB or better")
+            .is_empty()
+    );
+    // A Ryzen iGPU as Vulkan names it.
+    assert!(
+        catalog
+            .match_gpus("AMD Radeon Graphics (RADV RENOIR)")
+            .is_empty()
+    );
+}
