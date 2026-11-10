@@ -7,8 +7,8 @@ use std::path::{Path, PathBuf};
 
 use iced::futures::{SinkExt, Stream, executor::block_on};
 use iced::widget::{button, column, container, progress_bar, row, space, text};
-use iced::{Element, Fill};
-use rigcheck_gamedb::{Manifest, install};
+use iced::{Element, Fill, Task};
+use rigcheck_gamedb::{GameDb, Manifest, install};
 
 use crate::Message;
 use crate::i18n::I18n;
@@ -60,10 +60,111 @@ pub enum Status {
     Failed(Failure),
 }
 
+/// games.db's downloads, one at a time, and where they are for the banner.
+pub struct Downloader {
+    web: Web,
+    /// Where games.db goes.
+    dest: PathBuf,
+    status: Status,
+    /// Whether a download is on its way, shown or not: two at once would
+    /// write the same temp file.
+    running: bool,
+}
+
+impl Downloader {
+    pub fn new(web: Web, dest: PathBuf) -> Downloader {
+        Downloader {
+            web,
+            dest,
+            status: Status::Done,
+            running: false,
+        }
+    }
+
+    /// Downloads games.db unless `installed` (its `db_version`) is the
+    /// published build, showing the banner right away. `has_db`: whether
+    /// there's a games.db to keep using meanwhile. Does nothing while a
+    /// download runs.
+    pub fn start(&mut self, installed: Option<String>, has_db: bool) -> Task<Message> {
+        if self.running {
+            return Task::none();
+        }
+        self.status = progress(0, 0, has_db);
+        self.run(installed)
+    }
+
+    /// [`Downloader::start`] without the banner until a newer games.db
+    /// downloads: the update check at start-up.
+    pub fn check(&mut self, installed: Option<String>) -> Task<Message> {
+        if self.running {
+            return Task::none();
+        }
+        self.run(installed)
+    }
+
+    fn run(&mut self, installed: Option<String>) -> Task<Message> {
+        self.running = true;
+        Task::run(
+            games_db(self.web.clone(), self.dest.clone(), installed),
+            Message::Download,
+        )
+    }
+
+    /// Follows the download. Returns the games.db it installed, opened.
+    /// A failed update leaves the current games.db in use, and only says
+    /// so if there's none (`has_db`) or the app is too old for the new one.
+    pub fn event(&mut self, event: Event, has_db: bool) -> Option<GameDb> {
+        let result = match event {
+            Event::Progress { done, total } => {
+                self.status = progress(done, total, has_db);
+                return None;
+            }
+            Event::Finished(result) => result,
+        };
+        self.running = false;
+        self.status = Status::Done;
+        let opened = result.and_then(|fetched| match fetched {
+            Fetched::UpToDate => Ok(None),
+            Fetched::Installed => GameDb::open(&self.dest)
+                .map(Some)
+                .map_err(|error| Failure::Failed(error.to_string())),
+        });
+        match opened {
+            Ok(db) => db,
+            Err(failure) => {
+                eprintln!("couldn't download games.db: {failure:?}");
+                if !has_db || failure == Failure::NeedsNewerApp {
+                    self.status = Status::Failed(failure);
+                }
+                None
+            }
+        }
+    }
+
+    pub fn status(&self) -> &Status {
+        &self.status
+    }
+
+    /// Whether a download is on its way, so Settings can't start another.
+    pub fn running(&self) -> bool {
+        self.running
+    }
+}
+
+/// The banner's progress: the first download, or an update while
+/// games.db stays in use.
+fn progress(done: u64, total: u64, has_db: bool) -> Status {
+    if has_db {
+        Status::Updating { done, total }
+    } else {
+        Status::Running { done, total }
+    }
+}
+
 /// Downloads games.db to `dest`, unless `installed` (its `db_version`) is
 /// already the published one. The requests block, so they run on their own
 /// thread and send their progress back through the stream.
-pub fn games_db(web: Web, dest: PathBuf, installed: Option<String>) -> impl Stream<Item = Event> {
+fn games_db(web: Web, dest: PathBuf, installed: Option<String>) -> impl Stream<Item = Event> {
     iced::stream::channel(8, async move |events| {
         std::thread::spawn(move || {
             let mut events = events;
@@ -153,4 +254,79 @@ pub fn view(status: &Status, i18n: &I18n, colors: Colors) -> Option<Element<'sta
 /// `bytes` in megabytes with one decimal, e.g. "6.4".
 fn megabytes(bytes: u64) -> String {
     format!("{:.1}", bytes as f64 / 1_000_000.0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    fn downloader(dir: &TempDir) -> Downloader {
+        let web = Web::with(crate::web::fake::Fake::replying(Ok("{}")));
+        Downloader::new(web, dir.path().join("games.db"))
+    }
+
+    fn finished(result: Result<Fetched, Failure>) -> Event {
+        Event::Finished(result)
+    }
+
+    #[test]
+    fn one_download_runs_at_a_time() {
+        let dir = TempDir::new().unwrap();
+        let mut downloader = downloader(&dir);
+
+        assert_eq!(downloader.check(None).units(), 1);
+        assert_eq!(downloader.start(None, true).units(), 0);
+        assert_eq!(downloader.check(None).units(), 0);
+        assert!(downloader.running());
+
+        downloader.event(finished(Ok(Fetched::UpToDate)), true);
+        assert!(!downloader.running());
+        assert_eq!(downloader.start(None, true).units(), 1);
+    }
+
+    #[test]
+    fn the_start_up_check_shows_nothing_until_an_update_downloads() {
+        let dir = TempDir::new().unwrap();
+        let mut downloader = downloader(&dir);
+
+        let _ = downloader.check(Some("2026-11-01.1".to_owned()));
+        assert_eq!(*downloader.status(), Status::Done);
+
+        downloader.event(Event::Progress { done: 1, total: 2 }, true);
+        assert_eq!(*downloader.status(), Status::Updating { done: 1, total: 2 });
+    }
+
+    #[test]
+    fn a_failed_update_is_quiet_unless_the_app_is_too_old() {
+        let dir = TempDir::new().unwrap();
+        let mut downloader = downloader(&dir);
+        let offline = || Failure::Failed("offline".to_owned());
+
+        let _ = downloader.start(None, true);
+        assert!(downloader.event(finished(Err(offline())), true).is_none());
+        assert_eq!(*downloader.status(), Status::Done);
+
+        let _ = downloader.start(None, true);
+        downloader.event(finished(Err(Failure::NeedsNewerApp)), true);
+        assert_eq!(*downloader.status(), Status::Failed(Failure::NeedsNewerApp));
+
+        let _ = downloader.start(None, false);
+        downloader.event(finished(Err(offline())), false);
+        assert_eq!(*downloader.status(), Status::Failed(offline()));
+    }
+
+    #[test]
+    fn an_installed_download_comes_back_opened() {
+        let dir = TempDir::new().unwrap();
+        let mut downloader = downloader(&dir);
+        let _ = downloader.start(None, false);
+        // What a finished download leaves behind.
+        GameDb::create_seed(&dir.path().join("games.db")).unwrap();
+
+        let db = downloader.event(finished(Ok(Fetched::Installed)), false);
+
+        assert!(db.is_some());
+        assert_eq!(*downloader.status(), Status::Done);
+    }
 }

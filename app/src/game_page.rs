@@ -2,11 +2,11 @@
 
 use iced::widget::{Column, button, column, container, row, scrollable, text};
 use iced::{Center, Element, Fill};
-use rigcheck_core::{Blocker, Component, Level};
+use rigcheck_core::{Blocker, Component, Level, Verdict};
 use rigcheck_gamedb::{Game, Tier};
 
 use crate::i18n::I18n;
-use crate::library::{Cover, Status, cover_box, stamp};
+use crate::library::{Cover, Status, cover_box, fully_compared, stamp};
 use crate::style::{BOLD, Colors, level_color};
 use crate::{Message, Page};
 
@@ -106,8 +106,44 @@ pub fn view<'a>(
     scrollable(page.padding([0, 6])).into()
 }
 
-/// One sentence on why the game got its stamp.
+/// Why the game got its stamp: one sentence, and for READY? or LOW? a
+/// second naming what couldn't be compared.
 fn reason(status: &Status, record: Option<&Game>, i18n: &I18n) -> String {
+    let because = cause(status, record, i18n);
+    let Status::Verdict(verdict) = status else {
+        return because;
+    };
+    if !matches!(verdict.overall, Level::Recommended | Level::Minimum) {
+        return because;
+    }
+    let id = match not_compared(verdict).as_slice() {
+        [] => return because,
+        [Component::Cpu] => "why-not-compared-cpu",
+        [Component::Gpu] => "why-not-compared-gpu",
+        [Component::Ram] => "why-not-compared-ram",
+        [Component::Cpu, Component::Gpu] => "why-not-compared-cpu-gpu",
+        [Component::Cpu, Component::Ram] => "why-not-compared-cpu-ram",
+        [Component::Gpu, Component::Ram] => "why-not-compared-gpu-ram",
+        _ => "why-not-compared-all",
+    };
+    format!("{because} {}", i18n.t(id))
+}
+
+/// The CPU, GPU and RAM, less the ones `verdict` compared.
+fn not_compared(verdict: &Verdict) -> Vec<Component> {
+    [Component::Cpu, Component::Gpu, Component::Ram]
+        .into_iter()
+        .filter(|part| {
+            !verdict
+                .components
+                .iter()
+                .any(|(compared, _)| compared == part)
+        })
+        .collect()
+}
+
+/// One sentence on the stamp's cause.
+fn cause(status: &Status, record: Option<&Game>, i18n: &I18n) -> String {
     let verdict = match status {
         Status::Verdict(verdict) => verdict,
         Status::NoData => return i18n.t("why-no-data"),
@@ -129,6 +165,7 @@ fn reason(status: &Status, record: Option<&Game>, i18n: &I18n) -> String {
         (Level::Minimum, Some(component), _) => {
             i18n.t_with("why-minimum", &[("part", &part(component))])
         }
+        (Level::Recommended, _, _) if !fully_compared(verdict) => i18n.t("why-recommended-partial"),
         (Level::Recommended, _, _) => i18n.t("why-recommended"),
         _ => i18n.t("why-unknown"),
     }

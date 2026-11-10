@@ -143,21 +143,16 @@ struct App {
     rig: Option<Rig>,
     /// `None` until games.db is downloaded; the Library then shows NO DATA.
     db: Option<GameDb>,
-    download: download::Status,
+    download: download::Downloader,
     catalog: Catalog,
     /// `None` until Steam has been scanned.
     games: Option<Vec<InstalledGame>>,
-    /// The records of the Library's games (installed and owned), and
-    /// cover art.
+    /// The records of the Library's games (installed and owned).
     records: HashMap<u32, Game>,
-    covers: HashMap<u32, PathBuf>,
-    /// Where covers come from: Steam's cache, or downloads.
+    /// Cover art: Steam's cache, or downloads.
     art: covers::Covers,
-    /// When the app started (the pulse's phase) and the latest frame time.
-    started: std::time::Instant,
+    /// The latest frame time.
     now: std::time::Instant,
-    /// When each downloaded cover arrived, for its fade-in.
-    arrived: HashMap<u32, std::time::Instant>,
     /// A newer rigcheck release's version, if one is out.
     newer_release: Option<String>,
     /// Sizes for Settings > Storage, refreshed when they can change.
@@ -280,11 +275,12 @@ impl App {
             .flatten();
         let settings = Settings::load(&paths.config);
         let web = Web::net();
+        let mut download = download::Downloader::new(web.clone(), db_path);
         let fetch = match &db {
             // A background update check (ROADMAP §7.3), unless turned off.
-            Some(db) if !settings.manual_updates => download_db(&web, &paths.data, db.db_version()),
+            Some(db) if !settings.manual_updates => download.check(db.db_version()),
             Some(_) => Task::none(),
-            None => download_db(&web, &paths.data, None),
+            None => download.start(None, false),
         };
         // Same setting: is there a newer rigcheck?
         let release_check = if settings.manual_updates {
@@ -301,7 +297,8 @@ impl App {
             web.clone(),
             !settings.manual_updates,
         );
-        let art = covers::Covers::new(paths.home.clone(), paths.cache.join("images"), web.clone());
+        let mut art =
+            covers::Covers::new(paths.home.clone(), paths.cache.join("images"), web.clone());
         art.evict(settings.image_cache_bytes());
         let mut app = App {
             override_choices: overrides::Choices::default(),
@@ -317,17 +314,14 @@ impl App {
             hardware: None,
             rig: None,
             db: None,
-            download: download::Status::Running { done: 0, total: 0 },
+            download,
             catalog: Catalog::default(),
             games: None,
             records: HashMap::new(),
-            covers: HashMap::new(),
             art,
             storage: settings_page::Storage::default(),
             newer_release: None,
-            started: std::time::Instant::now(),
             now: std::time::Instant::now(),
-            arrived: HashMap::new(),
             search: String::new(),
             library_order: library::Order::default(),
             library_scope: library::Scope::default(),
@@ -359,11 +353,8 @@ impl App {
         if let Err(error) = self.fetched.prune(&db, now()) {
             eprintln!("couldn't prune fetched.db: {error}");
         }
-        self.catalog_list
-            .refresh(&Records::new(&db, &self.fetched, now()));
         self.db = Some(db);
-        self.download = download::Status::Done;
-        self.load_records();
+        self.records_changed();
         // A new hardware table can score the same parts differently.
         self.rig_changed();
     }
@@ -372,6 +363,20 @@ impl App {
     /// until there's a games.db.
     fn records(&self) -> Option<Records<'_>> {
         Some(Records::new(self.db.as_ref()?, &self.fetched, now()))
+    }
+
+    /// Reads every page's records again, after games.db or fetched.db
+    /// changed: the Catalog's rows in view, the open game page's and the
+    /// Library's.
+    fn records_changed(&mut self) {
+        if let Some(db) = &self.db {
+            let records = Records::new(db, &self.fetched, now());
+            self.catalog_list.refresh(&records);
+            if let Page::Game(app_id) = self.page {
+                self.opened = records.get(app_id).ok().flatten();
+            }
+        }
+        self.load_records();
     }
 
     /// Reads the record of each of the Library's games.
@@ -503,27 +508,12 @@ impl App {
 
     /// Whether a cover is loading (pulsing) or has just arrived (fading in).
     fn animating(&self) -> bool {
-        let now = std::time::Instant::now();
-        self.art.any_loading()
-            || self
-                .arrived
-                .values()
-                .any(|at| now.saturating_duration_since(*at) < motion::FADE_IN)
+        self.art.animating(std::time::Instant::now())
     }
 
-    /// `app_id`'s cover as drawn right now.
+    /// `app_id`'s cover as drawn this frame.
     fn cover_of(&self, app_id: u32) -> library::Cover<'_> {
-        if let Some(path) = self.covers.get(&app_id) {
-            let opacity = self.arrived.get(&app_id).map_or(1.0, |at| {
-                motion::fade_in(self.now.saturating_duration_since(*at))
-            });
-            library::Cover::Ready { path, opacity }
-        } else if self.art.is_loading(app_id) {
-            let pulse = motion::pulse(self.now.saturating_duration_since(self.started));
-            library::Cover::Loading { pulse }
-        } else {
-            library::Cover::Missing
-        }
+        self.art.cover_of(app_id, self.now)
     }
 
     fn shortcut(&mut self, shortcut: keys::Shortcut) -> Task<Message> {
@@ -611,25 +601,19 @@ impl App {
                     Message::CheckForUpdates => self.db.as_ref().and_then(GameDb::db_version),
                     _ => None,
                 };
-                self.download = match self.db {
-                    Some(_) => download::Status::Updating { done: 0, total: 0 },
-                    None => download::Status::Running { done: 0, total: 0 },
-                };
-                download_db(&self.web, &self.paths.data, installed)
+                self.download.start(installed, self.db.is_some())
             }
             Message::ClearFetched => {
                 if let Err(error) = self.fetched.clear() {
                     eprintln!("couldn't clear fetched.db: {error}");
                 }
                 self.lookup = lookup::State::Idle;
-                self.load_records();
+                self.records_changed();
                 self.refresh_storage();
                 Task::none()
             }
             Message::ClearImages => {
                 self.art.clear();
-                let images = self.paths.cache.join("images");
-                self.covers.retain(|_, path| !path.starts_with(&images));
                 self.refresh_storage();
                 Task::none()
             }
@@ -642,11 +626,13 @@ impl App {
                     return self.open_game(app_id);
                 }
                 self.page = page;
-                // The tiles in view need their covers.
-                if page == Page::Catalog {
-                    return self.catalog_covers();
+                // The tiles in view need their covers, again if the cache
+                // limit deleted some.
+                match page {
+                    Page::Catalog => self.catalog_covers(),
+                    Page::Library => self.library_covers(),
+                    _ => Task::none(),
                 }
-                Task::none()
             }
             Message::LatestRelease(answer) => {
                 // Offline, or no release yet: nothing to say.
@@ -661,21 +647,8 @@ impl App {
                 Task::none()
             }
             Message::CoverFetched(app_id, jpeg) => {
-                // A game without art is normal; only a failed save is worth a line.
-                let saved = jpeg.ok().and_then(|jpeg| {
-                    self.art
-                        .save(app_id, &jpeg)
-                        .inspect_err(|error| {
-                            eprintln!("couldn't keep the cover of {app_id}: {error}")
-                        })
-                        .ok()
-                });
-                self.art.settled(app_id);
-                if let Some(path) = saved {
-                    self.covers.insert(app_id, path);
-                    self.arrived.insert(app_id, std::time::Instant::now());
-                    self.art.evict(self.settings.image_cache_bytes());
-                }
+                self.art
+                    .fetched(app_id, jpeg, self.settings.image_cache_bytes());
                 Task::none()
             }
             Message::PickToCompare(app_id) => {
@@ -734,13 +707,7 @@ impl App {
             Message::LibraryScope(scope) => {
                 self.library_scope = scope;
                 // The owned games' covers: Steam's cache, else downloaded.
-                let ids: Vec<u32> = self
-                    .account
-                    .owned_games()
-                    .iter()
-                    .map(|game| game.app_id)
-                    .collect();
-                Task::batch(ids.into_iter().map(|app_id| self.cover(app_id)))
+                self.library_covers()
             }
             Message::Account(message) => {
                 let answer = matches!(message, account::Message::Owned(_));
@@ -770,32 +737,9 @@ impl App {
                 self.rig_changed();
                 Task::none()
             }
-            Message::Download(download::Event::Progress { done, total }) => {
-                self.download = match self.db {
-                    Some(_) => download::Status::Updating { done, total },
-                    None => download::Status::Running { done, total },
-                };
-                Task::none()
-            }
-            Message::Download(download::Event::Finished(result)) => {
-                let opened = result.and_then(|fetched| match fetched {
-                    download::Fetched::UpToDate => Ok(None),
-                    download::Fetched::Installed => GameDb::open(&self.paths.data.join("games.db"))
-                        .map(Some)
-                        .map_err(|error| download::Failure::Failed(error.to_string())),
-                });
-                self.download = download::Status::Done;
-                match opened {
-                    Ok(Some(db)) => self.use_db(db),
-                    Ok(None) => {}
-                    Err(failure) => {
-                        eprintln!("couldn't download games.db: {failure:?}");
-                        // A failed update keeps the current games.db in use;
-                        // only say so if there's none, or the app is too old.
-                        if self.db.is_none() || failure == download::Failure::NeedsNewerApp {
-                            self.download = download::Status::Failed(failure);
-                        }
-                    }
+            Message::Download(event) => {
+                if let Some(db) = self.download.event(event, self.db.is_some()) {
+                    self.use_db(db);
                 }
                 Task::none()
             }
@@ -829,10 +773,7 @@ impl App {
                 });
                 Task::none()
             }
-            Message::RetryDownload => {
-                self.download = download::Status::Running { done: 0, total: 0 };
-                download_db(&self.web, &self.paths.data, None)
-            }
+            Message::RetryDownload => self.download.start(None, self.db.is_some()),
             Message::WhatIfGpu(name) => {
                 self.whatif.gpu = name;
                 Task::none()
@@ -879,18 +820,20 @@ impl App {
         Task::batch(ids.into_iter().map(|app_id| self.cover(app_id)))
     }
 
+    /// Covers for the Library's games in its current scope.
+    fn library_covers(&mut self) -> Task<Message> {
+        let ids: Vec<u32> = self
+            .library_games()
+            .unwrap_or_default()
+            .into_iter()
+            .map(|(app_id, _)| app_id)
+            .collect();
+        Task::batch(ids.into_iter().map(|app_id| self.cover(app_id)))
+    }
+
     /// Shows `app_id`'s cover if one is on disk, else downloads it.
     fn cover(&mut self, app_id: u32) -> Task<Message> {
-        if self.covers.contains_key(&app_id) {
-            return Task::none();
-        }
-        match self.art.path(app_id) {
-            Some(path) => {
-                self.covers.insert(app_id, path);
-                Task::none()
-            }
-            None => self.art.fetch(app_id),
-        }
+        self.art.want(app_id)
     }
 
     /// The record for the game page, else asks Steam (ROADMAP §7.1).
@@ -937,11 +880,7 @@ impl App {
             }
         };
         if self.lookup == lookup::State::Idle {
-            self.catalog_list.reload(app_id, &records);
-            if self.page == Page::Game(app_id) {
-                self.opened = records.get(app_id).ok().flatten();
-            }
-            self.load_records();
+            self.records_changed();
         }
     }
 
@@ -1109,13 +1048,14 @@ impl App {
             Page::Settings => settings_page::view(
                 &self.settings,
                 self.storage,
+                self.download.running(),
                 self.account.view(i18n, colors),
                 i18n,
                 colors,
             ),
         };
         let mut body = column![].spacing(18);
-        if let Some(banner) = download::view(&self.download, i18n, colors) {
+        if let Some(banner) = download::view(self.download.status(), i18n, colors) {
             body = body.push(banner);
         }
         if let Some(version) = &self.newer_release {
@@ -1207,15 +1147,6 @@ fn catalog_to_top() -> Task<Message> {
     iced::widget::operation::snap_to(
         catalog::LIST,
         iced::widget::operation::RelativeOffset::START,
-    )
-}
-
-/// Downloads games.db into `data` unless `installed` is the published
-/// build, reporting progress as messages.
-fn download_db(web: &Web, data: &Path, installed: Option<String>) -> Task<Message> {
-    Task::run(
-        download::games_db(web.clone(), data.join("games.db"), installed),
-        Message::Download,
     )
 }
 
@@ -1330,7 +1261,9 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let app = library_app(&dir);
 
-        for text in ["Cyberpunk 2077", "TOO WEAK", "OMORI", "READY"] {
+        // Only OMORI's RAM is compared: the hardware table has no Intel
+        // N4100, and its GPU line names no card.
+        for text in ["Cyberpunk 2077", "TOO WEAK", "OMORI", "READY?"] {
             assert!(shows(&app, text), "{text} not shown");
         }
     }
@@ -1510,7 +1443,7 @@ mod tests {
             width: ONE_COLUMN,
         });
         assert!(shows(&app, "OMORI"));
-        assert!(shows(&app, "READY"));
+        assert!(shows(&app, "READY?"));
         assert!(!shows(&app, "Cyberpunk 2077"));
     }
 
@@ -1688,17 +1621,24 @@ mod tests {
 
     /// A games.db that knows Baldur's Gate 3 only by name, on the AMD laptop.
     fn lookup_app(dir: &TempDir) -> App {
+        lookup_app_knowing(
+            dir,
+            &[
+                (BG3, "Baldur's Gate 3"),
+                (2138330, "Cyberpunk 2077: Phantom Liberty"),
+            ],
+        )
+    }
+
+    /// A games.db that knows `names` only by name, on the AMD laptop.
+    fn lookup_app_knowing(dir: &TempDir, names: &[(u32, &str)]) -> App {
         let paths = Paths::under(dir.path());
         std::fs::create_dir_all(&paths.data).unwrap();
         let db = GameDb::create(&paths.data.join("games.db")).unwrap();
         let table = include_str!("../../data/hardware.toml");
         db.store_catalog(&Catalog::from_toml(table).unwrap())
             .unwrap();
-        db.store_names(&[
-            (BG3, "Baldur's Gate 3"),
-            (2138330, "Cyberpunk 2077: Phantom Liberty"),
-        ])
-        .unwrap();
+        db.store_names(names).unwrap();
         let (mut app, _) = App::new(paths, Language::English);
         let _ = app.update(Message::HardwareDetected(test_support::amd_laptop()));
         app
@@ -1790,7 +1730,7 @@ mod tests {
     fn an_update_is_swapped_in_without_a_restart() {
         let dir = TempDir::new().unwrap();
         let mut app = library_app(&dir);
-        assert!(shows(&app, "READY")); // OMORI
+        assert!(shows(&app, "READY?")); // OMORI
         assert!(!shows(&app, "Downloading the game database…"));
 
         let _ = app.update(Message::Download(download::Event::Progress {
@@ -1825,7 +1765,7 @@ mod tests {
             download::Failure::Failed("offline".to_owned()),
         ))));
 
-        assert!(shows(&app, "READY"));
+        assert!(shows(&app, "READY?"));
         assert!(!shows(
             &app,
             "Couldn't download the game database. Check your connection."
@@ -1846,7 +1786,7 @@ mod tests {
             &app,
             "The game database needs a newer rigcheck. Update the app to get it."
         ));
-        assert!(shows(&app, "READY"));
+        assert!(shows(&app, "READY?"));
     }
 
     #[test]
@@ -1891,6 +1831,42 @@ mod tests {
     }
 
     #[test]
+    fn clearing_fetched_games_takes_their_verdicts_off_the_catalog() {
+        let dir = TempDir::new().unwrap();
+        let mut app = lookup_app(&dir);
+        let _ = app.update(Message::Open(Page::Game(BG3)));
+        let _ = app.update(steam_says(BG3));
+        click(&mut app, "CATALOG");
+        assert!(shows(&app, "TOO WEAK"));
+
+        click(&mut app, "SETTINGS");
+        on_tall_window(&mut app, |ui| {
+            ui.click("CLEAR FETCHED GAMES").unwrap();
+        });
+        click(&mut app, "CATALOG");
+
+        assert!(!shows(&app, "TOO WEAK"));
+        assert!(shows(&app, "NOT CHECKED YET"));
+    }
+
+    #[test]
+    fn the_catalogs_filters_list_a_looked_up_game_like_its_tile() {
+        const STARDEW: u32 = 413150;
+        let dir = TempDir::new().unwrap();
+        let mut app = lookup_app_knowing(&dir, &[(STARDEW, "Stardew Valley")]);
+        let _ = app.update(Message::Open(Page::Game(STARDEW)));
+        let _ = app.update(steam_says(STARDEW));
+        click(&mut app, "CATALOG");
+        assert!(shows(&app, "READY?"));
+
+        click(&mut app, "CAN RUN");
+        assert!(shows(&app, "Stardew Valley"), "CAN RUN hides it");
+        click(&mut app, "CAN RUN");
+        click(&mut app, "NATIVE LINUX");
+        assert!(shows(&app, "Stardew Valley"), "NATIVE LINUX hides it");
+    }
+
+    #[test]
     fn clearing_images_frees_their_space() {
         let dir = TempDir::new().unwrap();
         let mut app = library_app(&dir);
@@ -1912,6 +1888,62 @@ mod tests {
     }
 
     #[test]
+    fn covers_come_back_after_clearing_images() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        let _ = app.update(Message::CoverFetched(1150690, Ok(vec![0; 1000])));
+
+        let _ = app.update(Message::ClearImages);
+
+        assert!(matches!(app.cover_of(1150690), library::Cover::Missing));
+        assert_eq!(
+            app.cover(1150690).units(),
+            1,
+            "OMORI's cover is asked for again"
+        );
+    }
+
+    #[test]
+    fn a_cover_the_cache_limit_deletes_is_downloaded_again() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        // Below what Settings offers, to keep the covers small.
+        let _ = app.update(Message::ImageCacheLimit(1));
+        let _ = app.update(Message::CoverFetched(1150690, Ok(vec![0; 800_000])));
+        std::thread::sleep(std::time::Duration::from_millis(20));
+
+        // Cyberpunk 2077's cover is newer: OMORI's goes to make room.
+        let _ = app.update(Message::CoverFetched(1091500, Ok(vec![0; 800_000])));
+
+        assert!(matches!(app.cover_of(1150690), library::Cover::Missing));
+        assert!(matches!(
+            app.cover_of(1091500),
+            library::Cover::Ready { .. }
+        ));
+        assert_eq!(
+            app.cover(1150690).units(),
+            1,
+            "OMORI's cover is asked for again"
+        );
+    }
+
+    #[test]
+    fn a_second_database_download_waits_for_the_first() {
+        let dir = TempDir::new().unwrap();
+        // Checking for a newer games.db, as at every start.
+        let mut app = library_app(&dir);
+
+        assert_eq!(app.update(Message::CheckForUpdates).units(), 0);
+        assert_eq!(app.update(Message::Redownload).units(), 0);
+
+        let _ = app.update(Message::Download(download::Event::Finished(Ok(
+            download::Fetched::UpToDate,
+        ))));
+        assert_eq!(app.update(Message::CheckForUpdates).units(), 1);
+        assert_eq!(app.update(Message::CheckForUpdates).units(), 0);
+    }
+
+    #[test]
     fn the_image_cache_limit_is_saved() {
         let dir = TempDir::new().unwrap();
         let mut app = library_app(&dir);
@@ -1930,6 +1962,10 @@ mod tests {
     fn re_downloading_the_database_starts_right_away() {
         let dir = TempDir::new().unwrap();
         let mut app = library_app(&dir);
+        // The update check at start-up found nothing newer.
+        let _ = app.update(Message::Download(download::Event::Finished(Ok(
+            download::Fetched::UpToDate,
+        ))));
 
         click(&mut app, "SETTINGS");
         // Settings is long: a window tall enough to reach Storage.
@@ -2050,10 +2086,11 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let app = library_app(&dir);
 
-        // OMORI is READY, Cyberpunk 2077 TOO WEAK on the AMD laptop.
+        // Cyberpunk 2077 is TOO WEAK on the AMD laptop; OMORI is READY?,
+        // its CPU and GPU not compared, so it doesn't count.
         assert!(shows(
             &app,
-            "1 of 2 installed games meet the recommended specs."
+            "0 of 2 installed games meet the recommended specs."
         ));
     }
 
@@ -2150,7 +2187,7 @@ mod tests {
             "Cyberpunk 2077",
             "OMORI",
             "TOO WEAK",
-            "READY",
+            "READY?",
             "BELOW MINIMUM",
             "MEETS RECOMMENDED",
             "GeForce GTX 1060 6GB or Radeon RX 580 8GB or Arc A380",
@@ -2257,7 +2294,10 @@ mod tests {
             let _ = app.update(message);
         }
 
-        assert!(shows(&app, "Meets the recommended specs."));
+        assert!(shows(
+            &app,
+            "What could be compared meets the recommended specs. The CPU and GPU couldn't be compared."
+        ));
     }
 
     /// Exactly three tiles wide.
@@ -2358,11 +2398,11 @@ mod tests {
         click(&mut app, "ALL MY GAMES");
 
         // Baldur's Gate 3 is owned, not installed: TOO WEAK on the iGPU like
-        // Cyberpunk 2077 (RX 480 95 vs Vega 7 32); OMORI is READY.
+        // Cyberpunk 2077 (RX 480 95 vs Vega 7 32); OMORI is READY?.
         assert!(shows(&app, "Baldur's Gate 3"));
         assert!(shows(
             &app,
-            "1 of 3 games you own meet the recommended specs."
+            "0 of 3 games you own meet the recommended specs."
         ));
         click(&mut app, "INSTALLED");
         assert!(!shows(&app, "Baldur's Gate 3"));

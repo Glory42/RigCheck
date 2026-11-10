@@ -21,9 +21,11 @@ pub struct Storage {
 const IMAGE_LIMITS: [u32; 4] = [100, 250, 500, 1000];
 
 /// `account` is the Steam account section ([`crate::account::view`]).
+/// While games.db is `downloading`, another download can't be started.
 pub fn view(
     settings: &Settings,
     storage: Storage,
+    downloading: bool,
     account: Element<'static, Message>,
     i18n: &I18n,
     colors: Colors,
@@ -61,7 +63,7 @@ pub fn view(
             i18n.t("storage-description"),
             colors
         ),
-        storage_rows(settings, storage, i18n, colors),
+        storage_rows(settings, storage, downloading, i18n, colors),
         section(
             i18n.t("privacy-title"),
             i18n.t("privacy-description"),
@@ -78,6 +80,7 @@ pub fn view(
 fn storage_rows(
     settings: &Settings,
     storage: Storage,
+    downloading: bool,
     i18n: &I18n,
     colors: Colors,
 ) -> Element<'static, Message> {
@@ -86,6 +89,9 @@ fn storage_rows(
             .padding([6, 10])
             .style(colors.button(false))
             .on_press(message)
+    };
+    let download = |id: &str, message: Message| {
+        action(id, message.clone()).on_press_maybe((!downloading).then_some(message))
     };
     let line = |id: &str, bytes: u64, actions: Vec<Element<'static, Message>>| {
         row![
@@ -114,8 +120,8 @@ fn storage_rows(
             "storage-games-db",
             storage.games_db,
             vec![
-                action("storage-check", Message::CheckForUpdates).into(),
-                action("storage-redownload", Message::Redownload).into(),
+                download("storage-check", Message::CheckForUpdates).into(),
+                download("storage-redownload", Message::Redownload).into(),
             ],
         ),
         line(

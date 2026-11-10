@@ -2,11 +2,12 @@
 //! [`Records`], which reads the two in ROADMAP §7.1's order: games.db, then
 //! a recent lookup, then a live fetch (made by the app, kept here).
 
+use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
 use rusqlite::{OptionalExtension, params};
 
-use crate::{Error, Game, GameDb, GameRecord, vendor_name};
+use crate::{Error, Filters, Game, GameDb, GameRecord, LookedUp, vendor_name};
 
 /// A lookup older than this is worth asking Steam again (ROADMAP §7.1).
 const STALE_AFTER: i64 = 30 * 24 * 60 * 60;
@@ -17,6 +18,9 @@ pub struct Fetched {
     db: GameDb,
     /// `None` in memory.
     path: Option<PathBuf>,
+    /// Every lookup and when it was made, read once for the Catalog's
+    /// filters and forgotten when a lookup is stored or deleted.
+    lookups: RefCell<Option<Vec<(i64, Game)>>>,
 }
 
 impl Fetched {
@@ -33,6 +37,7 @@ impl Fetched {
         Ok(Fetched {
             db,
             path: Some(path.to_owned()),
+            lookups: RefCell::new(None),
         })
     }
 
@@ -42,6 +47,7 @@ impl Fetched {
         Fetched {
             db: GameDb::create_in_memory().expect("an empty in-memory database"),
             path: None,
+            lookups: RefCell::new(None),
         }
     }
 
@@ -84,6 +90,7 @@ impl Fetched {
             }
         }
         tx.commit()?;
+        self.lookups.take();
         Ok(gone.len())
     }
 
@@ -138,7 +145,41 @@ impl Fetched {
             )?;
         }
         tx.commit()?;
+        self.lookups.take();
         self.db.store(&record, &catalog)
+    }
+
+    /// The lookups recent at `now`, and which of them `filters` keep.
+    fn looked_up(&self, filters: &Filters, now: i64) -> Result<LookedUp, Error> {
+        if self.lookups.borrow().is_none() {
+            let mut statement = self
+                .db
+                .conn
+                .prepare("SELECT app_id, updated_at FROM games")?;
+            let stored: Vec<(u32, i64)> = statement
+                .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+                .collect::<Result<_, _>>()?;
+            let mut lookups = Vec::new();
+            for (app_id, at) in stored {
+                if let Some(game) = self.db.game(app_id)? {
+                    lookups.push((at, game));
+                }
+            }
+            *self.lookups.borrow_mut() = Some(lookups);
+        }
+        let mut looked_up = LookedUp::default();
+        let lookups = self.lookups.borrow();
+        let recent = lookups
+            .iter()
+            .flatten()
+            .filter(|(at, _)| now - at <= STALE_AFTER);
+        for (_, game) in recent {
+            looked_up.all.push(game.app_id);
+            if filters.keeps(game) {
+                looked_up.kept.push(game.app_id);
+            }
+        }
+        Ok(looked_up)
     }
 
     /// The game with `app_id`, unless it was looked up more than 30 days
@@ -190,12 +231,6 @@ impl<'a> Records<'a> {
         }
     }
 
-    /// games.db, for what only it has: the Catalog's pages and counts, the
-    /// hardware table.
-    pub fn games(&self) -> &'a GameDb {
-        self.games
-    }
-
     /// The record for `app_id`: games.db's if it has checked the game, else
     /// a recent lookup's, else games.db's name-only one. `None` if neither
     /// file has it.
@@ -211,6 +246,36 @@ impl<'a> Records<'a> {
     /// recent lookup has its requirements.
     pub fn needs_lookup(&self, app_id: u32) -> bool {
         !checked(self.games, app_id) && !matches!(self.fetched.fresh(app_id, self.now), Ok(Some(_)))
+    }
+
+    /// Games `offset..offset + limit` of the Catalog, as
+    /// [`GameDb::games_page`] lists them, except that a game games.db knows
+    /// by name only passes the filters if a recent lookup of it does.
+    pub fn page(
+        &self,
+        query: &str,
+        filters: &Filters,
+        offset: usize,
+        limit: usize,
+    ) -> Result<Vec<(u32, String)>, Error> {
+        let looked_up = self.looked_up(filters)?;
+        self.games
+            .page_with(query, filters, offset, limit, &looked_up)
+    }
+
+    /// How many games [`Records::page`] lists for `query` and `filters`.
+    pub fn count(&self, query: &str, filters: &Filters) -> Result<usize, Error> {
+        let looked_up = self.looked_up(filters)?;
+        self.games.count_with(query, filters, &looked_up)
+    }
+
+    /// The lookups the Catalog's filters read. Without filters a lookup
+    /// changes nothing about which games are listed.
+    fn looked_up(&self, filters: &Filters) -> Result<LookedUp, Error> {
+        if *filters == Filters::default() {
+            return Ok(LookedUp::default());
+        }
+        self.fetched.looked_up(filters, self.now)
     }
 
     /// Keeps a live lookup of `app_id`'s store page, so [`Records::get`]

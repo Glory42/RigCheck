@@ -8,7 +8,7 @@ use iced::widget::{
     Space, button, center, column, container, grid, image, row, scrollable, space, text, text_input,
 };
 use iced::{ContentFit, Element, Fill};
-use rigcheck_core::{Level, Specs, Verdict};
+use rigcheck_core::{Confidence, Level, Specs, Verdict};
 use rigcheck_gamedb::Game;
 
 use crate::i18n::I18n;
@@ -37,6 +37,13 @@ pub enum Status {
     /// In games.db by name only: its store page hasn't been read yet.
     NotChecked,
     Verdict(Verdict),
+}
+
+/// Whether `verdict` compared the CPU, GPU and RAM all three. Only then is
+/// a game called READY or LOW without a question mark: one part meeting
+/// the specs says nothing about the others (ROADMAP §1, honest results).
+pub fn fully_compared(verdict: &Verdict) -> bool {
+    verdict.confidence == Confidence::High
 }
 
 /// The status of `game` (its games.db record, if any) on a PC with `specs`
@@ -242,9 +249,10 @@ fn summary(games: &[Entry], scope: Scope, i18n: &I18n) -> Option<String> {
     }
     let ready = games
         .iter()
-        .filter(
-            |entry| matches!(&entry.status, Status::Verdict(v) if v.overall == Level::Recommended),
-        )
+        .filter(|entry| {
+            matches!(&entry.status, Status::Verdict(v)
+                if v.overall == Level::Recommended && fully_compared(v))
+        })
         .count();
     let id = match scope {
         Scope::Installed => "library-summary",
@@ -259,19 +267,23 @@ fn summary(games: &[Entry], scope: Scope, i18n: &I18n) -> Option<String> {
     ))
 }
 
-/// Best first: the order verdict groups are listed in.
+/// Best first: the order verdict groups are listed in. READY? comes after
+/// READY, LOW? after LOW.
 fn rank(status: &Status) -> u8 {
     match status {
-        Status::Verdict(verdict) => match verdict.overall {
-            Level::Recommended => 0,
-            Level::Minimum => 1,
-            Level::Below => 2,
-            Level::Blocked => 3,
-            Level::Unknown => 4,
-        },
-        Status::NotChecked => 5,
-        Status::NoData => 6,
-        Status::Checking => 7,
+        Status::Verdict(verdict) => {
+            let partly = u8::from(!fully_compared(verdict));
+            match verdict.overall {
+                Level::Recommended => partly,
+                Level::Minimum => 2 + partly,
+                Level::Below => 4,
+                Level::Blocked => 5,
+                Level::Unknown => 6,
+            }
+        }
+        Status::NotChecked => 7,
+        Status::NoData => 8,
+        Status::Checking => 9,
     }
 }
 
@@ -347,14 +359,62 @@ pub fn stamp(status: &Status, i18n: &I18n) -> (String, iced::Color) {
         Status::NotChecked => {
             return (i18n.t("stamp-not-checked"), level_color(Level::Unknown));
         }
-        Status::Verdict(verdict) => verdict.overall,
+        Status::Verdict(verdict) => verdict,
     };
+    let partly = !fully_compared(level);
+    let level = level.overall;
     let id = match level {
+        Level::Recommended if partly => "stamp-recommended-partial",
         Level::Recommended => "stamp-recommended",
+        Level::Minimum if partly => "stamp-minimum-partial",
         Level::Minimum => "stamp-minimum",
         Level::Below => "stamp-below",
         Level::Blocked => "stamp-blocked",
         Level::Unknown => "stamp-unknown",
     };
     (i18n.t(id), level_color(level))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::i18n::Language;
+
+    fn verdict(overall: Level, confidence: Confidence) -> Status {
+        Status::Verdict(Verdict {
+            overall,
+            bottleneck: None,
+            components: Vec::new(),
+            confidence,
+            blocker: None,
+            warnings: Vec::new(),
+        })
+    }
+
+    #[test]
+    fn ready_and_low_ask_unless_cpu_gpu_and_ram_were_all_compared() {
+        let i18n = I18n::new(Language::English);
+        let label = |overall, confidence| stamp(&verdict(overall, confidence), &i18n).0;
+
+        assert_eq!(label(Level::Recommended, Confidence::High), "READY");
+        assert_eq!(label(Level::Recommended, Confidence::Partial), "READY?");
+        assert_eq!(label(Level::Recommended, Confidence::Low), "READY?");
+        assert_eq!(label(Level::Minimum, Confidence::High), "LOW");
+        assert_eq!(label(Level::Minimum, Confidence::Partial), "LOW?");
+        // One part too weak is enough to say so.
+        assert_eq!(label(Level::Below, Confidence::Partial), "TOO WEAK");
+    }
+
+    #[test]
+    fn partly_compared_verdicts_list_after_their_level() {
+        let order = [
+            verdict(Level::Recommended, Confidence::High),
+            verdict(Level::Recommended, Confidence::Partial),
+            verdict(Level::Minimum, Confidence::High),
+            verdict(Level::Minimum, Confidence::Partial),
+            verdict(Level::Below, Confidence::High),
+        ];
+
+        assert!(order.windows(2).all(|pair| rank(&pair[0]) < rank(&pair[1])));
+    }
 }

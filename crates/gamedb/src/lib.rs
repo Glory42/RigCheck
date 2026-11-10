@@ -130,6 +130,14 @@ impl Game {
         };
         evaluate(&requirements, specs, &self.linux)
     }
+
+    /// Whether this game reaches at least its minimum on `specs`.
+    fn runs_on(&self, specs: &Specs) -> bool {
+        matches!(
+            self.verdict(specs).overall,
+            Level::Minimum | Level::Recommended
+        )
+    }
 }
 
 /// What the Catalog lists besides a search. The default lists everything.
@@ -146,6 +154,55 @@ pub struct Filters {
     pub no_anticheat_issues: bool,
     /// Only games that reach at least their minimum on these specs.
     pub runs_on: Option<Specs>,
+}
+
+impl Filters {
+    /// Whether these filters keep `game`: what [`filter_conditions`] and
+    /// `temp.runnable` ask of a games.db row, asked of a record.
+    fn keeps(&self, game: &Game) -> bool {
+        let issues = [AntiCheat::Denied, AntiCheat::Broken, AntiCheat::Planned];
+        (!self.native_linux || game.linux.native)
+            && (!self.deck_verified || game.deck.as_deref() == Some("verified"))
+            && self.protondb_at_least.is_none_or(|lowest| {
+                game.linux
+                    .protondb
+                    .is_some_and(|tier| tiers_at_least(lowest).contains(&tier))
+            })
+            && (!self.no_anticheat_issues
+                || game
+                    .linux
+                    .anticheat
+                    .is_none_or(|status| !issues.contains(&status)))
+            && self
+                .runs_on
+                .as_ref()
+                .is_none_or(|specs| game.runs_on(specs))
+    }
+}
+
+/// Lookups of games games.db knows by name only, which the Catalog's
+/// filters read instead of those name-only rows: every one, and the ones
+/// the filters keep.
+#[derive(Debug, Default)]
+struct LookedUp {
+    all: Vec<u32>,
+    kept: Vec<u32>,
+}
+
+/// ProtonDB's tiers from `lowest` up.
+fn tiers_at_least(lowest: ProtonTier) -> &'static [ProtonTier] {
+    const BEST_FIRST: [ProtonTier; 5] = [
+        ProtonTier::Platinum,
+        ProtonTier::Gold,
+        ProtonTier::Silver,
+        ProtonTier::Bronze,
+        ProtonTier::Borked,
+    ];
+    let end = BEST_FIRST
+        .iter()
+        .position(|&tier| tier == lowest)
+        .unwrap_or(4);
+    &BEST_FIRST[..=end]
 }
 
 /// Brings a games.db written by an older build up to the current schema.
@@ -208,18 +265,7 @@ fn filter_conditions(filters: &Filters) -> Vec<String> {
         conditions.push("g.deck_status = 'verified'".to_owned());
     }
     if let Some(lowest) = filters.protondb_at_least {
-        let best_first = [
-            ProtonTier::Platinum,
-            ProtonTier::Gold,
-            ProtonTier::Silver,
-            ProtonTier::Bronze,
-            ProtonTier::Borked,
-        ];
-        let end = best_first
-            .iter()
-            .position(|&tier| tier == lowest)
-            .unwrap_or(4);
-        let names: Vec<String> = best_first[..=end]
+        let names: Vec<String> = tiers_at_least(lowest)
             .iter()
             .map(|&tier| format!("'{}'", proton_tier_name(tier)))
             .collect();
@@ -597,7 +643,25 @@ impl GameDb {
         offset: usize,
         limit: usize,
     ) -> Result<Vec<(u32, String)>, Error> {
-        let (from, values) = self.catalog_from(query, filters, self.is_broad(query))?;
+        self.page_with(query, filters, offset, limit, &LookedUp::default())
+    }
+
+    /// How many games the Catalog lists for `query` and `filters`.
+    pub fn games_count(&self, query: &str, filters: &Filters) -> Result<usize, Error> {
+        self.count_with(query, filters, &LookedUp::default())
+    }
+
+    /// [`GameDb::games_page`], with `looked_up` filtered in place of their
+    /// name-only rows.
+    fn page_with(
+        &self,
+        query: &str,
+        filters: &Filters,
+        offset: usize,
+        limit: usize,
+        looked_up: &LookedUp,
+    ) -> Result<Vec<(u32, String)>, Error> {
+        let (from, values) = self.catalog_from(query, filters, self.is_broad(query), looked_up)?;
         let sql = format!(
             "SELECT g.app_id, g.name {from} ORDER BY g.popularity DESC, g.name LIMIT {limit} OFFSET {offset}"
         );
@@ -611,8 +675,14 @@ impl GameDb {
         Ok(page)
     }
 
-    /// How many games the Catalog lists for `query` and `filters`.
-    pub fn games_count(&self, query: &str, filters: &Filters) -> Result<usize, Error> {
+    /// [`GameDb::games_count`], with `looked_up` filtered in place of their
+    /// name-only rows.
+    fn count_with(
+        &self,
+        query: &str,
+        filters: &Filters,
+        looked_up: &LookedUp,
+    ) -> Result<usize, Error> {
         // Just a search: the search table alone knows (~8 ms instead of ~40
         // for "s" on 200k games).
         if let (Some(terms), true) = (fts_query(query), *filters == Filters::default()) {
@@ -624,7 +694,7 @@ impl GameDb {
             )?;
             return Ok(count as usize);
         }
-        let (from, values) = self.catalog_from(query, filters, false)?;
+        let (from, values) = self.catalog_from(query, filters, false, looked_up)?;
         let count: i64 = self.conn.query_row(
             &format!("SELECT count(*) {from}"),
             params_from_iter(values),
@@ -647,21 +717,47 @@ impl GameDb {
 
     /// The `FROM … WHERE …` of a Catalog query, and the values for its `?`s.
     /// `broad` walks the popularity index and keeps the matches, instead of
-    /// joining the matches and sorting them.
+    /// joining the matches and sorting them. A name-only row with a lookup
+    /// in `looked_up` passes the filters if its lookup does.
     fn catalog_from(
         &self,
         query: &str,
         filters: &Filters,
         broad: bool,
+        looked_up: &LookedUp,
     ) -> Result<(String, Vec<String>), Error> {
         let mut from = if broad {
             "FROM games g INDEXED BY games_by_popularity".to_owned()
         } else {
             "FROM games g".to_owned()
         };
+        let mut filtered = filter_conditions(filters);
         if let Some(specs) = &filters.runs_on {
             self.fill_runnable(specs)?;
-            from.push_str(" JOIN temp.runnable USING (app_id)");
+            if looked_up.all.is_empty() {
+                from.push_str(" JOIN temp.runnable USING (app_id)");
+            } else {
+                filtered.push("g.app_id IN (SELECT app_id FROM temp.runnable)".to_owned());
+            }
+        }
+        if !looked_up.all.is_empty() && !filtered.is_empty() {
+            // App IDs are ours, not the user's, so they're written inline.
+            let name_only_in = |ids: &[u32]| {
+                let ids: Vec<String> = ids.iter().map(u32::to_string).collect();
+                format!(
+                    "(g.app_id IN ({}) AND g.requirements_status = 'not_crawled')",
+                    ids.join(", ")
+                )
+            };
+            let mut either = format!(
+                "(({}) AND NOT {})",
+                filtered.join(" AND "),
+                name_only_in(&looked_up.all)
+            );
+            if !looked_up.kept.is_empty() {
+                either = format!("{either} OR {}", name_only_in(&looked_up.kept));
+            }
+            filtered = vec![format!("({either})")];
         }
         let mut conditions = Vec::new();
         let mut values = Vec::new();
@@ -677,7 +773,7 @@ impl GameDb {
             }
             values.push(terms);
         }
-        conditions.extend(filter_conditions(filters));
+        conditions.extend(filtered);
         if !conditions.is_empty() {
             from = format!("{from} WHERE {}", conditions.join(" AND "));
         }
@@ -698,13 +794,8 @@ impl GameDb {
         )?;
         {
             let mut insert = tx.prepare("INSERT INTO temp.runnable (app_id) VALUES (?1)")?;
-            for game in checked {
-                if matches!(
-                    game.verdict(specs).overall,
-                    Level::Minimum | Level::Recommended
-                ) {
-                    insert.execute([game.app_id])?;
-                }
+            for game in checked.iter().filter(|game| game.runs_on(specs)) {
+                insert.execute([game.app_id])?;
             }
         }
         tx.commit()?;
