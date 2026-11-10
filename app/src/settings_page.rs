@@ -1,13 +1,13 @@
 //! The Settings page: Appearance, Language, Storage and Privacy.
 
 use iced::border::Border;
-use iced::widget::{Space, button, column, container, row, scrollable, space, text};
+use iced::widget::{Space, button, column, container, row, space, text};
 use iced::{Color, Element, Fill};
 
 use crate::Message;
 use crate::i18n::{I18n, Language};
 use crate::settings::{Appearance, Settings};
-use crate::style::{BOLD, Colors};
+use crate::style::{BOLD, Colors, scroll};
 
 /// What the app keeps on disk, in bytes (ROADMAP §7.1).
 #[derive(Debug, Clone, Copy, Default)]
@@ -73,7 +73,7 @@ pub fn view(
     ]
     .spacing(12);
     // Room on the right and bottom so hard shadows aren't clipped.
-    scrollable(page.padding([0, 6])).width(Fill).into()
+    scroll(page.padding([0, 6]), colors).width(Fill).into()
 }
 
 /// Sizes and what can be done about them.

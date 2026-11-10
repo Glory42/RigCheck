@@ -4,8 +4,9 @@
 use iced::border::Border;
 use iced::font::{Font, Weight};
 use iced::theme::Palette;
+use iced::widget::scrollable::{self, Direction, Rail, Scrollable, Scrollbar, Scroller};
 use iced::widget::{button, container};
-use iced::{Color, Shadow, Theme, Vector};
+use iced::{Color, Element, Shadow, Theme, Vector};
 
 use crate::settings::Appearance;
 
@@ -175,6 +176,36 @@ impl Colors {
         }
     }
 
+    /// The scrollbar: a muted bar on no track, the accent while it's
+    /// hovered or dragged. Square, like every other box.
+    pub fn scrollbar(self) -> impl Fn(&Theme, scrollable::Status) -> scrollable::Style {
+        move |theme, status| {
+            let used = matches!(
+                status,
+                scrollable::Status::Hovered {
+                    is_vertical_scrollbar_hovered: true,
+                    ..
+                } | scrollable::Status::Dragged {
+                    is_vertical_scrollbar_dragged: true,
+                    ..
+                }
+            );
+            let rail = Rail {
+                background: None,
+                border: Border::default(),
+                scroller: Scroller {
+                    background: if used { self.accent } else { self.muted }.into(),
+                    border: Border::default(),
+                },
+            };
+            scrollable::Style {
+                vertical_rail: rail,
+                horizontal_rail: rail,
+                ..scrollable::default(theme, status)
+            }
+        }
+    }
+
     fn hard_shadow(self, offset: f32) -> Shadow {
         Shadow {
             color: self.line,
@@ -182,6 +213,15 @@ impl Colors {
             blur_radius: 0.0,
         }
     }
+}
+
+/// A page that scrolls down. Its thin scrollbar keeps room of its own
+/// beside the content, so it never sits on text, buttons or shadows.
+pub fn scroll<'a, M: 'a>(content: impl Into<Element<'a, M>>, colors: Colors) -> Scrollable<'a, M> {
+    let bar = Scrollbar::new().width(6).scroller_width(6).spacing(10);
+    Scrollable::new(content)
+        .direction(Direction::Vertical(bar))
+        .style(colors.scrollbar())
 }
 
 /// The stamp color for a verdict level.

@@ -1,12 +1,12 @@
 //! The About page: version, licenses, links and the data-source credits
 //! ROADMAP §9 asks for.
 
-use iced::widget::{button, column, container, row, scrollable, text};
+use iced::widget::{button, column, container, row, text};
 use iced::{Element, Fill};
 
 use crate::Message;
 use crate::i18n::I18n;
-use crate::style::{BOLD, Colors};
+use crate::style::{BOLD, Colors, scroll};
 
 const REPOSITORY: &str = "https://github.com/Glory42/rigcheck";
 
@@ -72,5 +72,5 @@ pub fn view(i18n: &I18n, colors: Colors) -> Element<'static, Message> {
         ),
     ]
     .spacing(16);
-    scrollable(page.padding([0, 6])).into()
+    scroll(page.padding([0, 6]), colors).into()
 }

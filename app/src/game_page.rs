@@ -1,13 +1,13 @@
 //! The game page: the verdict, why, and the requirements next to your PC.
 
-use iced::widget::{Column, button, column, container, row, scrollable, text};
+use iced::widget::{Column, button, column, container, row, text};
 use iced::{Center, Element, Fill};
 use rigcheck_core::{Blocker, Component, Level, Verdict};
 use rigcheck_gamedb::{Game, Tier};
 
 use crate::i18n::I18n;
 use crate::library::{Cover, Status, cover_box, fully_compared, stamp};
-use crate::style::{BOLD, Colors, level_color};
+use crate::style::{BOLD, Colors, level_color, scroll};
 use crate::{Message, Page};
 
 /// The user's machine as the page shows it.
@@ -103,7 +103,7 @@ pub fn view<'a>(
             page = page.push(text);
         }
     }
-    scrollable(page.padding([0, 6])).into()
+    scroll(page.padding([0, 6]), colors).into()
 }
 
 /// Why the game got its stamp: one sentence, and for READY? or LOW? a

@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::ops::Range;
 
-use iced::widget::{button, column, container, row, scrollable, space, text, text_input};
+use iced::widget::{button, column, container, row, space, text, text_input};
 use iced::{Element, Fill};
 use rigcheck_core::{ProtonTier, Specs};
 use rigcheck_gamedb::{Filters, Game, Records};
@@ -13,7 +13,7 @@ use rigcheck_gamedb::{Filters, Game, Records};
 use crate::Message;
 use crate::i18n::I18n;
 use crate::library::{Cover, TILE_HEIGHT, TILE_WIDTH, game_tile, status};
-use crate::style::{BOLD, Colors};
+use crate::style::{BOLD, Colors, scroll};
 
 /// The search box's and the list's widget IDs.
 pub const SEARCH: &str = "catalog-search";
@@ -282,16 +282,18 @@ pub fn view<'a>(
         .on_submit(Message::Shortcut(crate::keys::Shortcut::Open))
         .padding(10)
         .font(BOLD);
-    let list_view = scrollable(
+    let list_view = scroll(
         column![space().height(first_row as f32 * ROW_HEIGHT)]
             .extend(tiles)
             .push(space().height(rows_after as f32 * ROW_HEIGHT))
             .width(Fill),
+        colors,
     )
     .on_scroll(|viewport| Message::CatalogScrolled {
         offset: viewport.absolute_offset().y,
         height: viewport.bounds().height,
-        width: viewport.bounds().width,
+        // The tiles' width: the scrollbar keeps room of its own.
+        width: viewport.content_bounds().width,
     })
     .id(LIST)
     .height(Fill);

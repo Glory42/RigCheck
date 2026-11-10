@@ -146,6 +146,8 @@ impl Covers {
     pub fn download_now(&mut self, app_id: u32) {
         let jpeg = self.web.cover(app_id);
         self.fetched(app_id, jpeg, u64::MAX);
+        // Shown at once: no frames run to fade it in.
+        self.arrived.remove(&app_id);
     }
 
     /// The cover for `app_id`, if Steam or rigcheck has one on disk.

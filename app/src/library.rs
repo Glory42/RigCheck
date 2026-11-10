@@ -5,14 +5,14 @@ use std::path::PathBuf;
 use iced::widget::grid::Sizing;
 use iced::widget::image::Handle;
 use iced::widget::{
-    Space, button, center, column, container, grid, image, row, scrollable, space, text, text_input,
+    Space, button, center, column, container, grid, image, row, space, text, text_input,
 };
 use iced::{ContentFit, Element, Fill};
 use rigcheck_core::{Confidence, Level, Specs, Verdict};
 use rigcheck_gamedb::Game;
 
 use crate::i18n::I18n;
-use crate::style::{BOLD, Colors, level_color};
+use crate::style::{BOLD, Colors, level_color, scroll};
 use crate::{Message, Page};
 
 /// Steam's library art is 600×900; tiles show it at this size.
@@ -223,7 +223,7 @@ pub fn view<'a>(
         }
     };
 
-    column![search_box, header, scrollable(content).height(Fill)]
+    column![search_box, header, scroll(content, colors).height(Fill)]
         .spacing(16)
         .into()
 }
