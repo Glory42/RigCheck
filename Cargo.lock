@@ -3888,6 +3888,7 @@ dependencies = [
  "fluent-bundle",
  "iced",
  "iced_test",
+ "image",
  "rigcheck-core",
  "rigcheck-gamedb",
  "rigcheck-hardware",

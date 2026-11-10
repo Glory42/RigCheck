@@ -1,14 +1,14 @@
 //! Two games side by side: verdict, what each asks of every part and how
 //! this PC does, and the Linux facts (ROADMAP Phase 8).
 
-use iced::widget::{Column, button, column, container, row, scrollable, text};
+use iced::widget::{Column, button, column, container, row, text};
 use iced::{Element, Fill};
 use rigcheck_gamedb::Game;
 
 use crate::game_page::{ROWS, linux_facts, requirement, result, row_id};
 use crate::i18n::I18n;
 use crate::library::{Status, stamp};
-use crate::style::{BOLD, Colors};
+use crate::style::{BOLD, Colors, scroll};
 use crate::{Message, Page};
 
 /// One of the two games.
@@ -72,7 +72,7 @@ pub fn view(a: Side, b: Side, i18n: &I18n, colors: Colors) -> Element<'static, M
         }
     }
 
-    scrollable(
+    scroll(
         column![
             back,
             text(i18n.t("compare-minimum-note")).color(colors.muted),
@@ -83,6 +83,7 @@ pub fn view(a: Side, b: Side, i18n: &I18n, colors: Colors) -> Element<'static, M
         ]
         .spacing(16)
         .padding([0, 6]),
+        colors,
     )
     .into()
 }
