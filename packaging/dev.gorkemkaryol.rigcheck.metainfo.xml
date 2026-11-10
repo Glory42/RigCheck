@@ -58,6 +58,11 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.1.0" date="2026-11-10">
+      <description>
+        <p>Verdicts say how sure they are: READY? and LOW? when the CPU, GPU or RAM couldn't be compared, and the game page says which. A CPU or GPU the store page names no model for is compared with what ProtonDB players ran the game on. Fixes games wrongly shown as too weak, verdicts that stayed after clearing fetched games, Catalog filters that skipped looked-up games, blank covers, and two database downloads at once. A thinner scrollbar that no longer covers the page.</p>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-11-09">
       <description>
         <p>First stable release. Requirements are read from more kinds of store pages: one graphics card per vendor, memory written without a unit, and old one-paragraph pages.</p>
