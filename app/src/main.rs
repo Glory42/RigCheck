@@ -1261,7 +1261,9 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let app = library_app(&dir);
 
-        for text in ["Cyberpunk 2077", "TOO WEAK", "OMORI", "READY"] {
+        // Only OMORI's RAM is compared: the hardware table has no Intel
+        // N4100, and its GPU line names no card.
+        for text in ["Cyberpunk 2077", "TOO WEAK", "OMORI", "READY?"] {
             assert!(shows(&app, text), "{text} not shown");
         }
     }
@@ -1441,7 +1443,7 @@ mod tests {
             width: ONE_COLUMN,
         });
         assert!(shows(&app, "OMORI"));
-        assert!(shows(&app, "READY"));
+        assert!(shows(&app, "READY?"));
         assert!(!shows(&app, "Cyberpunk 2077"));
     }
 
@@ -1728,7 +1730,7 @@ mod tests {
     fn an_update_is_swapped_in_without_a_restart() {
         let dir = TempDir::new().unwrap();
         let mut app = library_app(&dir);
-        assert!(shows(&app, "READY")); // OMORI
+        assert!(shows(&app, "READY?")); // OMORI
         assert!(!shows(&app, "Downloading the game database…"));
 
         let _ = app.update(Message::Download(download::Event::Progress {
@@ -1763,7 +1765,7 @@ mod tests {
             download::Failure::Failed("offline".to_owned()),
         ))));
 
-        assert!(shows(&app, "READY"));
+        assert!(shows(&app, "READY?"));
         assert!(!shows(
             &app,
             "Couldn't download the game database. Check your connection."
@@ -1784,7 +1786,7 @@ mod tests {
             &app,
             "The game database needs a newer rigcheck. Update the app to get it."
         ));
-        assert!(shows(&app, "READY"));
+        assert!(shows(&app, "READY?"));
     }
 
     #[test]
@@ -1855,7 +1857,7 @@ mod tests {
         let _ = app.update(Message::Open(Page::Game(STARDEW)));
         let _ = app.update(steam_says(STARDEW));
         click(&mut app, "CATALOG");
-        assert!(shows(&app, "READY"));
+        assert!(shows(&app, "READY?"));
 
         click(&mut app, "CAN RUN");
         assert!(shows(&app, "Stardew Valley"), "CAN RUN hides it");
@@ -2084,10 +2086,11 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let app = library_app(&dir);
 
-        // OMORI is READY, Cyberpunk 2077 TOO WEAK on the AMD laptop.
+        // Cyberpunk 2077 is TOO WEAK on the AMD laptop; OMORI is READY?,
+        // its CPU and GPU not compared, so it doesn't count.
         assert!(shows(
             &app,
-            "1 of 2 installed games meet the recommended specs."
+            "0 of 2 installed games meet the recommended specs."
         ));
     }
 
@@ -2184,7 +2187,7 @@ mod tests {
             "Cyberpunk 2077",
             "OMORI",
             "TOO WEAK",
-            "READY",
+            "READY?",
             "BELOW MINIMUM",
             "MEETS RECOMMENDED",
             "GeForce GTX 1060 6GB or Radeon RX 580 8GB or Arc A380",
@@ -2291,7 +2294,10 @@ mod tests {
             let _ = app.update(message);
         }
 
-        assert!(shows(&app, "Meets the recommended specs."));
+        assert!(shows(
+            &app,
+            "What could be compared meets the recommended specs. The CPU and GPU couldn't be compared."
+        ));
     }
 
     /// Exactly three tiles wide.
@@ -2392,11 +2398,11 @@ mod tests {
         click(&mut app, "ALL MY GAMES");
 
         // Baldur's Gate 3 is owned, not installed: TOO WEAK on the iGPU like
-        // Cyberpunk 2077 (RX 480 95 vs Vega 7 32); OMORI is READY.
+        // Cyberpunk 2077 (RX 480 95 vs Vega 7 32); OMORI is READY?.
         assert!(shows(&app, "Baldur's Gate 3"));
         assert!(shows(
             &app,
-            "1 of 3 games you own meet the recommended specs."
+            "0 of 3 games you own meet the recommended specs."
         ));
         click(&mut app, "INSTALLED");
         assert!(!shows(&app, "Baldur's Gate 3"));
