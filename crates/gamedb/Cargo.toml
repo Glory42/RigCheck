@@ -6,7 +6,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
-rigcheck-core = { version = "1.0.0", path = "../core" }
+rigcheck-core = { version = "1.1.0", path = "../core" }
 rusqlite = { version = "0.41.1", features = ["bundled"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
@@ -15,5 +15,5 @@ toml = "1.1.8"
 zstd = "0.14.3"
 
 [dev-dependencies]
-rigcheck-hardware = { version = "1.0.0", path = "../hardware" }
+rigcheck-hardware = { version = "1.1.0", path = "../hardware" }
 tempfile = "3.27.0"

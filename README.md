@@ -14,7 +14,7 @@
 </p>
 
 > [!NOTE]
-> **v1.0 is out.** The app is complete; the game database is still filling in. It's rebuilt daily from Steam, reading a few thousand store pages a day, most popular games first. Until a game's page has been read it's known by name only (`NOT CHECKED YET`), and the app looks it up on Steam when you open it, so you still get a verdict. See the [roadmap](ROADMAP.md).
+> **v1.1 is out.** The app is complete; the game database is still filling in. It's rebuilt daily from Steam, reading a few thousand store pages a day, most popular games first. Until a game's page has been read it's known by name only (`NOT CHECKED YET`), and the app looks it up on Steam when you open it, so you still get a verdict. See the [roadmap](ROADMAP.md).
 
 ## What it does
 

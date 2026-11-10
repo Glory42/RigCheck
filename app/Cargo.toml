@@ -15,11 +15,11 @@ fluent-bundle = "0.16"
 iced = { version = "0.14", features = ["image"] }
 # Checks a downloaded cover decodes before it's kept (iced already uses it).
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
-rigcheck-core = { version = "1.0.0", path = "../crates/core" }
-rigcheck-gamedb = { version = "1.0.0", path = "../crates/gamedb" }
+rigcheck-core = { version = "1.1.0", path = "../crates/core" }
+rigcheck-gamedb = { version = "1.1.0", path = "../crates/gamedb" }
 rigcheck-hardware = { path = "../crates/hardware" }
-rigcheck-net = { version = "1.0.0", path = "../crates/net" }
-rigcheck-steam = { version = "1.0.0", path = "../crates/steam" }
+rigcheck-net = { version = "1.1.0", path = "../crates/net" }
+rigcheck-steam = { version = "1.1.0", path = "../crates/steam" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 unic-langid = "0.9"
