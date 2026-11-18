@@ -11,9 +11,12 @@ repository = "https://github.com/Glory42/rigcheck"
 [dependencies]
 directories = "6.0.0"
 fluent-bundle = "0.16"
-# `image` decodes the PNG window icon now and cover art later.
-iced = { version = "0.14", features = ["image"] }
-# Checks a downloaded cover decodes before it's kept (iced already uses it).
+# Images without iced's default codecs (every format `image` knows, an AV1
+# encoder among them): the only images are the PNG icon and JPEG covers,
+# and the `image` line below turns on just those two for iced too.
+iced = { version = "0.14", features = ["image-without-codecs"] }
+# Checks a downloaded cover decodes before it's kept; its features are the
+# codecs iced decodes with.
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 rigcheck-core = { version = "1.1.0", path = "../crates/core" }
 rigcheck-gamedb = { version = "1.1.0", path = "../crates/gamedb" }

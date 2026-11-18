@@ -47,6 +47,9 @@ use web::Web;
 /// (and so its icon); Flatpak uses it as the app ID.
 const APP_ID: &str = "dev.gorkemkaryol.rigcheck";
 const ICON_PNG: &[u8] = include_bytes!("../../assets/brand/icon-256.png");
+/// How long typing in the Catalog pauses before the search runs: a search
+/// costs up to ~50 ms on 200k games, too much for every key.
+const SEARCH_PAUSE: std::time::Duration = std::time::Duration::from_millis(150);
 
 fn main() -> iced::Result {
     let paths = Paths::from_xdg();
@@ -110,13 +113,21 @@ fn system_locale() -> Option<String> {
         .find(|value| !value.is_empty())
 }
 
+/// The window icon, decoded with the `image` crate (iced's own decoder
+/// needs every codec).
+fn icon() -> window::Icon {
+    let png = ::image::load_from_memory_with_format(ICON_PNG, ::image::ImageFormat::Png)
+        .expect("bundled icon is a valid PNG")
+        .into_rgba8();
+    let (width, height) = png.dimensions();
+    window::icon::from_rgba(png.into_raw(), width, height).expect("bundled icon is a valid PNG")
+}
+
 fn window_settings() -> window::Settings {
     window::Settings {
         size: Size::new(1100.0, 720.0),
         min_size: Some(Size::new(640.0, 480.0)),
-        icon: Some(
-            window::icon::from_file_data(ICON_PNG, None).expect("bundled icon is a valid PNG"),
-        ),
+        icon: Some(icon()),
         platform_specific: window::settings::PlatformSpecific {
             application_id: APP_ID.to_owned(),
             ..Default::default()
@@ -230,7 +241,14 @@ enum Message {
     /// The system switched between light and dark (or said which it is).
     SystemTheme(iced::theme::Mode),
     Download(download::Event),
+    /// Search the Catalog for this now.
     CatalogSearch(String),
+    /// A key typed in the Catalog's search box: the box shows it at once,
+    /// and [`Message::CatalogSettled`] follows after a pause.
+    CatalogTyped(String),
+    /// The typing paused with this in the box: search, unless more was
+    /// typed since.
+    CatalogSettled(String),
     CatalogFilter(catalog::Chip),
     /// Only games ProtonDB rates this or better; `None` for all.
     CatalogProtonDb(Option<rigcheck_core::ProtonTier>),
@@ -561,6 +579,10 @@ impl App {
                 }
             }
             (Shortcut::Open, Page::Catalog) => {
+                // Enter right after typing: search what's typed first.
+                if let Some(typed) = self.catalog_list.unsearched().map(str::to_owned) {
+                    let _ = self.update(Message::CatalogSearch(typed));
+                }
                 match self
                     .records()
                     .and_then(|records| self.catalog_list.selected_game(&records))
@@ -745,6 +767,21 @@ impl App {
             }
             Message::CatalogSearch(query) => {
                 self.relist_catalog(|list, records| list.search(query, records))
+            }
+            Message::CatalogTyped(typed) => {
+                self.catalog_list.type_text(typed.clone());
+                web::background(|| {
+                    std::thread::sleep(SEARCH_PAUSE);
+                    Ok(())
+                })
+                .map(move |_| Message::CatalogSettled(typed.clone()))
+            }
+            Message::CatalogSettled(typed) => {
+                if self.catalog_list.unsearched() == Some(typed.as_str()) {
+                    self.update(Message::CatalogSearch(typed))
+                } else {
+                    Task::none()
+                }
             }
             Message::CatalogProtonDb(lowest) => {
                 self.relist_catalog(|list, records| list.protondb(lowest, records))
@@ -1510,15 +1547,60 @@ mod tests {
             width: ONE_COLUMN,
         });
 
-        let mut ui = iced_test::simulator(app.view());
-        ui.click(iced::widget::Id::new(catalog::SEARCH)).unwrap();
-        ui.typewrite("cyber");
-        for message in ui.into_messages() {
-            let _ = app.update(message);
-        }
+        type_in_catalog(&mut app, "cyber");
+        let _ = app.update(Message::CatalogSettled("cyber".to_owned()));
 
         assert!(shows(&app, "Cyberpunk 2077"));
         assert!(!shows(&app, "OMORI"));
+    }
+
+    fn type_in_catalog(app: &mut App, typed: &str) {
+        let mut ui = iced_test::simulator(app.view());
+        ui.click(iced::widget::Id::new(catalog::SEARCH)).unwrap();
+        ui.typewrite(typed);
+        for message in ui.into_messages() {
+            let _ = app.update(message);
+        }
+    }
+
+    /// A search costs up to ~50 ms on 200k games: it runs once the typing
+    /// pauses, not on every key.
+    #[test]
+    fn the_catalog_searches_once_the_typing_pauses() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let row = catalog::ROW_HEIGHT;
+        let _ = app.update(Message::CatalogScrolled {
+            offset: row,
+            height: row,
+            width: ONE_COLUMN,
+        });
+
+        type_in_catalog(&mut app, "cyber");
+        assert!(shows(&app, "OMORI"), "searched while typing");
+        // The pause after "cy": more keys came after it.
+        let _ = app.update(Message::CatalogSettled("cy".to_owned()));
+        assert!(shows(&app, "OMORI"), "searched for an earlier keystroke");
+        let _ = app.update(Message::CatalogSettled("cyber".to_owned()));
+
+        assert!(shows(&app, "Cyberpunk 2077"));
+        assert!(!shows(&app, "OMORI"));
+    }
+
+    #[test]
+    fn enter_before_the_pause_opens_the_first_match_for_what_was_typed() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+        let _ = app.update(Message::CatalogScrolled {
+            offset: 0.0,
+            height: catalog::ROW_HEIGHT,
+            width: ONE_COLUMN,
+        });
+
+        type_in_catalog(&mut app, "omo");
+        let _ = app.update(Message::Shortcut(keys::Shortcut::Open));
+
+        assert_eq!(app.page, Page::Game(1150690)); // OMORI
     }
 
     #[test]

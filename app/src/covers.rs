@@ -31,6 +31,9 @@ pub struct Covers {
     arrived: HashMap<u32, Instant>,
     /// The pulse's phase.
     started: Instant,
+    /// Bytes the downloaded covers take, once counted, kept current as
+    /// covers arrive: a new cover then needn't list the whole folder.
+    bytes: Option<u64>,
     web: Web,
 }
 
@@ -44,6 +47,7 @@ impl Covers {
             shown: HashMap::new(),
             arrived: HashMap::new(),
             started: Instant::now(),
+            bytes: None,
             web,
         }
     }
@@ -82,7 +86,14 @@ impl Covers {
             Ok(path) => {
                 self.shown.insert(app_id, path);
                 self.arrived.insert(app_id, Instant::now());
-                self.evict(limit);
+                let bytes = match self.bytes {
+                    Some(bytes) => bytes + jpeg.len() as u64,
+                    None => self.on_disk().iter().map(|(_, bytes, _)| bytes).sum(),
+                };
+                self.bytes = Some(bytes);
+                if bytes > limit {
+                    self.evict(limit);
+                }
             }
             Err(error) => eprintln!("couldn't keep the cover of {app_id}: {error}"),
         }
@@ -134,6 +145,7 @@ impl Covers {
                 self.forget(&path);
             }
         }
+        self.bytes = Some(size);
     }
 
     /// Deletes every downloaded cover.
@@ -212,10 +224,16 @@ impl Covers {
     }
 }
 
-/// `jpeg`, if it decodes as an image of at most 4096×4096 (Steam's covers
-/// are 600×900). A file that doesn't (an error page, a cut-off download) is
-/// no cover: iced's software renderer panics the second time it's asked to
-/// draw one. The size limit is read from the header, before decoding.
+/// The size covers are kept at: twice the size a tile draws them, for 2× screens.
+const KEPT_WIDTH: u32 = 2 * crate::library::COVER_WIDTH as u32;
+const KEPT_HEIGHT: u32 = 2 * crate::library::COVER_HEIGHT as u32;
+
+/// `jpeg` as a cover to keep, if it decodes as an image of at most
+/// 4096×4096 (Steam's covers are 600×900); one bigger than [`KEPT_WIDTH`]
+/// is scaled down to it. A file that doesn't decode (an error page, a
+/// cut-off download) is no cover: iced's software renderer panics the
+/// second time it's asked to draw one. The size limit is read from the
+/// header, before decoding.
 fn decodes(jpeg: Vec<u8>) -> Result<Vec<u8>, Failure> {
     let mut limits = image::Limits::default();
     limits.max_image_width = Some(4096);
@@ -225,10 +243,24 @@ fn decodes(jpeg: Vec<u8>) -> Result<Vec<u8>, Failure> {
         .with_guessed_format()
         .map_err(|error| Failure::Failed(format!("not an image: {error}")))?;
     reader.limits(limits);
-    match reader.decode() {
-        Ok(_) => Ok(jpeg),
-        Err(error) => Err(Failure::Failed(format!("not an image: {error}"))),
+    let image = reader
+        .decode()
+        .map_err(|error| Failure::Failed(format!("not an image: {error}")))?;
+    if image.width() <= KEPT_WIDTH {
+        return Ok(jpeg);
     }
+    let smaller = image
+        .resize_exact(
+            KEPT_WIDTH,
+            KEPT_HEIGHT,
+            image::imageops::FilterType::Triangle,
+        )
+        .into_rgb8();
+    let mut kept = Vec::new();
+    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut kept, 88)
+        .encode_image(&smaller)
+        .map_err(|error| Failure::Failed(format!("couldn't scale the cover: {error}")))?;
+    Ok(kept)
 }
 
 #[cfg(test)]
@@ -370,6 +402,30 @@ mod tests {
         assert!(decodes(crate::test_support::jpeg(1_000)).is_ok());
         assert!(decodes(b"<html>Service Unavailable</html>".to_vec()).is_err());
         assert!(decodes(vec![0; 1_000]).is_err());
+    }
+
+    /// Steam's 600×900 covers are kept at twice the tile's size: sharp on
+    /// a 2× screen, a third of the pixels to decode, more covers per MB.
+    #[test]
+    fn a_cover_is_kept_at_twice_the_tiles_size() {
+        let mut steam = Vec::new();
+        image::codecs::jpeg::JpegEncoder::new(&mut steam)
+            .encode(&vec![90; 600 * 900], 600, 900, image::ExtendedColorType::L8)
+            .unwrap();
+
+        let kept = decodes(steam.clone()).unwrap();
+
+        let size = image::load_from_memory(&kept).unwrap();
+        assert_eq!((size.width(), size.height()), (328, 492));
+        assert!(kept.len() < steam.len());
+    }
+
+    /// A cover no bigger than that is kept as it came.
+    #[test]
+    fn a_small_cover_is_kept_as_it_came() {
+        let small = crate::test_support::jpeg(1_000);
+
+        assert_eq!(decodes(small.clone()).unwrap(), small);
     }
 
     /// Steam's covers are 600×900. An image far bigger is refused before
