@@ -63,6 +63,31 @@ impl Manifest {
     }
 }
 
+/// Checks that `signature` (hex, as `manifest.sig` holds it) is
+/// `public_key`'s (raw Ed25519, hex) signature of exactly `json`, the
+/// `manifest.json` text. The Build games.db workflow signs every manifest
+/// it publishes, so a manifest uploaded any other way (a leaked token, a
+/// compromised workflow) is refused, and with it the games.db it names.
+pub fn verify_manifest(json: &str, signature: &str, public_key: &str) -> Result<(), Error> {
+    use aws_lc_rs::signature::{ED25519, UnparsedPublicKey};
+    let signature = from_hex(signature.trim()).ok_or("the manifest's signature isn't hex")?;
+    let public_key = from_hex(public_key).ok_or("the public key isn't hex")?;
+    UnparsedPublicKey::new(&ED25519, public_key)
+        .verify(json.as_bytes(), &signature)
+        .map_err(|_| "the manifest isn't signed by rigcheck's key".into())
+}
+
+/// `hex` as bytes; `None` unless it's pairs of hex digits.
+fn from_hex(hex: &str) -> Option<Vec<u8>> {
+    if !hex.len().is_multiple_of(2) {
+        return None;
+    }
+    (0..hex.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(hex.get(i..i + 2)?, 16).ok())
+        .collect()
+}
+
 /// "2026-11-01.10" as ("2026-11-01", 10): ISO dates sort as text.
 fn build(db_version: &str) -> Option<(&str, u64)> {
     let (date, run) = db_version.split_once('.')?;

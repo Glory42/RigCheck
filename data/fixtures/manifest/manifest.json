@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "db_version": "2026-11-17.17",
+  "built_at": "2026-11-17T15:15:00Z",
+  "url": "https://github.com/Glory42/RigCheck/releases/download/db-latest/games.db.zst",
+  "sha256": "bbc0701cb6931cd8c7dd6dfc6fde9d7f5eac1e9c08b89a63c9dc4491759cde6c",
+  "size_bytes": 11933638,
+  "min_app_version": "0.4.0"
+}

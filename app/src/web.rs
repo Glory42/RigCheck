@@ -13,8 +13,11 @@ use iced::futures::channel::oneshot;
 use rigcheck_net::{Allowlist, Capped, Client, RateLimiter, Retry};
 
 /// Published with every games.db build (ROADMAP §7.3).
-const MANIFEST_URL: &str =
+pub const MANIFEST_URL: &str =
     "https://github.com/Glory42/RigCheck/releases/download/db-latest/manifest.json";
+/// `manifest.json`'s signature, published next to it.
+pub const MANIFEST_SIG_URL: &str =
+    "https://github.com/Glory42/RigCheck/releases/download/db-latest/manifest.sig";
 /// The only place games.db is downloaded from, whatever a manifest says.
 pub const GAMES_DB_URL: &str =
     "https://github.com/Glory42/RigCheck/releases/download/db-latest/games.db.zst";
@@ -116,6 +119,11 @@ impl Web {
     /// The published games.db's `manifest.json`.
     pub fn manifest(&self) -> Result<String, Failure> {
         self.0.text(MANIFEST_URL)
+    }
+
+    /// `manifest.json`'s signature (`manifest.sig`, hex).
+    pub fn manifest_signature(&self) -> Result<String, Failure> {
+        self.0.text(MANIFEST_SIG_URL)
     }
 
     /// Streams `url` (a manifest's games.db) into `to`.
@@ -245,6 +253,8 @@ pub mod fake {
     #[derive(Clone)]
     pub struct Fake {
         reply: Result<String, Failure>,
+        /// Replies for particular URLs, instead of `reply`.
+        replies: Vec<(String, String)>,
         pub asked: Arc<Mutex<Vec<String>>>,
     }
 
@@ -252,8 +262,15 @@ pub mod fake {
         pub fn replying(reply: Result<&str, Failure>) -> Fake {
             Fake {
                 reply: reply.map(str::to_owned),
+                replies: Vec::new(),
                 asked: Arc::default(),
             }
+        }
+
+        /// Answers `url` with `reply`, and everything else as before.
+        pub fn with(mut self, url: &str, reply: &str) -> Fake {
+            self.replies.push((url.to_owned(), reply.to_owned()));
+            self
         }
 
         /// The URLs asked for, in order.
@@ -265,7 +282,10 @@ pub mod fake {
     impl Transport for Fake {
         fn text(&self, url: &str) -> Result<String, Failure> {
             self.asked.lock().unwrap().push(url.to_owned());
-            self.reply.clone()
+            match self.replies.iter().find(|(asked, _)| asked == url) {
+                Some((_, reply)) => Ok(reply.clone()),
+                None => self.reply.clone(),
+            }
         }
 
         fn bytes(&self, url: &str) -> Result<Vec<u8>, Failure> {
@@ -302,6 +322,7 @@ mod tests {
         let _ = web.cover(1086940);
         let _ = web.latest_version();
         let _ = web.manifest();
+        let _ = web.manifest_signature();
 
         let app = Allowlist::app();
         for url in fake.asked() {
