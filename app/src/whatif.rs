@@ -81,9 +81,12 @@ pub fn view<'a>(
             text(i18n.t("whatif-description")).color(colors.muted),
             gpu.view(i18n, colors),
             cpu.view(i18n, colors),
-            row![text("RAM").font(BOLD).width(60), row(ram).spacing(8)]
-                .spacing(12)
-                .align_y(iced::Center),
+            row![
+                text(i18n.t("row-ram")).font(BOLD).width(60),
+                row(ram).spacing(8)
+            ]
+            .spacing(12)
+            .align_y(iced::Center),
             result,
         ]
         .spacing(10),

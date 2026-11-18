@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::ops::Range;
 
-use iced::widget::{button, column, container, row, space, text, text_input};
+use iced::widget::{button, center, column, container, row, space, text, text_input};
 use iced::{Element, Fill};
 use rigcheck_core::{ProtonTier, Specs};
 use rigcheck_gamedb::{Filters, Game, Records};
@@ -321,21 +321,26 @@ pub fn view<'a>(
         .on_submit(Message::Shortcut(crate::keys::Shortcut::Open))
         .padding(10)
         .font(BOLD);
-    let list_view = scroll(
-        column![space().height(first_row as f32 * ROW_HEIGHT)]
-            .extend(tiles)
-            .push(space().height(rows_after as f32 * ROW_HEIGHT))
-            .width(Fill),
-        colors,
-    )
-    .on_scroll(|viewport| Message::CatalogScrolled {
-        offset: viewport.absolute_offset().y,
-        height: viewport.bounds().height,
-        // The tiles' width: the scrollbar keeps room of its own.
-        width: viewport.content_bounds().width,
-    })
-    .id(LIST)
-    .height(Fill);
+    let list_view: Element<'a, Message> = if list.total == 0 {
+        center(text(i18n.t("catalog-no-match")).font(BOLD)).into()
+    } else {
+        scroll(
+            column![space().height(first_row as f32 * ROW_HEIGHT)]
+                .extend(tiles)
+                .push(space().height(rows_after as f32 * ROW_HEIGHT))
+                .width(Fill),
+            colors,
+        )
+        .on_scroll(|viewport| Message::CatalogScrolled {
+            offset: viewport.absolute_offset().y,
+            height: viewport.bounds().height,
+            // The tiles' width: the scrollbar keeps room of its own.
+            width: viewport.content_bounds().width,
+        })
+        .id(LIST)
+        .height(Fill)
+        .into()
+    };
     let chips = Chip::ALL.map(|chip| {
         button(text(i18n.t(chip.label_id())).font(BOLD).size(12))
             .padding([6, 10])
@@ -372,6 +377,10 @@ pub fn view<'a>(
         )
         .spacing(8)
         .align_y(iced::Center);
+    let count = text(i18n.t_with("catalog-count", &[("count", &list.total.to_string())]))
+        .font(BOLD)
+        .size(12);
+    let tiers = tiers.push(space::horizontal()).push(count);
     column![search_box, row(chips).spacing(8).wrap(), tiers, list_view]
         .spacing(16)
         .into()

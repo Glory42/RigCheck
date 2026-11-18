@@ -2,7 +2,7 @@
 
 use iced::widget::{Column, button, column, container, row, text};
 use iced::{Center, Element, Fill};
-use rigcheck_core::{Blocker, Component, Level, Verdict};
+use rigcheck_core::{AntiCheat, Blocker, Component, Level, Verdict};
 use rigcheck_gamedb::{Game, Tier};
 
 use crate::i18n::I18n;
@@ -181,12 +181,10 @@ fn cause(status: &Status, record: Option<&Game>, i18n: &I18n) -> String {
     let part = |component| i18n.t(part_id(component));
     match (verdict.overall, verdict.bottleneck, verdict.blocker) {
         (Level::Blocked, _, Some(Blocker::Proton)) => i18n.t("why-blocked-proton"),
-        (Level::Blocked, _, _) => {
-            let name = record
-                .and_then(|game| game.anticheat_name.clone())
-                .unwrap_or_else(|| "Anti-cheat".to_owned());
-            i18n.t_with("why-blocked-anticheat", &[("name", &name)])
-        }
+        (Level::Blocked, _, _) => match record.and_then(|game| game.anticheat_name.as_deref()) {
+            Some(name) => i18n.t_with("why-blocked-anticheat", &[("name", name)]),
+            None => i18n.t("why-blocked-anticheat-unnamed"),
+        },
         (Level::Below, Some(component), _) => {
             i18n.t_with("why-below", &[("part", &part(component))])
         }
@@ -265,19 +263,33 @@ pub fn linux_facts(game: &Game, i18n: &I18n) -> [(String, String); 3] {
             .unwrap_or_else(|| "—".to_owned())
     };
     let anticheat = match (&game.anticheat_name, game.linux.anticheat) {
-        (Some(name), Some(status)) => format!("{name}: {}", format!("{status:?}").to_uppercase()),
+        (Some(name), Some(status)) => format!("{name}: {}", i18n.t(anticheat_id(status))),
         _ => i18n.t("game-none"),
     };
-    let deck = game
-        .deck
-        .clone()
-        .map(|deck| deck.to_uppercase())
-        .unwrap_or_else(|| "—".to_owned());
+    // Steam's Deck statuses, in the app's language; anything new as Steam
+    // wrote it.
+    let deck = match game.deck.as_deref() {
+        Some(status @ ("verified" | "playable" | "unsupported" | "unknown")) => {
+            i18n.t(&format!("deck-{status}"))
+        }
+        Some(other) => other.to_uppercase(),
+        None => "—".to_owned(),
+    };
     [
         (i18n.t("game-protondb"), proton),
         (i18n.t("game-anticheat"), anticheat),
         (i18n.t("game-deck"), deck),
     ]
+}
+
+fn anticheat_id(status: AntiCheat) -> &'static str {
+    match status {
+        AntiCheat::Supported => "anticheat-supported",
+        AntiCheat::Running => "anticheat-running",
+        AntiCheat::Planned => "anticheat-planned",
+        AntiCheat::Broken => "anticheat-broken",
+        AntiCheat::Denied => "anticheat-denied",
+    }
 }
 
 /// Your PC next to each tier, with the bottleneck row highlighted.
