@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use iced::widget::grid::Sizing;
 use iced::widget::image::Handle;
 use iced::widget::{
-    Space, button, center, column, container, grid, image, row, space, text, text_input,
+    Space, button, center, column, container, grid, image, row, space, text, text_input, tooltip,
 };
 use iced::{ContentFit, Element, Fill};
 use rigcheck_core::{Confidence, Level, Specs, Verdict};
@@ -354,6 +354,15 @@ pub fn game_tile(
             text_color: Some(colors.line),
             ..container::Style::default().background(color)
         });
+    // Hovering the stamp says what it means.
+    let stamp = tooltip(
+        stamp,
+        container(text(i18n.t(meaning(status))).size(12))
+            .padding(8)
+            .max_width(260)
+            .style(move |_| colors.boxed(colors.panel)),
+        tooltip::Position::Bottom,
+    );
     let name = container(text(name.to_owned()).font(BOLD).size(12))
         .padding([6, 6])
         .height(50);
@@ -363,14 +372,11 @@ pub fn game_tile(
         .height(TILE_HEIGHT)
         .padding(3)
         .style(move |_, _| {
-            let boxed = colors.boxed(if selected {
-                colors.accent
-            } else {
-                colors.panel
-            });
+            let (background, text_color) = colors.tile(selected);
+            let boxed = colors.boxed(background);
             button::Style {
                 background: boxed.background,
-                text_color: colors.text,
+                text_color,
                 border: boxed.border,
                 shadow: boxed.shadow,
                 snap: true,
@@ -378,6 +384,24 @@ pub fn game_tile(
         })
         .on_press(Message::Open(Page::Game(app_id)))
         .into()
+}
+
+/// What `status`'s stamp means, as About's legend says it.
+pub fn meaning(status: &Status) -> &'static str {
+    let verdict = match status {
+        Status::Checking => return "legend-checking",
+        Status::NoData => return "legend-no-data",
+        Status::NotChecked => return "legend-not-checked",
+        Status::Verdict(verdict) => verdict,
+    };
+    match verdict.overall {
+        Level::Recommended | Level::Minimum if !fully_compared(verdict) => "legend-partial",
+        Level::Recommended => "legend-recommended",
+        Level::Minimum => "legend-minimum",
+        Level::Below => "legend-below",
+        Level::Blocked => "legend-blocked",
+        Level::Unknown => "legend-unknown",
+    }
 }
 
 /// The stamp's text and color.

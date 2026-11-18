@@ -152,15 +152,27 @@ impl Colors {
         }
     }
 
-    /// A tab or button; `on` paints it in the accent color.
+    /// A game tile's background and text: the accent when the keyboard has
+    /// selected it, with text readable on the accent.
+    pub fn tile(self, selected: bool) -> (Color, Color) {
+        if selected {
+            (self.accent, self.on_accent)
+        } else {
+            (self.panel, self.text)
+        }
+    }
+
+    /// A tab or button; `on` paints it in the accent color. Hovered, it
+    /// darkens a step; disabled, its text is muted and it lies flat.
     pub fn button(self, on: bool) -> impl Fn(&Theme, button::Status) -> button::Style {
         move |_, status| {
-            let (background, text_color) = if on {
-                (self.accent, self.on_accent)
-            } else {
-                (self.panel, self.text)
+            let (background, text_color) = match (on, status) {
+                (_, button::Status::Disabled) => (self.panel2, self.muted),
+                (true, _) => (self.accent, self.on_accent),
+                (false, button::Status::Hovered) => (self.panel2, self.text),
+                (false, _) => (self.panel, self.text),
             };
-            let pressed = status == button::Status::Pressed;
+            let pressed = matches!(status, button::Status::Pressed | button::Status::Disabled);
             button::Style {
                 background: Some(background.into()),
                 text_color,
@@ -270,6 +282,9 @@ mod tests {
                 ("muted text on background", c.muted, c.bg),
                 ("muted text on panels", c.muted, c.panel),
                 ("selected buttons", c.on_accent, c.accent),
+                ("hovered buttons", c.text, c.panel2),
+                ("a keyboard-selected tile", c.tile(true).1, c.tile(true).0),
+                ("a tile", c.tile(false).1, c.tile(false).0),
             ];
             let stamps = [
                 Level::Recommended,
