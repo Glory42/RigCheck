@@ -17,6 +17,9 @@ pub struct Storage {
     pub images: u64,
 }
 
+/// The text sizes to pick from, in percent.
+const SCALES: [u16; 4] = [100, 125, 150, 175];
+
 /// The image cache limits to pick from, in MB.
 const IMAGE_LIMITS: [u32; 4] = [100, 250, 500, 1000];
 
@@ -55,6 +58,16 @@ pub fn view(
             colors
         ),
         row(languages).spacing(18).wrap(),
+        section(i18n.t("scale-title"), i18n.t("scale-description"), colors),
+        row(SCALES.map(|percent| {
+            let on = settings.ui_scale.unwrap_or(100) == percent;
+            button(text(format!("{percent}%")).font(BOLD).size(12))
+                .padding([6, 10])
+                .style(colors.button(on))
+                .on_press(Message::UiScale(percent))
+                .into()
+        }))
+        .spacing(8),
         section(
             i18n.t("account-title"),
             i18n.t("account-description"),

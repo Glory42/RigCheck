@@ -26,6 +26,9 @@ pub struct Settings {
     /// The most space downloaded covers may take; `None` for the default.
     #[serde(default)]
     pub image_cache_mb: Option<u32>,
+    /// How big everything is drawn, in percent; `None` for 100.
+    #[serde(default)]
+    pub ui_scale: Option<u16>,
 }
 
 /// The app's color theme, picked under Settings > Appearance.
