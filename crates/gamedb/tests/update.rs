@@ -4,7 +4,7 @@
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
-use rigcheck_gamedb::{GameDb, Limits, Manifest, install, install_within};
+use rigcheck_gamedb::{GameDb, Limits, Manifest, install, install_within, verify_manifest};
 use sha2::{Digest, Sha256};
 use tempfile::TempDir;
 
@@ -301,4 +301,39 @@ fn a_download_with_another_table_or_index_installs() {
     );
 
     assert!(install(&zst, &manifest, &dir.path().join("data/games.db")).is_ok());
+}
+
+/// The throwaway key that signed data/fixtures/manifest/ with OpenSSL, as
+/// the Build games.db workflow signs each release (see its README).
+const FIXTURE_KEY: &str = "59d9af65a316d50d4b3df8adb6a2712d004ec76514c24111e2da1dc5969c982d";
+const SIGNED: &str = include_str!("../../../data/fixtures/manifest/manifest.json");
+const SIGNATURE: &str = include_str!("../../../data/fixtures/manifest/manifest.sig");
+
+#[test]
+fn a_manifest_signed_with_the_key_verifies() {
+    assert!(verify_manifest(SIGNED, SIGNATURE, FIXTURE_KEY).is_ok());
+}
+
+#[test]
+fn a_manifest_changed_after_signing_does_not_verify() {
+    let changed = SIGNED.replace("11933638", "11933639");
+
+    assert!(verify_manifest(&changed, SIGNATURE, FIXTURE_KEY).is_err());
+}
+
+#[test]
+fn a_manifest_signed_with_another_key_does_not_verify() {
+    let other = "1".repeat(64);
+
+    assert!(verify_manifest(SIGNED, SIGNATURE, &other).is_err());
+}
+
+#[test]
+fn a_signature_that_isnt_one_does_not_verify() {
+    for signature in ["", "zz", "Not Found", &SIGNATURE[..64]] {
+        assert!(
+            verify_manifest(SIGNED, signature, FIXTURE_KEY).is_err(),
+            "{signature}"
+        );
+    }
 }

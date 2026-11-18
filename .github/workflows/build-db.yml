@@ -144,6 +144,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Holds the manifest signing key; only master may use it.
+    environment: db-signing
     permissions:
       contents: write # upload release assets
       actions: write # re-enable this workflow so GitHub doesn't pause it
@@ -156,13 +158,28 @@ jobs:
           name: games-db
           path: out
 
+      # The app checks this signature against the public key built into it
+      # (app/src/download.rs) before it trusts the manifest, and through its
+      # SHA-256 the games.db. The key never leaves this job.
+      - name: Sign the manifest
+        env:
+          MANIFEST_SIGNING_KEY: ${{ secrets.MANIFEST_SIGNING_KEY }}
+        run: |
+          key="$RUNNER_TEMP/manifest-key.pem"
+          (umask 077 && printf '%s\n' "$MANIFEST_SIGNING_KEY" > "$key")
+          openssl pkeyutl -sign -rawin -inkey "$key" -in out/manifest.json \
+            | od -An -tx1 -v | tr -d ' \n' > out/manifest.sig
+          rm -f "$key"
+          test "$(wc -c < out/manifest.sig)" -eq 128
+          cat out/manifest.sig
+
       - name: Save to the db-wip release
         run: |
           if ! gh release view db-wip > /dev/null 2>&1; then
             gh release create db-wip --prerelease --title "games.db (work in progress)" \
               --notes "The crawl's progress between daily releases, saved every few hours by the Build games.db workflow. rigcheck downloads db-latest, not this. Licensed under the ODbL."
           fi
-          gh release upload db-wip out/games.db.zst out/manifest.json --clobber
+          gh release upload db-wip out/games.db.zst out/manifest.sig out/manifest.json --clobber
 
       - name: Publish to the db-latest release
         if: github.event.schedule == '17 3 * * *' || inputs.publish
@@ -171,7 +188,7 @@ jobs:
             gh release create db-latest --prerelease --title "games.db (updated daily)" \
               --notes "The game database rigcheck downloads. Rebuilt daily by the Build games.db workflow. Licensed under the ODbL (see the license and sources rows in its meta table)."
           fi
-          gh release upload db-latest out/games.db.zst out/manifest.json --clobber
+          gh release upload db-latest out/games.db.zst out/manifest.sig out/manifest.json --clobber
 
       # GitHub pauses scheduled workflows after 60 days without repo activity.
       # Re-enabling through the API resets that, without a commit (master

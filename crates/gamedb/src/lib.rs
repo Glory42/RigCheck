@@ -22,7 +22,7 @@ pub mod ingest;
 mod update;
 
 pub use fetched::{Fetched, Records};
-pub use update::{Limits, Manifest, SCHEMA_VERSION, install, install_within};
+pub use update::{Limits, Manifest, SCHEMA_VERSION, install, install_within, verify_manifest};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 

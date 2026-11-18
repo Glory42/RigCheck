@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use iced::futures::{SinkExt, Stream, executor::block_on};
 use iced::widget::{button, column, container, progress_bar, row, space, text};
 use iced::{Element, Fill, Task};
-use rigcheck_gamedb::{GameDb, Limits, Manifest, install};
+use rigcheck_gamedb::{GameDb, Limits, Manifest, install, verify_manifest};
 use rigcheck_net::Capped;
 
 use crate::Message;
@@ -178,25 +178,41 @@ fn games_db(web: Web, dest: PathBuf, installed: Option<String>) -> impl Stream<I
     iced::stream::channel(8, async move |events| {
         std::thread::spawn(move || {
             let mut events = events;
-            let result = fetch(&web, &dest, installed.as_deref(), |done, total| {
-                let _ = block_on(events.send(Event::Progress { done, total }));
-            });
+            let result = fetch(
+                &web,
+                &dest,
+                installed.as_deref(),
+                MANIFEST_KEY,
+                |done, total| {
+                    let _ = block_on(events.send(Event::Progress { done, total }));
+                },
+            );
             let _ = block_on(events.send(Event::Finished(result)));
         });
     })
 }
 
+/// The Build games.db workflow's public key (raw Ed25519, hex): every
+/// manifest it publishes is signed with the private half, which only that
+/// workflow holds (the `db-signing` environment). A new key needs a new
+/// app release, and a games.db signed with it.
+const MANIFEST_KEY: &str = "4b5e92057091637338b5a95f61bd449085996c9f363436abd2b8ea2133dece64";
+
+/// Downloads and installs games.db unless `installed` is already the
+/// published build. The manifest must be signed with `key`'s private half.
 fn fetch(
     web: &Web,
     dest: &Path,
     installed: Option<&str>,
+    key: &str,
     mut progress: impl FnMut(u64, u64),
 ) -> Result<Fetched, Failure> {
     let failed = |error: rigcheck_gamedb::Error| Failure::Failed(error.to_string());
-    let manifest = web
-        .manifest()
-        .map_err(|failure| Failure::Failed(failure.to_string()))?;
-    let manifest = Manifest::from_json(&manifest).map_err(failed)?;
+    let asked = |failure: crate::web::Failure| Failure::Failed(failure.to_string());
+    let json = web.manifest().map_err(asked)?;
+    let signature = web.manifest_signature().map_err(asked)?;
+    verify_manifest(&json, &signature, key).map_err(failed)?;
+    let manifest = Manifest::from_json(&json).map_err(failed)?;
     if manifest.needs_newer_app() {
         return Err(Failure::NeedsNewerApp);
     }
@@ -356,17 +372,65 @@ mod tests {
         )
     }
 
-    /// Only the manifest was asked for: the download never started.
-    fn refused(json: &str) -> bool {
-        let fake = crate::web::fake::Fake::replying(Ok(json));
+    fn hex(bytes: &[u8]) -> String {
+        bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+    }
+
+    /// A new signing key, as the Build games.db workflow holds one: the key
+    /// pair and its public half in hex, as the app has it.
+    fn signing_key() -> (aws_lc_rs::signature::Ed25519KeyPair, String) {
+        use aws_lc_rs::signature::{Ed25519KeyPair, KeyPair};
+        let pkcs8 = Ed25519KeyPair::generate_pkcs8(&aws_lc_rs::rand::SystemRandom::new()).unwrap();
+        let pair = Ed25519KeyPair::from_pkcs8(pkcs8.as_ref()).unwrap();
+        let public = hex(pair.public_key().as_ref());
+        (pair, public)
+    }
+
+    /// Fetches with `json` published as the manifest and `signature` as
+    /// its signature, checked against `key`. Whether it was refused before
+    /// the download started: only the manifest and its signature asked for.
+    fn refused_with(json: &str, signature: &str, key: &str) -> bool {
+        let fake = crate::web::fake::Fake::replying(Ok(json))
+            .with(crate::web::MANIFEST_SIG_URL, signature);
         let dir = TempDir::new().unwrap();
-        let result = fetch(
-            &Web::with(fake.clone()),
-            &dir.path().join("games.db"),
-            None,
-            |_, _| {},
-        );
-        result.is_err() && fake.asked().len() == 1
+        let web = Web::with(fake.clone());
+        let result = fetch(&web, &dir.path().join("games.db"), None, key, |_, _| {});
+        result.is_err() && fake.asked() == [crate::web::MANIFEST_URL, crate::web::MANIFEST_SIG_URL]
+    }
+
+    /// [`refused_with`] a manifest signed with the right key.
+    fn refused(json: &str) -> bool {
+        let (pair, public) = signing_key();
+        refused_with(json, &hex(pair.sign(json.as_bytes()).as_ref()), &public)
+    }
+
+    #[test]
+    fn a_manifest_signed_with_another_key_is_not_followed() {
+        let json = manifest(crate::web::GAMES_DB_URL, 12_000_000);
+        let (pair, _) = signing_key();
+        let (_, other) = signing_key();
+
+        assert!(refused_with(
+            &json,
+            &hex(pair.sign(json.as_bytes()).as_ref()),
+            &other
+        ));
+    }
+
+    #[test]
+    fn a_manifest_without_a_signature_is_not_followed() {
+        let json = manifest(crate::web::GAMES_DB_URL, 12_000_000);
+        let (_, public) = signing_key();
+
+        assert!(refused_with(&json, "Not Found", &public));
+    }
+
+    #[test]
+    fn a_signed_manifest_is_followed() {
+        let json = manifest(crate::web::GAMES_DB_URL, 12_000_000);
+
+        // It gets as far as the download (which this fake can't serve).
+        assert!(!refused(&json));
     }
 
     #[test]
