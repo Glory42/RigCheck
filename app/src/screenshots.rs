@@ -36,6 +36,11 @@ fn screenshots() {
     let _ = app.update(Message::GamesFound(installed));
 
     shoot(&mut app, &out, "library");
+    let _ = app.update(Message::AppearanceSelected(crate::settings::Appearance::Ink));
+    shoot(&mut app, &out, "library-ink");
+    let _ = app.update(Message::AppearanceSelected(crate::settings::Appearance::Paper));
+    let _ = app.update(Message::Open(Page::MyRig));
+    shoot(&mut app, &out, "my-rig");
     let _ = app.update(Message::Open(Page::Catalog));
     let rows = SIZE.1;
     let _ = app.update(Message::CatalogScrolled {

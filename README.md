@@ -6,11 +6,12 @@
 
 <p align="center">
   <b>Can my PC run it?</b><br>
-  A Linux desktop app that checks your Steam games against your hardware, and against Linux itself.
+  A Linux desktop app that checks your Steam games against your hardware, and against Linux itself.<br>
+  <a href="https://rigcheck.gorkemkaryol.dev">rigcheck.gorkemkaryol.dev</a>
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/library.webp" alt="The Library: installed Steam games as cover tiles with READY, TOO WEAK and BLOCKED stamps" width="820">
+  <img src="assets/screenshots/library.webp" alt="The Library: installed Steam games as cover tiles with their verdict stamps and a summary of how many meet the recommended specs" width="820">
 </p>
 
 > [!NOTE]
