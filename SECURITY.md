@@ -29,3 +29,11 @@ rigcheck runs on your machine with your user's permissions. The parts worth a cl
 Especially interesting: anything that makes the app talk to another host, run another program, or read or write outside the paths above, and anything in a downloaded `games.db` or Steam file that can do more than produce a wrong verdict.
 
 Wrong verdicts themselves aren't security issues. Report them as a [Wrong verdict](https://github.com/Glory42/rigcheck/issues/new?template=wrong-verdict.yml) issue.
+
+## Verifying a download
+
+Every release since 1.2.0 carries a `SHA256SUMS` file and a build provenance attestation for the AppImage, `.deb`, `.rpm` and tarball. To check that a file was built by this repository's release workflow from a tagged commit:
+
+```sh
+gh attestation verify rigcheck-1.2.0-x86_64.AppImage --repo Glory42/rigcheck
+```

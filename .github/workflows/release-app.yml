@@ -13,8 +13,9 @@ on:
       - app/Cargo.toml
   workflow_dispatch:
 
+# Building needs nothing more; only the publish job, on tags, gets write access.
 permissions:
-  contents: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
@@ -25,11 +26,19 @@ jobs:
     # against, so building on an old one runs on more distros.
     runs-on: ubuntu-22.04
     timeout-minutes: 40
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable branch
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v') }}
+      - uses: taiki-e/install-action@ab49d3c64680143e184118bed66a46419fc15519 # v2.90.5
         with:
           tool: cargo-deb,cargo-generate-rpm
 
@@ -47,12 +56,20 @@ jobs:
       - run: cargo deb -p rigcheck --no-build --output dist-deb/
       # --output is only taken as a directory if it exists.
       - run: mkdir -p dist-rpm && cargo generate-rpm -p app --output dist-rpm/
+      # appimagetool and the AppImage runtime it embeds, pinned to releases
+      # and checked: the runtime ends up inside the AppImage users run.
       - name: AppImage and tarball
         run: |
-          curl -sSLo appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          curl -sSfLo appimagetool https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+          curl -sSfLo runtime-x86_64 https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64
+          sha256sum -c <<'EOF'
+          ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0  appimagetool
+          2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d  runtime-x86_64
+          EOF
           chmod +x appimagetool
-          packaging/package.sh "${{ steps.version.outputs.version }}" "$PWD/appimagetool"
+          packaging/package.sh "${{ steps.version.outputs.version }}" "$PWD/appimagetool" "$PWD/runtime-x86_64"
           mv dist-deb/*.deb dist-rpm/*.rpm dist/
+          (cd dist && sha256sum -- *.AppImage *.deb *.rpm *.tar.gz > SHA256SUMS && cat SHA256SUMS)
 
       - name: Check the packages
         run: |
@@ -63,16 +80,44 @@ jobs:
           APPIMAGE_EXTRACT_AND_RUN=1 dist/*.AppImage --appimage-extract >/dev/null
           test -x squashfs-root/usr/bin/rigcheck
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: rigcheck-${{ steps.version.outputs.version }}
           path: dist/*
 
+  # Only for a pushed tag: the one job with write access. It runs no build
+  # tools, just attests and uploads what `package` made.
+  publish:
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # create the release
+      id-token: write # sign the provenance attestation
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: rigcheck-${{ needs.package.outputs.version }}
+          path: dist
+
+      # Lets anyone check a download was built here: `gh attestation verify
+      # <file> --repo Glory42/rigcheck`.
+      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
+        with:
+          subject-path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+            dist/*.tar.gz
+
       - name: Publish the release
-        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.package.outputs.version }}
         run: |
           gh release create "$GITHUB_REF_NAME" dist/* \
-            --title "rigcheck ${{ steps.version.outputs.version }}" \
-            --notes "Install the AppImage, the .deb (Debian, Ubuntu), the .rpm (Fedora, openSUSE) or the tarball. See the README."
+            --title "rigcheck $VERSION" \
+            --notes "Install the AppImage, the .deb (Debian, Ubuntu), the .rpm (Fedora, openSUSE) or the tarball. See the README. SHA256SUMS lists each file's checksum; \`gh attestation verify <file> --repo Glory42/rigcheck\` checks it was built by this repo's release workflow."

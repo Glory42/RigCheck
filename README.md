@@ -124,7 +124,7 @@ cargo install cargo-deny --locked
 cargo test --workspace           # all tests; UI tests run headless
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all
-cargo deny check bans            # only crates/net may use an HTTP client
+cargo deny check advisories bans # known vulnerabilities; only crates/net may use HTTP
 INSTA_UPDATE=always cargo test -p rigcheck-core --test parser   # accept parser snapshot changes, then review the diff
 ```
 
