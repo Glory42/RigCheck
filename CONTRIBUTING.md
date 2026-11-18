@@ -45,7 +45,7 @@ Setup and everyday commands are in the [README](README.md#development). Before o
 cargo fmt --all
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-cargo deny check bans
+cargo deny check advisories bans
 ```
 
 The UI tests render offscreen. On a machine without a GPU, set `ICED_TEST_BACKEND=tiny-skia`, as CI does.

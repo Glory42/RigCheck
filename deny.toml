@@ -1,5 +1,5 @@
 # cargo-deny checks the dependency graph: https://embarkstudios.github.io/cargo-deny/
-# Run locally with `cargo deny check bans`.
+# Run locally with `cargo deny check advisories bans` (CI runs both).
 
 [bans]
 multiple-versions = "allow"
@@ -12,4 +12,17 @@ deny = [
     { crate = "curl", reason = "use reqwest inside crates/net" },
     { crate = "attohttpc", reason = "use reqwest inside crates/net" },
     { crate = "minreq", reason = "use reqwest inside crates/net" },
+]
+
+[advisories]
+# Known vulnerabilities fail the check. These "unmaintained" notices all come
+# in through iced 0.14 (wgpu, image, its font and D-Bus stacks) and have no
+# fix we can take short of an iced upgrade; revisit them when iced moves on.
+ignore = [
+    { id = "RUSTSEC-2024-0436", reason = "paste, via iced (wgpu-hal, image)" },
+    { id = "RUSTSEC-2026-0441", reason = "pin-utils, via iced" },
+    { id = "RUSTSEC-2026-0192", reason = "ttf-parser, via iced's text stack" },
+    { id = "RUSTSEC-2026-0371", reason = "zbus_names, via iced's D-Bus dependencies" },
+    { id = "RUSTSEC-2026-0370", reason = "zvariant, via iced's D-Bus dependencies" },
+    { id = "RUSTSEC-2026-0372", reason = "zvariant_derive, via iced's D-Bus dependencies" },
 ]

@@ -17,4 +17,4 @@ passes now. For UI changes, a screenshot. -->
 
 **Blast Radius:** <!-- one word: none, CI, UI text, whole app, … -->
 
-<!-- Checklist: cargo fmt, clippy -D warnings, cargo test, cargo deny check bans -->
+<!-- Checklist: cargo fmt, clippy -D warnings, cargo test, cargo deny check advisories bans -->

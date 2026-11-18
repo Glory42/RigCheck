@@ -1,0 +1,11 @@
+# Workflows pin actions by commit SHA (a tag can be moved; a commit can't).
+# Dependabot keeps those pins current with weekly PRs.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

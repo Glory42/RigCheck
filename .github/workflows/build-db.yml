@@ -3,6 +3,10 @@ name: Build games.db
 # Daily: continue crawling Steam where yesterday stopped, merge the data
 # sources, validate, and publish games.db.zst + manifest.json to the rolling
 # `db-latest` release (ROADMAP Phase 4, §7.3).
+#
+# Two jobs. `build` handles third-party data (Steam, ProtonDB, AWACY, Blender,
+# pci.ids) with a read-only token; `publish` holds the write token and runs
+# none of that data, only `gh` on the finished files.
 on:
   schedule:
     - cron: "17 3 * * *"
@@ -13,8 +17,7 @@ on:
         default: "3000"
 
 permissions:
-  contents: write # upload release assets
-  actions: write # re-enable this workflow so GitHub doesn't pause it
+  contents: read
 
 # Never two crawls at once: they'd race on the release.
 concurrency:
@@ -23,17 +26,22 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  GH_TOKEN: ${{ github.token }}
   PIPELINE: target/release/rigcheck-pipeline
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 350 # GitHub's limit is 360
+    timeout-minutes: 340 # GitHub's limit is 360; publish needs a few minutes
+    env:
+      GH_TOKEN: ${{ github.token }} # read-only: download yesterday's release
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable branch
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           save-if: ${{ github.ref == 'refs/heads/master' }}
       - run: cargo build --release --locked -p rigcheck-pipeline
@@ -46,9 +54,12 @@ jobs:
             echo "No previous release; starting fresh."
           fi
 
+      # Everything downloaded lands in sources/, never next to the pipeline
+      # binary in target/: an archive can't overwrite what runs next.
       - name: Download data sources
         run: |
           set -euo pipefail
+          mkdir -p sources
           # ProtonDB: the newest monthly dump (names like reports_oct1_2026.tar.gz).
           dump=$(gh api repos/bdefore/protondb-data/contents/reports --jq '.[].name' | python3 -c '
           import re, sys, datetime
@@ -57,12 +68,18 @@ jobs:
               return datetime.datetime.strptime(f"{m[1]} {m[2]} {m[3]}", "%b %d %Y") if m else datetime.datetime.min
           print(max(sys.stdin.read().split(), key=when))')
           echo "ProtonDB dump: $dump"
-          curl -sfL "https://github.com/bdefore/protondb-data/raw/master/reports/$dump" | tar xz
-          curl -sfL -o awacy.json https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/master/games.json
-          curl -sfL -o blender.zip https://opendata.blender.org/snapshots/opendata-latest.zip
-          unzip -p blender.zip '*.jsonl' > blender.jsonl
-          curl -sfL -o pci.ids https://pci-ids.ucw.cz/v2.2/pci.ids
-          ls -la reports_piiremoved.json awacy.json blender.jsonl pci.ids
+          # Only the one file we read, into sources/.
+          curl -sfL "https://github.com/bdefore/protondb-data/raw/master/reports/$dump" \
+            | tar -xz --no-same-owner --no-same-permissions -C sources reports_piiremoved.json
+          curl -sfL -o sources/awacy.json https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/master/games.json
+          curl -sfL -o sources/blender.zip https://opendata.blender.org/snapshots/opendata-latest.zip
+          unzip -p sources/blender.zip '*.jsonl' > sources/blender.jsonl
+          curl -sfL -o sources/pci.ids https://pci-ids.ucw.cz/v2.2/pci.ids
+          # Plain files only: a symlink could point the pipeline at another file.
+          for f in reports_piiremoved.json awacy.json blender.jsonl pci.ids; do
+            test -f "sources/$f" && ! test -L "sources/$f"
+          done
+          ls -la sources
 
       - name: Fetch the app list
         run: $PIPELINE applist apps.json
@@ -73,10 +90,12 @@ jobs:
       - name: Crawl
         timeout-minutes: 240
         continue-on-error: true
-        run: $PIPELINE crawl apps.json games.db "${{ inputs.budget || '3000' }}" reports_piiremoved.json
+        env:
+          BUDGET: ${{ inputs.budget || '3000' }}
+        run: $PIPELINE crawl apps.json games.db "$BUDGET" sources/reports_piiremoved.json
 
       - name: Build
-        run: $PIPELINE build games.db apps.json reports_piiremoved.json awacy.json pci.ids blender.jsonl
+        run: $PIPELINE build games.db apps.json sources/reports_piiremoved.json sources/awacy.json sources/pci.ids sources/blender.jsonl
 
       - name: Validate
         run: $PIPELINE validate games.db
@@ -98,6 +117,31 @@ jobs:
             "https://github.com/${{ github.repository }}/releases/download/db-latest/games.db.zst" \
             "0.4.0"
           cat out/manifest.json
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: games-db
+          path: |
+            out/games.db.zst
+            out/manifest.json
+          retention-days: 3
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # upload release assets
+      actions: write # re-enable this workflow so GitHub doesn't pause it
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: games-db
+          path: out
 
       - name: Publish to the db-latest release
         run: |

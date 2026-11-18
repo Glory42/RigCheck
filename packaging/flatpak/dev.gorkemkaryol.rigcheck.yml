@@ -38,4 +38,5 @@ modules:
       - type: git
         url: https://github.com/Glory42/rigcheck.git
         tag: v1.1.0
+        commit: 1d23860810c14f03fe6097960625b0f9891f129f
       - cargo-sources.json

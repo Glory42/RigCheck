@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # Builds the AppImage and the tarball from target/release/rigcheck into dist/.
 # The .deb and .rpm come from `cargo deb` and `cargo generate-rpm` (see
-# app/Cargo.toml). Usage: packaging/package.sh <version> [path to appimagetool]
+# app/Cargo.toml).
+# Usage: packaging/package.sh <version> [path to appimagetool] [AppImage runtime file]
+# Without a runtime file, appimagetool downloads the latest runtime itself.
 set -euo pipefail
 
 version="$1"
 appimagetool="${2:-appimagetool}"
+runtime_args=()
+if [[ -n "${3:-}" ]]; then runtime_args=(--runtime-file "$3"); fi
 id=dev.gorkemkaryol.rigcheck
 root="$(cd "$(dirname "$0")/.." && pwd)"
 dist="$root/dist"
@@ -37,7 +41,7 @@ cp "$root/packaging/$id.desktop" "$appdir/$id.desktop"
 cp "$root/assets/brand/icon-256.png" "$appdir/$id.png"
 ln -s usr/bin/rigcheck "$appdir/AppRun"
 # No FUSE in containers and CI: let appimagetool unpack itself instead.
-APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 "$appimagetool" --no-appstream "$appdir" \
+APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 "$appimagetool" --no-appstream "${runtime_args[@]}" "$appdir" \
     "$dist/rigcheck-$version-x86_64.AppImage"
 rm -rf "$appdir"
 
