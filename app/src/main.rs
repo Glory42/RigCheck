@@ -61,6 +61,7 @@ fn main() -> iced::Result {
     )
     .title("rigcheck")
     .theme(App::theme)
+    .scale_factor(App::scale_factor)
     .subscription(App::subscription)
     .window(window_settings())
     .run()
@@ -221,6 +222,8 @@ enum Message {
     OverrideGpu(Option<String>),
     OverrideCpu(Option<String>),
     CopyHardwareReport,
+    /// Put this text on the clipboard.
+    CopyText(String),
     /// My Rig > What if: hypothetical parts (`None` keeps your own).
     WhatIfGpu(Option<String>),
     WhatIfCpu(Option<String>),
@@ -229,6 +232,8 @@ enum Message {
     SetManualUpdates(bool),
     /// Settings > Storage: the image cache limit in MB.
     ImageCacheLimit(u32),
+    /// Draw everything at this percent of its size.
+    UiScale(u16),
     CheckForUpdates,
     Redownload,
     ClearFetched,
@@ -540,6 +545,11 @@ impl App {
         library::status(self.records.get(&app_id), self.specs())
     }
 
+    /// How big everything is drawn: Settings' text size.
+    fn scale_factor(&self) -> f32 {
+        f32::from(self.settings.ui_scale.unwrap_or(100)) / 100.0
+    }
+
     /// The appearance to draw with: the picked one, or the system's.
     fn appearance(&self) -> Appearance {
         self.settings.appearance.resolve(self.system_mode)
@@ -643,6 +653,11 @@ impl App {
             }
             Message::SetManualUpdates(manual) => {
                 self.settings.manual_updates = manual;
+                self.save_settings();
+                Task::none()
+            }
+            Message::UiScale(percent) => {
+                self.settings.ui_scale = (percent != 100).then_some(percent);
                 self.save_settings();
                 Task::none()
             }
@@ -857,6 +872,7 @@ impl App {
                 self.whatif.ram_gb = gb;
                 Task::none()
             }
+            Message::CopyText(text) => clipboard::write(text),
             Message::CopyHardwareReport => match &self.hardware {
                 Some(hardware) => clipboard::write(hardware.report()),
                 None => Task::none(),
@@ -2533,6 +2549,68 @@ mod tests {
 
         assert!(shows(&app, "VERIFIZIERT"));
         assert!(shows(&app, "PLATINUM"));
+    }
+
+    /// What each stamp means is written down: on About, and on the stamp
+    /// itself when hovered.
+    #[test]
+    fn about_explains_every_stamp() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        click(&mut app, "ABOUT");
+
+        assert!(shows(&app, "WHAT THE STAMPS MEAN"));
+        assert!(shows(
+            &app,
+            "A part is below the minimum. The game page names it."
+        ));
+    }
+
+    #[test]
+    fn the_text_size_is_picked_saved_and_used() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        assert_eq!(app.scale_factor(), 1.0);
+
+        click(&mut app, "SETTINGS");
+        click(&mut app, "125%");
+
+        assert_eq!(app.scale_factor(), 1.25);
+        let saved = Settings::load(&Paths::under(dir.path()).config);
+        assert_eq!(saved.ui_scale, Some(125));
+    }
+
+    /// A game page as plain text, to paste in a help thread, and for screen
+    /// readers, which iced doesn't support.
+    #[test]
+    fn a_game_page_copies_as_text() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        let _ = app.update(Message::Open(Page::Game(1091500)));
+
+        let mut ui = iced_test::simulator(app.view());
+        ui.click("COPY AS TEXT").unwrap();
+        let copied = ui
+            .into_messages()
+            .find_map(|message| match message {
+                Message::CopyText(text) => Some(text),
+                _ => None,
+            })
+            .expect("COPY AS TEXT copies");
+
+        assert!(
+            copied.starts_with("Cyberpunk 2077: TOO WEAK\nYour GPU is below the minimum.\n"),
+            "{copied}"
+        );
+        assert!(
+            copied.contains(
+                "GPU — YOUR PC: Radeon Vega 7 (Ryzen 5000/7000U) | MINIMUM: GeForce GTX 1060 6GB \
+                 or Radeon RX 580 8GB or Arc A380 | "
+            ),
+            "{copied}"
+        );
+        assert!(copied.contains("PROTONDB: PLATINUM"), "{copied}");
     }
 
     #[test]

@@ -70,6 +70,10 @@ pub fn view<'a>(
         .padding([7, 12])
         .style(colors.button(false))
         .on_press(Message::Open(back));
+    let copy = button(text(i18n.t("copy-as-text")).font(BOLD).size(13))
+        .padding([7, 12])
+        .style(colors.button(false))
+        .on_press(Message::CopyText(report(&name, record, status, rig, i18n)));
     let mut header = row![].spacing(18).align_y(Center);
     header = header.push(cover_box(cover, 110.0, 165.0, colors));
     header = header.push(
@@ -84,6 +88,7 @@ pub fn view<'a>(
                         "https://store.steampowered.com/app/{app_id}/"
                     ))),
                 compare_buttons,
+                copy,
             ]
             .spacing(12)
             .align_y(Center),
@@ -104,6 +109,39 @@ pub fn view<'a>(
         }
     }
     scroll(page.padding([0, 6]), colors).into()
+}
+
+/// The page as plain text: the stamp and why, each requirement row, and
+/// the Linux facts.
+fn report(name: &str, record: Option<&Game>, status: &Status, rig: &Rig, i18n: &I18n) -> String {
+    let (stamp, _) = stamp(status, i18n);
+    let mut lines = vec![format!("{name}: {stamp}"), reason(status, record, i18n)];
+    if let Some(game) = record {
+        let label = |id: &str| i18n.t(id);
+        for component in ROWS {
+            let yours = match component {
+                Component::Cpu => &rig.cpu,
+                Component::Gpu => &rig.gpu,
+                Component::Ram => &rig.ram,
+                Component::Vram => &rig.vram,
+                _ => &rig.api,
+            };
+            lines.push(format!(
+                "{} — {}: {yours} | {}: {} | {}: {} | {}",
+                label(row_id(component)),
+                label("game-your-pc"),
+                label("game-minimum"),
+                requirement(game.minimum.as_ref(), component),
+                label("game-recommended"),
+                requirement(game.recommended.as_ref(), component),
+                result(status, component, i18n),
+            ));
+        }
+        for (label, value) in linux_facts(game, i18n) {
+            lines.push(format!("{label}: {value}"));
+        }
+    }
+    lines.join("\n")
 }
 
 /// Why the game got its stamp: one sentence, then what ProtonDB players ran
