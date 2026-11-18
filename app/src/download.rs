@@ -70,6 +70,8 @@ pub struct Downloader {
     /// Whether a download is on its way, shown or not: two at once would
     /// write the same temp file.
     running: bool,
+    /// How the last check or download ended, for Settings.
+    last: Option<Result<Fetched, Failure>>,
 }
 
 impl Downloader {
@@ -79,6 +81,7 @@ impl Downloader {
             dest,
             status: Status::Done,
             running: false,
+            last: None,
         }
     }
 
@@ -124,6 +127,7 @@ impl Downloader {
         };
         self.running = false;
         self.status = Status::Done;
+        self.last = Some(result.clone());
         let opened = result.and_then(|fetched| match fetched {
             Fetched::UpToDate => Ok(None),
             Fetched::Installed => GameDb::open(&self.dest)
@@ -144,6 +148,11 @@ impl Downloader {
 
     pub fn status(&self) -> &Status {
         &self.status
+    }
+
+    /// How the last check or download ended, if one has this session.
+    pub fn last(&self) -> Option<&Result<Fetched, Failure>> {
+        self.last.as_ref()
     }
 
     /// Whether a download is on its way, so Settings can't start another.
@@ -235,10 +244,15 @@ pub fn view(status: &Status, i18n: &I18n, colors: Colors) -> Option<Element<'sta
             }))
             .font(BOLD),
             progress_bar(0.0..=total.max(1) as f32, done as f32).girth(10),
-            text(i18n.t_with(
-                "download-progress",
-                &[("done", &megabytes(done)), ("total", &megabytes(total))],
-            ))
+            // The size comes with the manifest, a moment after the start.
+            text(if total == 0 {
+                i18n.t("download-starting")
+            } else {
+                i18n.t_with(
+                    "download-progress",
+                    &[("done", &megabytes(done)), ("total", &megabytes(total))],
+                )
+            })
             .size(13),
         ],
         Status::Failed(Failure::Failed(_)) => column![

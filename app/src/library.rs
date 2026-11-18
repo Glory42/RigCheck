@@ -169,11 +169,26 @@ pub fn view<'a>(
             .spacing(16)
             .into();
     }
-    let Some(mut games) = games else {
+    let Some(games) = games else {
         return column![scopes, center(text(i18n.t("library-scanning")))]
             .spacing(16)
             .into();
     };
+    if games.is_empty() && scope == Scope::Installed {
+        return column![
+            scopes,
+            center(
+                column![
+                    text(i18n.t("library-none")).font(BOLD),
+                    text(i18n.t("library-none-hint")).color(colors.muted),
+                ]
+                .spacing(8)
+                .max_width(560)
+            )
+        ]
+        .spacing(16)
+        .into();
+    }
     let search_box = text_input(&i18n.t("library-search"), search)
         .id(SEARCH)
         .on_input(Message::Search)
@@ -201,13 +216,14 @@ pub fn view<'a>(
             .push(text(summary).font(BOLD));
     }
 
-    let query = search.to_lowercase();
-    games.retain(|entry| entry.name.to_lowercase().contains(&query));
-    games.sort_by_key(|entry| entry.name.to_lowercase());
+    let games = listed(games, search, order);
+    if games.is_empty() {
+        let none = text(i18n.t_with("library-no-match", &[("query", search)])).font(BOLD);
+        return column![search_box, header, center(none)].spacing(16).into();
+    }
     let content: Element<'a, Message> = match order {
         Order::Name => tiles(games, i18n, colors),
         Order::Verdict => {
-            games.sort_by_key(|entry| rank(&entry.status));
             let mut groups = column![].spacing(18);
             for group in games.chunk_by(|a, b| rank(&a.status) == rank(&b.status)) {
                 let (label, _) = stamp(&group[0].status, i18n);
@@ -226,6 +242,19 @@ pub fn view<'a>(
     column![search_box, header, scroll(content, colors).height(Fill)]
         .spacing(16)
         .into()
+}
+
+/// The games whose name contains `search`, in the order they're shown: by
+/// name, or grouped by verdict (best first) and by name within a group.
+pub fn listed<'a>(mut games: Vec<Entry<'a>>, search: &str, order: Order) -> Vec<Entry<'a>> {
+    let query = search.to_lowercase();
+    games.retain(|entry| entry.name.to_lowercase().contains(&query));
+    games.sort_by_key(|entry| entry.name.to_lowercase());
+    if order == Order::Verdict {
+        // Stable: names stay in order within a verdict.
+        games.sort_by_key(|entry| rank(&entry.status));
+    }
+    games
 }
 
 /// The tile grid. Shrink: each tile is as tall as its content, not square.

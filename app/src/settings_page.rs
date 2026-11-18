@@ -25,6 +25,9 @@ const IMAGE_LIMITS: [u32; 4] = [100, 250, 500, 1000];
 pub fn view(
     settings: &Settings,
     storage: Storage,
+    // The installed build and how the last update check went, e.g.
+    // ["Build 2026-11-17.17", "Up to date."].
+    database: Vec<String>,
     downloading: bool,
     account: Element<'static, Message>,
     i18n: &I18n,
@@ -63,7 +66,7 @@ pub fn view(
             i18n.t("storage-description"),
             colors
         ),
-        storage_rows(settings, storage, downloading, i18n, colors),
+        storage_rows(settings, storage, database, downloading, i18n, colors),
         section(
             i18n.t("privacy-title"),
             i18n.t("privacy-description"),
@@ -80,6 +83,7 @@ pub fn view(
 fn storage_rows(
     settings: &Settings,
     storage: Storage,
+    database: Vec<String>,
     downloading: bool,
     i18n: &I18n,
     colors: Colors,
@@ -124,6 +128,13 @@ fn storage_rows(
                 download("storage-redownload", Message::Redownload).into(),
             ],
         ),
+        row![space::horizontal().width(180)]
+            .extend(
+                database
+                    .into_iter()
+                    .map(|note| text(note).size(13).color(colors.muted).into())
+            )
+            .spacing(12),
         line(
             "storage-fetched",
             storage.fetched_db,
@@ -160,8 +171,13 @@ fn privacy(settings: &Settings, i18n: &I18n, colors: Colors) -> Element<'static,
         .style(colors.button(settings.manual_updates == manual))
         .on_press(Message::SetManualUpdates(manual))
     };
-    let destinations = ["privacy-github", "privacy-steam-store", "privacy-steam-cdn"]
-        .map(|id| text(i18n.t(id)).into());
+    let destinations = [
+        "privacy-github",
+        "privacy-steam-store",
+        "privacy-steam-cdn",
+        "privacy-steam-api",
+    ]
+    .map(|id| text(i18n.t(id)).into());
     column![
         text(i18n.t("privacy-updates")).font(BOLD),
         row![

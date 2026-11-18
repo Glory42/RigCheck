@@ -430,6 +430,41 @@ impl App {
         }
     }
 
+    /// For Settings: the installed games.db build, and how the last update
+    /// check this session went.
+    fn database_notes(&self) -> Vec<String> {
+        let i18n = &self.i18n;
+        let build = self
+            .db
+            .as_ref()
+            .and_then(GameDb::db_version)
+            .map(|version| i18n.t_with("storage-build", &[("version", &version)]));
+        let check = self.download.last().map(|last| {
+            i18n.t(match last {
+                Ok(download::Fetched::UpToDate) => "storage-up-to-date",
+                Ok(download::Fetched::Installed) => "storage-updated",
+                Err(_) => "storage-check-failed",
+            })
+        });
+        build.into_iter().chain(check).collect()
+    }
+
+    /// The Library's games with their verdicts and covers; `None` while
+    /// Steam is being scanned.
+    fn library_entries(&self) -> Option<Vec<library::Entry<'_>>> {
+        self.library_games().map(|games| {
+            games
+                .into_iter()
+                .map(|(app_id, name)| library::Entry {
+                    app_id,
+                    name,
+                    status: self.status(app_id),
+                    cover: self.cover_of(app_id),
+                })
+                .collect()
+        })
+    }
+
     /// Why ALL MY GAMES has nothing to list, if it hasn't.
     fn library_note(&self) -> Option<String> {
         if self.library_scope != library::Scope::Owned {
@@ -712,14 +747,13 @@ impl App {
                 Task::batch(downloads)
             }
             Message::LibraryOpenFirst => {
-                let query = self.search.to_lowercase();
-                let first = self
-                    .library_games()
-                    .unwrap_or_default()
-                    .into_iter()
-                    .filter(|(_, name)| name.to_lowercase().contains(&query))
-                    .min_by_key(|(_, name)| name.to_lowercase())
-                    .map(|(app_id, _)| app_id);
+                let first = library::listed(
+                    self.library_entries().unwrap_or_default(),
+                    &self.search,
+                    self.library_order,
+                )
+                .first()
+                .map(|entry| entry.app_id);
                 match first {
                     Some(app_id) => self.update(Message::Open(Page::Game(app_id))),
                     None => Task::none(),
@@ -980,28 +1014,15 @@ impl App {
         let colors = self.appearance().colors();
         let i18n = &self.i18n;
         let page = match self.page {
-            Page::Library => {
-                let entries = self.library_games().map(|games| {
-                    games
-                        .into_iter()
-                        .map(|(app_id, name)| library::Entry {
-                            app_id,
-                            name,
-                            status: self.status(app_id),
-                            cover: self.cover_of(app_id),
-                        })
-                        .collect()
-                });
-                library::view(
-                    entries,
-                    &self.search,
-                    self.library_order,
-                    self.library_scope,
-                    self.library_note(),
-                    i18n,
-                    colors,
-                )
-            }
+            Page::Library => library::view(
+                self.library_entries(),
+                &self.search,
+                self.library_order,
+                self.library_scope,
+                self.library_note(),
+                i18n,
+                colors,
+            ),
             Page::Game(app_id) => {
                 // Installed games that aren't in games.db have only Steam's name.
                 let installed = self
@@ -1029,9 +1050,11 @@ impl App {
                         i18n,
                         colors,
                     ),
-                    None => coming_soon(i18n.t("tab-library"), i18n, colors),
+                    None if self.db.is_none() => notice(i18n.t("no-database"), colors),
+                    None => notice(i18n.t("why-no-data"), colors),
                 }
             }
+            Page::Catalog if self.db.is_none() => notice(i18n.t("no-database"), colors),
             Page::Catalog => catalog::view(
                 &self.catalog_list,
                 self.specs(),
@@ -1085,6 +1108,7 @@ impl App {
             Page::Settings => settings_page::view(
                 &self.settings,
                 self.storage,
+                self.database_notes(),
                 self.download.running(),
                 self.account.view(i18n, colors),
                 i18n,
@@ -1188,9 +1212,10 @@ fn catalog_to_top() -> Task<Message> {
 }
 
 /// Placeholder for pages that later phases build.
-fn coming_soon(title: String, i18n: &I18n, colors: Colors) -> Element<'static, Message> {
+/// A page with nothing to show but why, e.g. before the first games.db.
+fn notice(why: String, colors: Colors) -> Element<'static, Message> {
     center(
-        container(column![text(title).font(BOLD).size(20), text(i18n.t("coming-soon"))].spacing(6))
+        container(text(why).font(BOLD))
             .padding(18)
             .style(move |_| colors.boxed(colors.panel)),
     )
@@ -2406,6 +2431,108 @@ mod tests {
             &app,
             "rigcheck hasn't read this game's store page yet."
         ));
+    }
+
+    /// Grouped by verdict, Enter opens the first tile on screen, not the
+    /// first by name.
+    #[test]
+    fn enter_opens_the_first_game_listed_by_verdict() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        // A–Z: Cyberpunk 2077 (TOO WEAK) first. By verdict: OMORI (READY?).
+        let _ = app.update(Message::LibraryOrder(library::Order::Verdict));
+
+        let _ = app.update(Message::LibraryOpenFirst);
+
+        assert_eq!(app.page, Page::Game(1150690)); // OMORI
+    }
+
+    #[test]
+    fn a_library_search_that_matches_nothing_says_so() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        let _ = app.update(Message::Search("zelda".to_owned()));
+
+        assert!(shows(&app, "No games match “zelda”."));
+    }
+
+    #[test]
+    fn a_library_without_steam_games_says_where_it_looked() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+
+        let _ = app.update(Message::GamesFound(Vec::new()));
+
+        assert!(shows(&app, "No installed Steam games found."));
+    }
+
+    #[test]
+    fn the_catalog_counts_its_matches_and_says_when_there_are_none() {
+        let dir = TempDir::new().unwrap();
+        let mut app = catalog_app(&dir);
+
+        let _ = app.update(Message::CatalogSearch("zelda".to_owned()));
+        assert!(shows(&app, "GAMES: 0"));
+        assert!(shows(&app, "No games match. Try fewer words or filters."));
+
+        let _ = app.update(Message::CatalogSearch("cyber".to_owned()));
+        assert!(shows(&app, "GAMES: 1"));
+    }
+
+    /// Before the first download there's no games.db to search or to know
+    /// a game by: say so, not "this game isn't in the database".
+    #[test]
+    fn without_a_game_database_the_catalog_and_game_pages_say_so() {
+        let dir = TempDir::new().unwrap();
+        let (mut app, _) = App::new(Paths::under(dir.path()), Language::English);
+
+        click(&mut app, "CATALOG");
+        assert!(shows(&app, "The game database isn't downloaded yet."));
+
+        let _ = app.update(Message::Open(Page::Game(1150690)));
+        assert!(shows(&app, "The game database isn't downloaded yet."));
+    }
+
+    #[test]
+    fn settings_say_which_build_is_installed_and_how_the_last_check_went() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        let _ = app.update(Message::Download(download::Event::Finished(Ok(
+            download::Fetched::UpToDate,
+        ))));
+
+        click(&mut app, "SETTINGS");
+
+        assert!(shows(&app, "Up to date."));
+    }
+
+    #[test]
+    fn the_download_banner_says_it_is_starting_before_the_size_is_known() {
+        let dir = TempDir::new().unwrap();
+        let (mut app, _) = App::new(Paths::under(dir.path()), Language::English);
+
+        let _ = app.update(Message::Download(download::Event::Progress {
+            done: 0,
+            total: 0,
+        }));
+
+        assert!(shows(&app, "Starting…"));
+        assert!(!shows(&app, "0.0 of 0.0 MB"));
+    }
+
+    /// Steam Deck and anti-cheat statuses are words, so they're translated;
+    /// ProtonDB's tiers are its own names and stay.
+    #[test]
+    fn deck_and_anti_cheat_statuses_are_in_the_apps_language() {
+        let dir = TempDir::new().unwrap();
+        let mut app = library_app(&dir);
+        let _ = app.update(Message::LanguageSelected(Some(Language::German)));
+
+        let _ = app.update(Message::Open(Page::Game(1091500))); // Cyberpunk 2077
+
+        assert!(shows(&app, "VERIFIZIERT"));
+        assert!(shows(&app, "PLATINUM"));
     }
 
     #[test]
