@@ -34,7 +34,7 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  PIPELINE: target/release/rigcheck-pipeline
+  PIPELINE: target/pipeline/rigcheck-pipeline
 
 jobs:
   build:
@@ -52,7 +52,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           save-if: ${{ github.ref == 'refs/heads/master' }}
-      - run: cargo build --release --locked -p rigcheck-pipeline
+      - run: cargo build --profile pipeline --locked -p rigcheck-pipeline
 
       # db-wip holds the last run's work; db-latest is the fallback until a
       # run has saved one.
