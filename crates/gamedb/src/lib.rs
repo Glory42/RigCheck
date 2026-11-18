@@ -13,6 +13,7 @@ use rigcheck_core::{
     AntiCheat, Catalog, CatalogEntry, GameRequirements, Level, LinuxInfo, ParsedTier, ProtonTier,
     Reported, Requirement, Specs, Vendor, Verdict, evaluate, parse, requirement_text,
 };
+use rusqlite::config::DbConfig;
 use rusqlite::{Connection, OptionalExtension, params, params_from_iter};
 use serde::Deserialize;
 
@@ -21,7 +22,7 @@ pub mod ingest;
 mod update;
 
 pub use fetched::{Fetched, Records};
-pub use update::{Manifest, SCHEMA_VERSION, install};
+pub use update::{Limits, Manifest, SCHEMA_VERSION, install, install_within};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
@@ -230,6 +231,16 @@ fn tiers_at_least(lowest: ProtonTier) -> &'static [ProtonTier] {
     &BEST_FIRST[..=end]
 }
 
+/// `conn` with SQLite's guards for files from elsewhere on: triggers, views
+/// and index expressions in the file may only call functions SQLite marks
+/// harmless (`trusted_schema` off), and SQL can't deliberately corrupt the
+/// file (defensive mode). games.db is downloaded, so its schema is data.
+pub(crate) fn guarded(conn: Connection) -> Result<Connection, Error> {
+    conn.set_db_config(DbConfig::SQLITE_DBCONFIG_TRUSTED_SCHEMA, false)?;
+    conn.set_db_config(DbConfig::SQLITE_DBCONFIG_DEFENSIVE, true)?;
+    Ok(conn)
+}
+
 /// Brings a games.db written by an older build up to the current schema.
 /// Only additions, so older apps can still read the result.
 fn upgrade(conn: &Connection) -> Result<(), Error> {
@@ -338,7 +349,7 @@ impl Tier {
 
 impl GameDb {
     pub fn open(path: &Path) -> Result<GameDb, Error> {
-        let conn = Connection::open(path)?;
+        let conn = guarded(Connection::open(path)?)?;
         upgrade(&conn)?;
         Ok(GameDb::with(conn))
     }
@@ -348,12 +359,12 @@ impl GameDb {
         if path.exists() {
             std::fs::remove_file(path)?;
         }
-        GameDb::with_schema(Connection::open(path)?)
+        GameDb::with_schema(guarded(Connection::open(path)?)?)
     }
 
     /// An empty database that lives as long as it's open.
     fn create_in_memory() -> Result<GameDb, Error> {
-        GameDb::with_schema(Connection::open_in_memory()?)
+        GameDb::with_schema(guarded(Connection::open_in_memory()?)?)
     }
 
     fn with_schema(conn: Connection) -> Result<GameDb, Error> {

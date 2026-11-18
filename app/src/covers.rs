@@ -212,11 +212,20 @@ impl Covers {
     }
 }
 
-/// `jpeg`, if it decodes as an image. A file that doesn't (an error page,
-/// a cut-off download) is no cover: iced's software renderer panics the
-/// second time it's asked to draw one.
+/// `jpeg`, if it decodes as an image of at most 4096×4096 (Steam's covers
+/// are 600×900). A file that doesn't (an error page, a cut-off download) is
+/// no cover: iced's software renderer panics the second time it's asked to
+/// draw one. The size limit is read from the header, before decoding.
 fn decodes(jpeg: Vec<u8>) -> Result<Vec<u8>, Failure> {
-    match image::load_from_memory(&jpeg) {
+    let mut limits = image::Limits::default();
+    limits.max_image_width = Some(4096);
+    limits.max_image_height = Some(4096);
+    limits.max_alloc = Some(64 * 1024 * 1024);
+    let mut reader = image::ImageReader::new(std::io::Cursor::new(&jpeg))
+        .with_guessed_format()
+        .map_err(|error| Failure::Failed(format!("not an image: {error}")))?;
+    reader.limits(limits);
+    match reader.decode() {
         Ok(_) => Ok(jpeg),
         Err(error) => Err(Failure::Failed(format!("not an image: {error}"))),
     }
@@ -361,6 +370,18 @@ mod tests {
         assert!(decodes(crate::test_support::jpeg(1_000)).is_ok());
         assert!(decodes(b"<html>Service Unavailable</html>".to_vec()).is_err());
         assert!(decodes(vec![0; 1_000]).is_err());
+    }
+
+    /// Steam's covers are 600×900. An image far bigger is refused before
+    /// it's decoded, however few bytes it takes.
+    #[test]
+    fn a_cover_bigger_than_any_steam_serves_is_refused() {
+        let mut wide = Vec::new();
+        image::codecs::jpeg::JpegEncoder::new(&mut wide)
+            .encode(&[128; 5000], 5000, 1, image::ExtendedColorType::L8)
+            .unwrap();
+
+        assert!(decodes(wide).is_err());
     }
 
     #[test]

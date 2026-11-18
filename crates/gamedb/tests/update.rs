@@ -4,7 +4,7 @@
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
-use rigcheck_gamedb::{GameDb, Manifest, install};
+use rigcheck_gamedb::{GameDb, Limits, Manifest, install, install_within};
 use sha2::{Digest, Sha256};
 use tempfile::TempDir;
 
@@ -137,12 +137,30 @@ fn an_installed_db_knows_which_build_it_is() {
 }
 
 #[test]
-fn only_a_different_build_is_an_update() {
-    let manifest = Manifest::from_json(PUBLISHED).unwrap();
+fn only_a_newer_build_is_an_update() {
+    let manifest = Manifest::from_json(PUBLISHED).unwrap(); // 2026-11-01.1
 
     assert!(manifest.is_update_for(None));
     assert!(manifest.is_update_for(Some("2026-10-31.1")));
     assert!(!manifest.is_update_for(Some("2026-11-01.1")));
+    // An older build served again (a rollback) isn't taken.
+    assert!(!manifest.is_update_for(Some("2026-11-01.2")));
+    assert!(!manifest.is_update_for(Some("2026-11-02.1")));
+}
+
+#[test]
+fn build_numbers_compare_as_numbers() {
+    let json = PUBLISHED.replace("2026-11-01.1", "2026-11-01.10");
+    let manifest = Manifest::from_json(&json).unwrap();
+
+    assert!(manifest.is_update_for(Some("2026-11-01.9")));
+}
+
+#[test]
+fn a_build_named_some_other_way_is_an_update() {
+    let manifest = Manifest::from_json(PUBLISHED).unwrap();
+
+    assert!(manifest.is_update_for(Some("seed")));
 }
 
 /// The app was killed mid-update: a half-downloaded file and a
@@ -186,4 +204,101 @@ fn an_installed_db_finds_games_by_a_one_letter_prefix() {
             "PUBG: BATTLEGROUNDS"
         ]
     );
+}
+
+#[test]
+fn a_download_of_another_size_than_the_manifest_says_keeps_the_old_db() {
+    let dir = TempDir::new().unwrap();
+    let (zst, mut manifest) = published(dir.path());
+    manifest.size_bytes -= 1; // the SHA-256 still matches
+    let dest = dir.path().join("data/games.db");
+    old_db(&dest);
+
+    assert!(install(&zst, &manifest, &dest).is_err());
+
+    assert!(still_old(&dest));
+}
+
+#[test]
+fn a_download_over_the_size_limit_keeps_the_old_db() {
+    let dir = TempDir::new().unwrap();
+    let (zst, manifest) = published(dir.path());
+    let dest = dir.path().join("data/games.db");
+    old_db(&dest);
+    let limits = Limits {
+        download_bytes: manifest.size_bytes - 1,
+        ..Limits::default()
+    };
+
+    assert!(install_within(&zst, &manifest, &dest, &limits).is_err());
+
+    assert!(still_old(&dest));
+}
+
+/// A decompression bomb: a small download that unpacks to far more.
+#[test]
+fn a_download_that_unpacks_past_the_limit_keeps_the_old_db() {
+    let dir = TempDir::new().unwrap();
+    let (zst, manifest) = published(dir.path());
+    let dest = dir.path().join("data/games.db");
+    old_db(&dest);
+    let limits = Limits {
+        unpacked_bytes: 4096,
+        ..Limits::default()
+    };
+
+    assert!(install_within(&zst, &manifest, &dest, &limits).is_err());
+
+    assert!(still_old(&dest));
+    assert!(!dest.with_extension("db.new").exists());
+}
+
+/// A built games.db with `sql` run on it, packaged like a release.
+fn tampered(dir: &Path, sql: &str) -> (PathBuf, Manifest) {
+    let build = dir.join("built.db");
+    drop(GameDb::create_seed(&build).unwrap());
+    rusqlite::Connection::open(&build)
+        .unwrap()
+        .execute_batch(sql)
+        .unwrap();
+    package(dir, &build)
+}
+
+/// SQL in a downloaded file runs when the app writes to it on install, so
+/// only the schema the pipeline itself writes is accepted.
+#[test]
+fn a_download_with_sql_of_its_own_keeps_the_old_db() {
+    let attacks = [
+        // Runs when the app records the build in `meta`.
+        "CREATE TRIGGER planted AFTER INSERT ON meta BEGIN DELETE FROM games; END;",
+        "CREATE VIEW planted AS SELECT * FROM games;",
+        // The search trigger, rewritten.
+        "DROP TRIGGER games_fts_insert;
+         CREATE TRIGGER games_fts_insert AFTER INSERT ON games BEGIN DELETE FROM games; END;",
+        // A table the app builds itself on install, already there.
+        "CREATE VIRTUAL TABLE games_search USING fts5(name);",
+    ];
+    for sql in attacks {
+        let dir = TempDir::new().unwrap();
+        let (zst, manifest) = tampered(dir.path(), sql);
+        let dest = dir.path().join("data/games.db");
+        old_db(&dest);
+
+        assert!(install(&zst, &manifest, &dest).is_err(), "accepted: {sql}");
+
+        assert!(still_old(&dest));
+    }
+}
+
+/// The checks don't reject what the pipeline legitimately adds over time:
+/// tables, columns and indexes.
+#[test]
+fn a_download_with_another_table_or_index_installs() {
+    let dir = TempDir::new().unwrap();
+    let (zst, manifest) = tampered(
+        dir.path(),
+        "CREATE TABLE future (x INTEGER); CREATE INDEX games_by_name ON games (name);",
+    );
+
+    assert!(install(&zst, &manifest, &dir.path().join("data/games.db")).is_ok());
 }

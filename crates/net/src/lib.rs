@@ -2,11 +2,13 @@
 //! host on an [`Allowlist`] (ROADMAP §6); `deny.toml` keeps HTTP clients out
 //! of other crates.
 
+mod capped;
 mod client;
 mod limit;
 
 use url::Url;
 
+pub use capped::Capped;
 pub use client::{Client, Error, HttpStatus, status};
 pub use limit::{RateLimiter, Retry};
 

@@ -10,11 +10,17 @@ use std::time::Duration;
 
 use iced::Task;
 use iced::futures::channel::oneshot;
-use rigcheck_net::{Allowlist, Client, RateLimiter, Retry};
+use rigcheck_net::{Allowlist, Capped, Client, RateLimiter, Retry};
 
 /// Published with every games.db build (ROADMAP §7.3).
 const MANIFEST_URL: &str =
     "https://github.com/Glory42/RigCheck/releases/download/db-latest/manifest.json";
+/// The only place games.db is downloaded from, whatever a manifest says.
+pub const GAMES_DB_URL: &str =
+    "https://github.com/Glory42/RigCheck/releases/download/db-latest/games.db.zst";
+/// The largest image (cover or screenshot) the app downloads. Steam's are
+/// well under 1 MB.
+const IMAGE_LIMIT: u64 = 10_000_000;
 /// Uploaded with every release (packaging/package.sh). `latest` skips
 /// prereleases, so the daily `db-latest` games.db release never counts.
 const VERSION_URL: &str =
@@ -174,9 +180,9 @@ impl Transport for Net {
     fn bytes(&self, url: &str) -> Result<Vec<u8>, Failure> {
         let client = self.client(url)?;
         let mut client = client.lock().map_err(|_| broke())?;
-        let mut body = Vec::new();
+        let mut body = Capped::new(Vec::new(), IMAGE_LIMIT);
         client.download(url, &mut body, |_| {})?;
-        Ok(body)
+        Ok(body.into_inner())
     }
 
     /// On a client of its own: a download takes minutes, and holding the

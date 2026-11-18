@@ -4,7 +4,7 @@
 use std::io::{Read, Write};
 use std::time::{Duration, Instant};
 
-use crate::{Allowlist, RateLimiter, Retry};
+use crate::{Allowlist, Capped, RateLimiter, Retry};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
@@ -37,6 +37,10 @@ const USER_AGENT: &str = concat!(
     env!("CARGO_PKG_VERSION"),
     " (+https://github.com/Glory42/rigcheck)"
 );
+
+/// The largest text answer: Steam's app list pages (50,000 games, ~5 MB)
+/// with room to spare.
+pub const TEXT_LIMIT: u64 = 64 * 1024 * 1024;
 
 /// Long enough for the 50 MB games.db budget on a slow (~0.5 Mbit/s) line.
 const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(15 * 60);
@@ -74,10 +78,14 @@ impl Client {
         })
     }
 
-    /// The body of `url`. Errors never include the URL, which can carry an
-    /// API key and end up in CI logs.
+    /// The body of `url`, at most [`TEXT_LIMIT`] bytes of UTF-8. Errors
+    /// never include the URL, which can carry an API key and end up in CI
+    /// logs.
     pub fn get_text(&mut self, url: &str) -> Result<String, Error> {
-        Ok(self.get(url, None)?.text().map_err(|e| e.without_url())?)
+        let mut response = self.get(url, None)?;
+        let mut body = Capped::new(Vec::new(), TEXT_LIMIT);
+        std::io::copy(&mut response, &mut body).map_err(without_url)?;
+        Ok(String::from_utf8(body.into_inner())?)
     }
 
     /// Streams the body of `url` into `to`, calling `progress` with the bytes
@@ -92,7 +100,7 @@ impl Client {
         let mut buffer = vec![0; 64 * 1024];
         let mut done = 0;
         loop {
-            let read = response.read(&mut buffer)?;
+            let read = response.read(&mut buffer).map_err(without_url)?;
             if read == 0 {
                 return Ok(done);
             }
@@ -130,5 +138,17 @@ impl Client {
             }
         }
         unreachable!("the loop only ends by returning")
+    }
+}
+
+/// An error reading a body, without the URL reqwest puts in its errors.
+fn without_url(error: std::io::Error) -> Error {
+    let kind = error.kind();
+    match error.into_inner() {
+        Some(inner) => match inner.downcast::<reqwest::Error>() {
+            Ok(error) => Box::new(error.without_url()),
+            Err(other) => other,
+        },
+        None => Box::new(std::io::Error::from(kind)),
     }
 }

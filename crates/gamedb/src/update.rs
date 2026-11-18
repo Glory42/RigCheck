@@ -1,13 +1,16 @@
 //! Getting a new games.db: `manifest.json` says what's published, and the
 //! downloaded file is checked before it replaces the old one (ROADMAP §7.3).
 
+use std::collections::HashMap;
 use std::fs::{self, File};
+use std::io::{self, Read};
 use std::path::Path;
 
+use rusqlite::{Connection, OpenFlags};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::{Error, GameDb};
+use crate::{Error, GameDb, guarded};
 
 /// The games.db schema this build reads and writes.
 pub const SCHEMA_VERSION: u32 = 1;
@@ -44,19 +47,79 @@ impl Manifest {
     }
 
     /// Whether this build replaces the `installed` one (its `db_version`
-    /// meta row; `None` if there's none). Any other build counts: the
-    /// published one is the one to have, and "2026-11-01.10" sorts before
-    /// "2026-11-01.9" as text.
+    /// meta row; `None` if there's none): only a newer build does, so an
+    /// older one served again can't roll the data back. Versions are
+    /// "date.run", and runs compare as numbers ("2026-11-01.10" is after
+    /// "2026-11-01.9"). A version named some other way (a seed, a hand
+    /// build) is replaced by any published one.
     pub fn is_update_for(&self, installed: Option<&str>) -> bool {
-        installed != Some(self.db_version.as_str())
+        let Some(installed) = installed else {
+            return true;
+        };
+        match (build(&self.db_version), build(installed)) {
+            (Some(published), Some(installed)) => published > installed,
+            _ => installed != self.db_version,
+        }
+    }
+}
+
+/// "2026-11-01.10" as ("2026-11-01", 10): ISO dates sort as text.
+fn build(db_version: &str) -> Option<(&str, u64)> {
+    let (date, run) = db_version.split_once('.')?;
+    let is_date = date.len() == 10
+        && date.bytes().enumerate().all(|(i, b)| {
+            if i == 4 || i == 7 {
+                b == b'-'
+            } else {
+                b.is_ascii_digit()
+            }
+        });
+    is_date.then_some(())?;
+    Some((date, run.parse().ok()?))
+}
+
+/// How big a download and the database it unpacks to may be. A tampered
+/// release could otherwise fill the disk or the memory.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Limits {
+    pub download_bytes: u64,
+    pub unpacked_bytes: u64,
+}
+
+impl Default for Limits {
+    /// Twice the 50 MB download budget (ROADMAP §7.4); the unpacked file
+    /// is ~5× the download.
+    fn default() -> Limits {
+        Limits {
+            download_bytes: 100_000_000,
+            unpacked_bytes: 1_000_000_000,
+        }
     }
 }
 
 /// Replaces the games.db at `dest` with the downloaded `zst`, but only once
-/// it matches the manifest's SHA-256 and opens as a games.db. Any failure
+/// it matches the manifest's size and SHA-256, unpacks within the default
+/// [`Limits`], and holds only the schema the pipeline writes. Any failure
 /// leaves the old file as it was.
 pub fn install(zst: &Path, manifest: &Manifest, dest: &Path) -> Result<GameDb, Error> {
-    // At most the 50 MB size budget (ROADMAP §7.4), so reading it whole is fine.
+    install_within(zst, manifest, dest, &Limits::default())
+}
+
+/// [`install`], within `limits`.
+pub fn install_within(
+    zst: &Path,
+    manifest: &Manifest,
+    dest: &Path,
+    limits: &Limits,
+) -> Result<GameDb, Error> {
+    let size = fs::metadata(zst)?.len();
+    if size > limits.download_bytes {
+        return Err("the download is bigger than a games.db can be".into());
+    }
+    if size != manifest.size_bytes {
+        return Err("the download isn't the size the manifest says".into());
+    }
+    // Within the limit above, so reading it whole is fine.
     let bytes = fs::read(zst)?;
     if sha256_hex(&bytes) != manifest.sha256 {
         return Err("the download doesn't match the manifest's SHA-256".into());
@@ -67,8 +130,7 @@ pub fn install(zst: &Path, manifest: &Manifest, dest: &Path) -> Result<GameDb, E
     // Unpacked next to `dest`, so the rename below stays on one filesystem
     // and replaces the old file in one step.
     let new = dest.with_extension("db.new");
-    let unpacked = zstd::stream::copy_decode(bytes.as_slice(), File::create(&new)?)
-        .map_err(Error::from)
+    let unpacked = unpack(&bytes, &new, limits.unpacked_bytes)
         .and_then(|()| check(&new, manifest))
         .and_then(|()| add_indexes(&new))
         .and_then(|()| GameDb::open(&new)?.set_meta(DB_VERSION, &manifest.db_version));
@@ -80,13 +142,66 @@ pub fn install(zst: &Path, manifest: &Manifest, dest: &Path) -> Result<GameDb, E
     GameDb::open(dest)
 }
 
-/// The sanity query: a SQLite file whose schema is the one announced.
+/// Decompresses `zst` into `to`, stopping past `limit` bytes.
+fn unpack(zst: &[u8], to: &Path, limit: u64) -> Result<(), Error> {
+    let mut decoder = zstd::stream::read::Decoder::new(zst)?.take(limit + 1);
+    let written = io::copy(&mut decoder, &mut File::create(to)?)?;
+    if written > limit {
+        return Err("the download unpacks to more than a games.db can be".into());
+    }
+    Ok(())
+}
+
+/// Checks the unpacked file before anything writes to it, read-only: a
+/// sound SQLite file, the schema version the manifest announced, and no
+/// SQL that would run on a write (triggers, views, virtual tables) other
+/// than the pipeline's own, word for word. Tables and indexes may differ:
+/// the pipeline adds those over time, and they run nothing.
 fn check(path: &Path, manifest: &Manifest) -> Result<(), Error> {
-    let schema = GameDb::open(path)?.meta("schema_version")?;
+    let conn = guarded(Connection::open_with_flags(
+        path,
+        OpenFlags::SQLITE_OPEN_READ_ONLY,
+    )?)?;
+    let health: String = conn.query_row("PRAGMA quick_check", [], |row| row.get(0))?;
+    if health != "ok" {
+        return Err("the download is a damaged database".into());
+    }
+    let ours = runnable_sql(&GameDb::create_in_memory()?.conn)?;
+    for (name, sql) in runnable_sql(&conn)? {
+        if ours.get(&name) != Some(&sql) {
+            return Err(format!("the download has SQL of its own ({name})").into());
+        }
+    }
+    let schema: Option<String> = conn
+        .query_row(
+            "SELECT value FROM meta WHERE key = 'schema_version'",
+            [],
+            |row| row.get(0),
+        )
+        .ok();
     if schema != Some(manifest.schema_version.to_string()) {
         return Err("the download isn't the games.db the manifest announced".into());
     }
     Ok(())
+}
+
+/// Every trigger, view and virtual table in `conn`, by name, with its SQL
+/// in single spaces.
+fn runnable_sql(conn: &Connection) -> Result<HashMap<String, String>, Error> {
+    let mut statement = conn.prepare(
+        "SELECT name, sql FROM sqlite_master
+         WHERE type IN ('trigger', 'view')
+            OR (type = 'table' AND sql LIKE 'CREATE VIRTUAL TABLE%')",
+    )?;
+    let rows = statement.query_map([], |row| {
+        let sql: Option<String> = row.get(1)?;
+        let sql = sql.unwrap_or_default();
+        Ok((
+            row.get(0)?,
+            sql.split_whitespace().collect::<Vec<_>>().join(" "),
+        ))
+    })?;
+    Ok(rows.collect::<Result<_, _>>()?)
 }
 
 /// Indexes the app needs but the pipeline doesn't. Built here rather than

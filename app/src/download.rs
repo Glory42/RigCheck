@@ -8,12 +8,13 @@ use std::path::{Path, PathBuf};
 use iced::futures::{SinkExt, Stream, executor::block_on};
 use iced::widget::{button, column, container, progress_bar, row, space, text};
 use iced::{Element, Fill, Task};
-use rigcheck_gamedb::{GameDb, Manifest, install};
+use rigcheck_gamedb::{GameDb, Limits, Manifest, install};
+use rigcheck_net::Capped;
 
 use crate::Message;
 use crate::i18n::I18n;
 use crate::style::{BOLD, Colors};
-use crate::web::Web;
+use crate::web::{GAMES_DB_URL, Web};
 
 #[derive(Debug, Clone)]
 pub enum Event {
@@ -193,12 +194,25 @@ fn fetch(
     if !manifest.is_update_for(installed) {
         return Ok(Fetched::UpToDate);
     }
+    // A manifest can't send the app elsewhere, or announce more than a
+    // games.db can be.
+    if manifest.url != GAMES_DB_URL {
+        return Err(Failure::Failed(
+            "the manifest points somewhere other than rigcheck's release".to_owned(),
+        ));
+    }
+    if manifest.size_bytes > Limits::default().download_bytes {
+        return Err(Failure::Failed(
+            "the manifest announces a bigger file than a games.db can be".to_owned(),
+        ));
+    }
     let part = dest.with_extension("db.zst.part");
     let result = (|| {
         if let Some(dir) = dest.parent() {
             fs::create_dir_all(dir)?;
         }
-        let mut file = File::create(&part)?;
+        // No more than the manifest announced.
+        let mut file = Capped::new(File::create(&part)?, manifest.size_bytes);
         web.download(&manifest.url, &mut file, &mut |done| {
             progress(done, manifest.size_bytes)
         })
@@ -314,6 +328,43 @@ mod tests {
         let _ = downloader.start(None, false);
         downloader.event(finished(Err(offline())), false);
         assert_eq!(*downloader.status(), Status::Failed(offline()));
+    }
+
+    /// The manifest as the pipeline publishes it, but pointing at `url`
+    /// and announcing `size_bytes`.
+    fn manifest(url: &str, size_bytes: u64) -> String {
+        format!(
+            r#"{{"schema_version": 1, "db_version": "2026-11-17.17",
+                "built_at": "2026-11-17T15:15:00Z", "url": "{url}",
+                "sha256": "{}", "size_bytes": {size_bytes},
+                "min_app_version": "0.4.0"}}"#,
+            "0".repeat(64)
+        )
+    }
+
+    /// Only the manifest was asked for: the download never started.
+    fn refused(json: &str) -> bool {
+        let fake = crate::web::fake::Fake::replying(Ok(json));
+        let dir = TempDir::new().unwrap();
+        let result = fetch(
+            &Web::with(fake.clone()),
+            &dir.path().join("games.db"),
+            None,
+            |_, _| {},
+        );
+        result.is_err() && fake.asked().len() == 1
+    }
+
+    #[test]
+    fn a_manifest_pointing_somewhere_else_is_not_followed() {
+        let fork = "https://github.com/someone/fork/releases/download/db-latest/games.db.zst";
+
+        assert!(refused(&manifest(fork, 12_000_000)));
+    }
+
+    #[test]
+    fn a_manifest_announcing_more_than_a_games_db_can_be_is_not_followed() {
+        assert!(refused(&manifest(crate::web::GAMES_DB_URL, 500_000_000)));
     }
 
     #[test]

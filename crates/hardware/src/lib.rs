@@ -8,7 +8,10 @@
 mod rig;
 
 use std::fs;
+use std::io::Read;
 use std::path::Path;
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 pub use rig::{Rig, Swap};
 
@@ -18,20 +21,49 @@ pub trait Commands {
     fn run(&self, program: &str, args: &[&str]) -> Option<String>;
 }
 
-/// Runs real programs found on `PATH`.
+/// Runs real programs found on `PATH`, giving up on one after 10 seconds.
 pub struct System;
 
 impl Commands for System {
     fn run(&self, program: &str, args: &[&str]) -> Option<String> {
-        let output = std::process::Command::new(program)
-            .args(args)
-            .output()
-            .ok()?;
-        output
-            .status
-            .success()
-            .then(|| String::from_utf8_lossy(&output.stdout).into_owned())
+        run_with_timeout(program, args, Duration::from_secs(10))
     }
+}
+
+/// `program`'s stdout, or `None` if it isn't installed, fails, or is still
+/// running after `timeout` (a hung GPU driver can stall `vulkaninfo`), in
+/// which case it's killed.
+pub fn run_with_timeout(program: &str, args: &[&str], timeout: Duration) -> Option<String> {
+    let mut child = Command::new(program)
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .ok()?;
+    // Read on another thread, so a program printing more than the pipe
+    // holds doesn't block waiting for us.
+    let mut stdout = child.stdout.take()?;
+    let reader = std::thread::spawn(move || {
+        let mut out = Vec::new();
+        stdout.read_to_end(&mut out).map(|_| out)
+    });
+    let deadline = Instant::now() + timeout;
+    let status = loop {
+        if let Some(status) = child.try_wait().ok()? {
+            break status;
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            return None;
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    let out = reader.join().ok()?.ok()?;
+    status
+        .success()
+        .then(|| String::from_utf8_lossy(&out).into_owned())
 }
 
 /// What rigcheck knows about the user's machine. `None` means not detected.
