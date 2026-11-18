@@ -1,20 +1,28 @@
 name: Build games.db
 
-# Daily: continue crawling Steam where yesterday stopped, merge the data
-# sources, validate, and publish games.db.zst + manifest.json to the rolling
-# `db-latest` release (ROADMAP Phase 4, §7.3).
+# Every 4 hours: continue crawling Steam where the last run stopped, merge
+# the data sources, validate, and save the result to the `db-wip` release.
+# Once a day (the 03:17 run) it's also published to `db-latest`, the release
+# the app downloads (ROADMAP Phase 4, §7.3): users get one update a day,
+# while the crawl uses the whole day. Steam limits requests per 5 minutes,
+# not per day, so six runs crawl six times as much.
 #
 # Two jobs. `build` handles third-party data (Steam, ProtonDB, AWACY, Blender,
 # pci.ids) with a read-only token; `publish` holds the write token and runs
 # none of that data, only `gh` on the finished files.
 on:
   schedule:
-    - cron: "17 3 * * *"
+    - cron: "17 3 * * *" # crawl and publish
+    - cron: "17 7,11,15,19,23 * * *" # crawl only
   workflow_dispatch:
     inputs:
       budget:
         description: Games to crawl this run (each is 2 store requests)
         default: "3000"
+      publish:
+        description: Publish to db-latest (the app's release), not only db-wip
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -33,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 340 # GitHub's limit is 360; publish needs a few minutes
     env:
-      GH_TOKEN: ${{ github.token }} # read-only: download yesterday's release
+      GH_TOKEN: ${{ github.token }} # read-only: download the last run's release
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -46,13 +54,18 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/master' }}
       - run: cargo build --release --locked -p rigcheck-pipeline
 
-      - name: Restore yesterday's database
+      # db-wip holds the last run's work; db-latest is the fallback until a
+      # run has saved one.
+      - name: Restore the last run's database
         run: |
-          if gh release download db-latest --pattern games.db.zst --dir previous; then
-            zstd -d previous/games.db.zst -o games.db
-          else
-            echo "No previous release; starting fresh."
-          fi
+          for release in db-wip db-latest; do
+            if gh release download "$release" --pattern games.db.zst --dir previous; then
+              echo "Continuing from $release."
+              zstd -d previous/games.db.zst -o games.db
+              exit 0
+            fi
+          done
+          echo "No previous release; starting fresh."
 
       # Everything downloaded lands in sources/, never next to the pipeline
       # binary in target/: an archive can't overwrite what runs next.
@@ -143,7 +156,16 @@ jobs:
           name: games-db
           path: out
 
+      - name: Save to the db-wip release
+        run: |
+          if ! gh release view db-wip > /dev/null 2>&1; then
+            gh release create db-wip --prerelease --title "games.db (work in progress)" \
+              --notes "The crawl's progress between daily releases, saved every few hours by the Build games.db workflow. rigcheck downloads db-latest, not this. Licensed under the ODbL."
+          fi
+          gh release upload db-wip out/games.db.zst out/manifest.json --clobber
+
       - name: Publish to the db-latest release
+        if: github.event.schedule == '17 3 * * *' || inputs.publish
         run: |
           if ! gh release view db-latest > /dev/null 2>&1; then
             gh release create db-latest --prerelease --title "games.db (updated daily)" \

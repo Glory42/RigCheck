@@ -213,7 +213,7 @@ fn crawl(apps: &Path, db_path: &Path, budget: usize, reports: Option<&Path>) -> 
             .collect(),
         None => HashMap::new(),
     };
-    let batch = plan(&apps, &db, &popularity, budget)?;
+    let batch = plan(&apps, &db, &popularity, budget, now()?)?;
     let mut client = client()?;
     let (mut games, mut other) = (0, 0);
     for app_id in &batch {

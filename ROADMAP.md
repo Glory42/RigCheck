@@ -446,7 +446,7 @@ Build this test-first. It's pure logic with no I/O, so it's the easiest part to 
 - [x] Enrich: Deck status (one store request per game), hardware scores (hand scores in `data/hardware.toml` first; Blender Open Data fills parts the table lacks, see §9), GPU PCI IDs from `pci.ids`
 - [x] `validate`: size budget and sanity checks: not empty, and ≥ 90% of the 100 most popular games parsed (not 100%: some popular games leave a field out on Steam, e.g. TF2 lists no GPU)
 - [x] `report`: unmatched hardware tokens sorted by frequency, used to grow the aliases in `data/hardware.toml`
-- [x] `build-db.yml`: daily cron → download the previous release → run the pipeline (stop well under the 6-hour job limit) → publish `games.db.zst` + `manifest.json` to a rolling `db-latest` release
+- [x] `build-db.yml`: daily cron → download the previous release → run the pipeline (stop well under the 6-hour job limit) → publish `games.db.zst` + `manifest.json` to a rolling `db-latest` release. Since 1.2: the crawl runs every 4 hours and saves its progress to `db-wip`; the 03:17 run also publishes to `db-latest`, so the app still updates once a day. A changed store page waits a week (games with ProtonDB reports) or a month before it's fetched again
 - [x] Keep scheduled workflows alive: GitHub disables cron in repos inactive for 60 days, so each run re-enables its own workflow through the API (a commit would need a pull request, since `master` is protected)
 - [ ] Optional: run the first full crawl locally to get past the multi-day backlog faster
 

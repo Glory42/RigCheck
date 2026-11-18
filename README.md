@@ -14,7 +14,7 @@
 </p>
 
 > [!NOTE]
-> **v1.1 is out.** The app is complete; the game database is still filling in. It's rebuilt daily from Steam, reading a few thousand store pages a day, most popular games first. Until a game's page has been read it's known by name only (`NOT CHECKED YET`), and the app looks it up on Steam when you open it, so you still get a verdict. See the [roadmap](ROADMAP.md).
+> **v1.1 is out.** The app is complete; the game database is still filling in. It's crawled from Steam every 4 hours, about 18,000 store pages a day, most popular games first, and the app gets a new copy once a day. Until a game's page has been read it's known by name only (`NOT CHECKED YET`), and the app looks it up on Steam when you open it, so you still get a verdict. See the [roadmap](ROADMAP.md).
 
 ## What it does
 
@@ -128,7 +128,7 @@ cargo deny check advisories bans # known vulnerabilities; only crates/net may us
 INSTA_UPDATE=always cargo test -p rigcheck-core --test parser   # accept parser snapshot changes, then review the diff
 ```
 
-CI runs fmt, clippy, tests and `cargo deny` on pushes to `master` and on pull requests; pull requests that only touch `website/` skip the Rust steps. Other workflows build the game database daily (`build-db.yml`), the release packages (`release-app.yml`), the Flatpak (`flatpak.yml`) and the site (`website.yml`). Screenshots are rendered by an ignored test: `RIGCHECK_SCREENSHOT_DB=<a games.db> cargo test -p rigcheck screenshots -- --ignored`.
+CI runs fmt, clippy, tests and `cargo deny` on pushes to `master` and on pull requests; pull requests that only touch `website/` skip the Rust steps. Other workflows build the game database (`build-db.yml`: crawls every 4 hours, publishes daily), the release packages (`release-app.yml`), the Flatpak (`flatpak.yml`) and the site (`website.yml`). Screenshots are rendered by an ignored test: `RIGCHECK_SCREENSHOT_DB=<a games.db> cargo test -p rigcheck screenshots -- --ignored`.
 
 ## Contributing
 
