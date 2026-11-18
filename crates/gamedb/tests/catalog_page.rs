@@ -83,3 +83,26 @@ fn the_search_follows_names_as_they_are_written_and_changed() {
     assert_eq!(search("hades"), ["Hades II"]);
     assert_eq!(search("ii"), ["Hades II"]);
 }
+
+/// The Catalog reads the whole list of matches once per search and pages
+/// through it while scrolling: the same games, in the same order, as
+/// asking for each page.
+#[test]
+fn the_whole_list_of_matches_is_the_pages_one_after_another() {
+    let (_dir, db) = db();
+    for query in ["", "port", "half life", "p", "nothing matches"] {
+        let pages: Vec<u32> = (0..3)
+            .flat_map(|page| {
+                db.games_page(query, &Filters::default(), page * 2, 2)
+                    .unwrap()
+            })
+            .map(|(app_id, _)| app_id)
+            .collect();
+
+        assert_eq!(
+            db.games_ids(query, &Filters::default()).unwrap(),
+            pages,
+            "{query}"
+        );
+    }
+}

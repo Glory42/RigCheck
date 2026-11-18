@@ -171,10 +171,13 @@ fn amd_laptop(games: &GameDb) -> Specs {
         .clone()
 }
 
-/// Names in the Catalog for `filters`, checking the count agrees.
+/// Names in the Catalog for `filters`, checking the count and the whole
+/// list of IDs agree.
 fn listed(records: &Records, filters: &Filters) -> Vec<String> {
     let page = records.page("", filters, 0, 100).unwrap();
     assert_eq!(records.count("", filters).unwrap(), page.len());
+    let ids: Vec<u32> = page.iter().map(|(app_id, _)| *app_id).collect();
+    assert_eq!(records.ids("", filters).unwrap(), ids);
     page.into_iter().map(|(_, name)| name).collect()
 }
 

@@ -48,4 +48,28 @@ fn perf() {
             "search {query:?} took {took:?}"
         );
     }
+
+    // A filtered list scrolled deep: every page used to walk the
+    // popularity index again (~650 ms with Deck verified + Gold).
+    let _ = app.update(Message::CatalogSearch(String::new()));
+    let start = Instant::now();
+    let _ = app.update(Message::CatalogFilter(crate::catalog::Chip::DeckVerified));
+    let _ = app.update(Message::CatalogProtonDb(Some(
+        rigcheck_core::ProtonTier::Gold,
+    )));
+    println!("filters on: {:?}", start.elapsed());
+    for row in [100.0, 1000.0, 2000.0] {
+        let start = Instant::now();
+        let _ = app.update(Message::CatalogScrolled {
+            offset: row * crate::catalog::ROW_HEIGHT,
+            height: 900.0,
+            width: 1060.0,
+        });
+        let took = start.elapsed();
+        println!("filtered scroll to row {row}: {took:?}");
+        assert!(
+            took < Duration::from_millis(50),
+            "filtered scroll took {took:?}"
+        );
+    }
 }

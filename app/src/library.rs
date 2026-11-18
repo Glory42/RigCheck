@@ -16,8 +16,8 @@ use crate::style::{BOLD, Colors, level_color, scroll};
 use crate::{Message, Page};
 
 /// Steam's library art is 600×900; tiles show it at this size.
-const COVER_WIDTH: f32 = 164.0;
-const COVER_HEIGHT: f32 = 246.0;
+pub const COVER_WIDTH: f32 = 164.0;
+pub const COVER_HEIGHT: f32 = 246.0;
 
 /// A game tile's size: the cover, the stamp (24) and the name (50), inside
 /// a 3 px padding. Fixed, so the Catalog's grid maps scroll to rows.

@@ -65,7 +65,10 @@ impl Chip {
 /// The list's state: what's searched, where it's scrolled, and the rows in
 /// view (read as they come into view: games.db, or a lookup of the game).
 pub struct List {
+    /// What's searched for…
     query: String,
+    /// …and what's in the search box, searched once the typing pauses.
+    typed: String,
     filters: Filters,
     /// Whether CAN RUN is on. `filters.runs_on` holds the specs it uses
     /// once hardware detection has finished.
@@ -75,6 +78,12 @@ pub struct List {
     /// The grid's width, for how many tiles fit in a row.
     width: f32,
     total: usize,
+    /// With a filter on, every match in order, read once per search: a
+    /// filtered page costs as much as the whole list (SQLite walks most of
+    /// the popularity index either way), so scrolling then runs no query.
+    /// Without filters a page stops early and is cheap, so pages are read
+    /// as they scroll into view.
+    ids: Option<Vec<u32>>,
     /// The index of `rows[0]` in the whole list.
     first: usize,
     /// The tile the keyboard has highlighted…
@@ -88,6 +97,7 @@ impl Default for List {
     fn default() -> List {
         List {
             query: String::new(),
+            typed: String::new(),
             filters: Filters::default(),
             can_run: false,
             scroll: 0.0,
@@ -95,6 +105,7 @@ impl Default for List {
             viewport: 1200.0,
             width: 1060.0,
             total: 0,
+            ids: None,
             first: 0,
             selected: 0,
             keyboard: false,
@@ -104,8 +115,8 @@ impl Default for List {
 }
 
 impl List {
-    /// Fetches the rows that scrolled into view. The count stays: it
-    /// only changes with the search (and costs ~30 ms on a broad one).
+    /// Fetches the rows that scrolled into view, from the matches already
+    /// listed.
     pub fn scrolled(&mut self, offset: f32, height: f32, width: f32, records: &Records) {
         self.scroll = offset;
         self.viewport = height;
@@ -116,8 +127,19 @@ impl List {
     /// Lists `query`'s matches from the top. The caller scrolls the list
     /// widget back up too ([`LIST`]), as for every change of what's listed.
     pub fn search(&mut self, query: String, records: &Records) {
+        self.typed.clone_from(&query);
         self.query = query;
         self.restart(records);
+    }
+
+    /// Shows `typed` in the search box; [`List::search`] lists its matches.
+    pub fn type_text(&mut self, typed: String) {
+        self.typed = typed;
+    }
+
+    /// What's typed but not searched for yet, if anything.
+    pub fn unsearched(&self) -> Option<&str> {
+        (self.typed != self.query).then_some(self.typed.as_str())
     }
 
     /// Turns `chip` on or off. `specs` are this PC's, for CAN RUN.
@@ -158,12 +180,32 @@ impl List {
         self.refresh(records);
     }
 
-    /// Counts the matches and fetches the rows in view again, e.g. for a
+    /// Lists the matches and fetches the rows in view again, e.g. for a
     /// new games.db or a lookup stored or cleared.
     pub fn refresh(&mut self, records: &Records) {
-        self.total = records.count(&self.query, &self.filters).unwrap_or(0);
+        if self.filters == Filters::default() {
+            self.ids = None;
+            self.total = records.count(&self.query, &self.filters).unwrap_or(0);
+        } else {
+            let ids = records.ids(&self.query, &self.filters).unwrap_or_default();
+            self.total = ids.len();
+            self.ids = Some(ids);
+        }
         self.rows.clear();
         self.fetch_rows(records);
+    }
+
+    /// The app IDs at `range` of the whole list.
+    fn ids_at(&self, range: Range<usize>, records: &Records) -> Vec<u32> {
+        match &self.ids {
+            Some(ids) => ids[range].to_vec(),
+            None => records
+                .page(&self.query, &self.filters, range.start, range.len())
+                .unwrap_or_default()
+                .into_iter()
+                .map(|(app_id, _)| app_id)
+                .collect(),
+        }
     }
 
     /// Tiles in a row.
@@ -204,11 +246,10 @@ impl List {
     pub fn selected_game(&self, records: &Records) -> Option<u32> {
         match self.selected.checked_sub(self.first) {
             Some(index) if index < self.rows.len() => Some(self.rows[index].app_id),
-            _ => records
-                .page(&self.query, &self.filters, self.selected, 1)
-                .ok()?
+            _ => self
+                .ids_at(self.selected..self.selected + 1, records)
                 .first()
-                .map(|(app_id, _)| *app_id),
+                .copied(),
         }
     }
 
@@ -217,9 +258,7 @@ impl List {
         if range.start == self.first && range.len() == self.rows.len() && !self.rows.is_empty() {
             return; // Same rows as before.
         }
-        let page = records
-            .page(&self.query, &self.filters, range.start, range.len())
-            .unwrap_or_default();
+        let page = self.ids_at(range.clone(), records);
         self.first = range.start;
         // Scrolling a little keeps most rows: reuse them and only load the
         // records that came into view (a full record takes ~1.5 ms).
@@ -230,7 +269,7 @@ impl List {
             .collect();
         self.rows = page
             .into_iter()
-            .filter_map(|(app_id, _)| {
+            .filter_map(|app_id| {
                 loaded
                     .remove(&app_id)
                     .or_else(|| records.get(app_id).ok().flatten())
@@ -275,9 +314,9 @@ pub fn view<'a>(
             });
             container(row(tiles).spacing(GAP)).height(ROW_HEIGHT).into()
         });
-    let search_box = text_input(&i18n.t("catalog-search"), &list.query)
+    let search_box = text_input(&i18n.t("catalog-search"), &list.typed)
         .id(SEARCH)
-        .on_input(Message::CatalogSearch)
+        .on_input(Message::CatalogTyped)
         // Enter opens the highlighted row (the first, after a new search).
         .on_submit(Message::Shortcut(crate::keys::Shortcut::Open))
         .padding(10)

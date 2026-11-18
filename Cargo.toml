@@ -8,3 +8,20 @@ version = "1.1.0"
 edition = "2024"
 license = "MIT"
 publish = false
+
+# Release builds: one codegen unit and whole-program LTO let the compiler
+# optimize across crates, and symbols are stripped. Slower to build (CI
+# builds releases only for packages and the pipeline), smaller and faster
+# to run.
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true
+
+# The data pipeline (build-db.yml): release speed without LTO, which would
+# add minutes to every crawl's build for no gain worth having.
+[profile.pipeline]
+inherits = "release"
+lto = false
+codegen-units = 16
+strip = false

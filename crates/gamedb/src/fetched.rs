@@ -278,6 +278,13 @@ impl<'a> Records<'a> {
             .page_with(query, filters, offset, limit, &looked_up)
     }
 
+    /// Every game [`Records::page`] lists for `query` and `filters`, in
+    /// order (see [`GameDb::games_ids`]).
+    pub fn ids(&self, query: &str, filters: &Filters) -> Result<Vec<u32>, Error> {
+        let looked_up = self.looked_up(filters)?;
+        self.games.ids_with(query, filters, &looked_up)
+    }
+
     /// How many games [`Records::page`] lists for `query` and `filters`.
     pub fn count(&self, query: &str, filters: &Filters) -> Result<usize, Error> {
         let looked_up = self.looked_up(filters)?;
