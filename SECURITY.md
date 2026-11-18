@@ -30,6 +30,16 @@ Especially interesting: anything that makes the app talk to another host, run an
 
 Wrong verdicts themselves aren't security issues. Report them as a [Wrong verdict](https://github.com/Glory42/rigcheck/issues/new?template=wrong-verdict.yml) issue.
 
+## How the game database is checked
+
+The app downloads `games.db` only from this repository's `db-latest` release, and only after:
+
+1. `manifest.sig` is a valid Ed25519 signature of `manifest.json` by the key whose public half is built into the app (`MANIFEST_KEY` in `app/src/download.rs`). Only the Build games.db workflow can sign: the private key is a secret of the `db-signing` environment, which only `master` may use.
+2. The download matches the manifest's size and SHA-256, unpacks within a size limit, and holds no SQL (triggers, views, virtual tables) other than the pipeline's own, before anything writes to it.
+3. It's a newer build than the installed one, so an older file can't be served again.
+
+If the signing key is ever lost or exposed: make a new one (`openssl genpkey -algorithm ed25519`), store it as the `MANIFEST_SIGNING_KEY` secret of the `db-signing` environment, put its public half in `MANIFEST_KEY`, and release the app. Until users update, their app keeps its installed database.
+
 ## Verifying a download
 
 Every release since 1.2.0 carries a `SHA256SUMS` file and a build provenance attestation for the AppImage, `.deb`, `.rpm` and tarball. To check that a file was built by this repository's release workflow from a tagged commit:
