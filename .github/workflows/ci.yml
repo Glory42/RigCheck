@@ -74,3 +74,11 @@ jobs:
       - run: desktop-file-validate packaging/dev.gorkemkaryol.rigcheck.desktop
       - run: appstreamcli validate --no-net --explain packaging/dev.gorkemkaryol.rigcheck.metainfo.xml
 
+  # .claude/skills is a copy of .agents/skills (Codex's location), not a
+  # symlink, so checkouts work on Windows too. Catch silent drift.
+  agent-skills:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: diff -r .claude/skills .agents/skills

@@ -58,6 +58,25 @@ The UI tests render offscreen. On a machine without a GPU, set `ICED_TEST_BACKEN
 - **Real data over invented data.** Fixtures are captured from real machines and real store pages where possible.
 - **Keep `crates/core` pure** (no files, no network). Only `crates/net` may use an HTTP client; `cargo deny check bans` enforces it.
 
+### Coding agents
+
+[`AGENTS.md`](AGENTS.md) is the canonical guide for coding agents: commands,
+project boundaries and the definition of done. [`CLAUDE.md`](CLAUDE.md) imports
+it with `@AGENTS.md` and adds only Claude Code notes, so there is one file to
+maintain rather than two that drift.
+
+Repo skills live in [`.agents/skills/`](.agents/skills), where Codex looks.
+`.claude/skills/` is a byte-identical copy for Claude Code and OpenCode, not a
+symlink, so checkouts work on Windows too. Edit `.agents/skills/`, then mirror
+it:
+
+```sh
+cp -a .agents/skills/. .claude/skills/
+diff -r .claude/skills .agents/skills
+```
+
+CI's `agent-skills` job runs that `diff` and fails if the copies differ.
+
 The [roadmap](ROADMAP.md) says what's planned and why. For anything bigger than a fix, open an issue first so we can agree on the approach.
 
 ### Pull requests
